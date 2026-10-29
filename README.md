@@ -394,8 +394,13 @@ and maker/taker flags all reconciled with the exchange's own record (PASS, BTC a
 by the testnet's oracle band). It also caught a sizing bug that reconciliation cannot see, now
 fixed. [research/RESULTS_TESTNET.md](research/RESULTS_TESTNET.md).
 
-Scoreboard: forty-one tests. Four passes (#4, #8, #12 provisional, #26), two real but not
-tradable (#19, #20), one measurement (#39), one plumbing check (#40), the rest failed (#37 the latest) or are running
+#41 ran #39's measurement on eight coins down the liquidity ladder (DOGE to YFI). No cell pays a
+resting order; the back-of-queue loss deepens as coins thin (−0.8 bps on BTC to −4.0 on XTZ, rank
+correlation +0.97 with volume). Hyperliquid NO; Binance "not established" by its frozen replication
+rule. [research/RESULTS_MARKOUT_SMALL.md](research/RESULTS_MARKOUT_SMALL.md).
+
+Scoreboard: forty-two tests. Four passes (#4, #8, #12 provisional, #26), two real but not
+tradable (#19, #20), two measurements (#39, #41), one plumbing check (#40), the rest failed (#37 the latest) or are running
 (#22–#24, #27, #29, #31, #32, #34, #38). Two are risk construction; the third is income (carry at
 maker fees) with a forward test still attached. No predictive edge has been found at any horizon,
 and across #4, #8 and #15 the one effect that survives is volatility sizing.

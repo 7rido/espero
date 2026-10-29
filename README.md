@@ -399,8 +399,12 @@ resting order; the back-of-queue loss deepens as coins thin (−0.8 bps on BTC t
 correlation +0.97 with volume). Hyperliquid NO; Binance "not established" by its frozen replication
 rule. [research/RESULTS_MARKOUT_SMALL.md](research/RESULTS_MARKOUT_SMALL.md).
 
-Scoreboard: forty-two tests. Four passes (#4, #8, #12 provisional, #26), two real but not
-tradable (#19, #20), two measurements (#39, #41), one plumbing check (#40), the rest failed (#37 the latest) or are running
+#42 rehearsed the real-fill test on testnet across five coins: resting orders, a book recorder,
+reconciliation and a position-against-intent check all passed (74 fills, zero breaks).
+[research/RESULTS_REHEARSAL.md](research/RESULTS_REHEARSAL.md).
+
+Scoreboard: forty-three tests. Four passes (#4, #8, #12 provisional, #26), two real but not
+tradable (#19, #20), two measurements (#39, #41), two plumbing checks (#40, #42), the rest failed (#37 the latest) or are running
 (#22–#24, #27, #29, #31, #32, #34, #38). Two are risk construction; the third is income (carry at
 maker fees) with a forward test still attached. No predictive edge has been found at any horizon,
 and across #4, #8 and #15 the one effect that survives is volatility sizing.

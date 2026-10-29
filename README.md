@@ -403,7 +403,12 @@ rule. [research/RESULTS_MARKOUT_SMALL.md](research/RESULTS_MARKOUT_SMALL.md).
 reconciliation and a position-against-intent check all passed (74 fills, zero breaks).
 [research/RESULTS_REHEARSAL.md](research/RESULTS_REHEARSAL.md).
 
-Scoreboard: forty-three tests. Four passes (#4, #8, #12 provisional, #26), two real but not
+#43 mapped the repo's real signals from 1 hour to 2 weeks. #20's new-low bounce at 12 h passed its
+pre-registered confirmation on 2025–26 (+21.8 bps a day-mean), but trade-weighted the same trades
+lose 9.6 bps: the day-mean convention gave 50 quiet-day trades the result. Not tradable, and a
+warning for every day-mean in this repo. [research/RESULTS_HORIZONS.md](research/RESULTS_HORIZONS.md).
+
+Scoreboard: forty-four tests. Four passes (#4, #8, #12 provisional, #26), two real but not
 tradable (#19, #20), two measurements (#39, #41), two plumbing checks (#40, #42), the rest failed (#37 the latest) or are running
 (#22–#24, #27, #29, #31, #32, #34, #38). Two are risk construction; the third is income (carry at
 maker fees) with a forward test still attached. No predictive edge has been found at any horizon,

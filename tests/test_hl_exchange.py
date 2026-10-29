@@ -42,6 +42,11 @@ class TestRounding(unittest.TestCase):
         self.assertEqual(hx.round_size(0.0019, 3), 0.001)
         self.assertEqual(hx.round_size(12.3456, 1), 12.3)
 
+    def test_size_already_on_the_grid_stays_put(self):
+        # #40's testnet session: 0.00014 floored to 0.00013 and left 0.00011 BTC open
+        for sz, sd in ((0.00014, 5), (0.29, 2), (0.57, 2), (0.0052, 4), (1.15, 2)):
+            self.assertEqual(hx.round_size(sz, sd), sz)
+
     def test_parse_order_response(self):
         resting = {"status": "ok", "response": {"type": "order", "data": {"statuses": [{"resting": {"oid": 7}}]}}}
         self.assertEqual(hx.parse_order_response(resting)["status"], "resting")

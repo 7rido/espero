@@ -61,7 +61,8 @@ def account_address(env: dict) -> Optional[str]:
 
 # -------------------------------------------------------------------- rounding
 def round_size(sz: float, sz_decimals: int) -> float:
-    return math.floor(abs(sz) * 10 ** sz_decimals) / 10 ** sz_decimals
+    # round first: 0.00014 * 1e5 is 13.999999999999998 in floating point and must not floor to 13
+    return math.floor(round(abs(sz) * 10 ** sz_decimals, 9)) / 10 ** sz_decimals
 
 
 def round_price(px: float, sz_decimals: int, side: str) -> float:

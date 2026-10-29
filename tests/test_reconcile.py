@@ -66,3 +66,23 @@ def test_post_only_refusal():
     assert len(rc.post_only_refused(rested, [])) == 1
     took = [{"coin": "BTC", "side": "buy", "price": 1, "status": "filled", "oid": 8}]
     assert len(rc.post_only_refused(took, [fill(8, 1, 1, True, rate=TAKER)])) == 2
+
+
+def test_positions_match_within_half_a_step():
+    assert rc.positions_match({"BTC": 0.00014}, {"BTC": 0.00014}, {"BTC": 0.00001}) == []
+    assert rc.positions_match({"BTC": 0.0}, {}, {"BTC": 0.00001}) == []                 # flat = missing
+    b = rc.positions_match({"BTC": 0.0}, {"BTC": 0.00011}, {"BTC": 0.00001})            # #40's leftover
+    assert len(b) == 1 and "BTC" in b[0]
+    assert len(rc.positions_match({}, {"ETH": -0.01}, {"ETH": 0.0001})) == 1           # unintended short
+
+
+def test_fill_markouts_take_the_makers_side_and_need_a_recent_row():
+    book = [(1000, "BTC", 100.0), (2000, "BTC", 101.0), (11_000, "BTC", 99.0), (61_500, "BTC", 102.0),
+            (400_000, "BTC", 90.0)]                                  # far past +300 s: too stale to use
+    fills = [{"oid": 1, "coin": "BTC", "side": "B", "px": "100", "time": "1000", "crossed": False},
+             {"oid": 2, "coin": "BTC", "side": "A", "px": "100", "time": "1000", "crossed": False}]
+    m = rc.fill_markouts(fills, book, horizons_s=(1, 10, 60, 300))
+    assert abs(m[0][1] - 100.0) < 1e-9 and abs(m[1][1] + 100.0) < 1e-9                 # +1% for the buyer
+    assert abs(m[0][10] + 100.0) < 1e-9                                                 # mid 99 at +10 s
+    assert abs(m[0][60] - 200.0) < 1e-9                                                 # 61.5 s is within 2 s
+    assert m[0][300] is None                                                            # nothing near +300 s

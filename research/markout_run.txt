@@ -1,0 +1,285 @@
+#39 — measured costs and markouts. 334,576 day rows; bar t >= 4.60 (computed 4.596, N = 359)
+dropped coin-days: 0; job errors: 0
+days per set: coin  BTC  ETH  SOL  XRP
+set                     
+B     210  210  210  210
+H      24   24   24   24
+V1     10   10   10   10
+V2      7    7    7    7
+
+== Proxy validation (|proxy − quote| <= max(0.25 bps, 20%), every 'all' cell, V1 and V2)
+-- V1
+coin    measure  horizon  proxy  quote   ok
+ BTC maker_cons        1  -0.57  -0.60 True
+ BTC maker_cons       10  -0.79  -0.78 True
+ BTC maker_cons       60  -0.70  -0.69 True
+ BTC maker_cons      300  -0.68  -0.69 True
+ BTC  maker_opt        1  -0.28  -0.30 True
+ BTC  maker_opt       10  -0.40  -0.39 True
+ BTC  maker_opt       60  -0.35  -0.34 True
+ BTC  maker_opt      300  -0.34  -0.35 True
+ BTC      taker        0   0.38   0.37 True
+ ETH maker_cons        1  -0.54  -0.59 True
+ ETH maker_cons       10  -1.00  -0.99 True
+ ETH maker_cons       60  -0.93  -0.92 True
+ ETH maker_cons      300  -0.49  -0.50 True
+ ETH  maker_opt        1  -0.27  -0.30 True
+ ETH  maker_opt       10  -0.53  -0.53 True
+ ETH  maker_opt       60  -0.48  -0.48 True
+ ETH  maker_opt      300  -0.25  -0.25 True
+ ETH      taker        0   0.48   0.46 True
+ SOL maker_cons        1  -0.72  -0.83 True
+ SOL maker_cons       10  -1.13  -1.09 True
+ SOL maker_cons       60  -0.75  -0.72 True
+ SOL maker_cons      300  -0.67  -0.63 True
+ SOL  maker_opt        1  -0.21  -0.30 True
+ SOL  maker_opt       10  -0.47  -0.45 True
+ SOL  maker_opt       60  -0.30  -0.28 True
+ SOL  maker_opt      300  -0.26  -0.24 True
+ SOL      taker        0   0.98   0.87 True
+ XRP maker_cons        1  -1.05  -1.28 True
+ XRP maker_cons       10  -1.35  -1.34 True
+ XRP maker_cons       60  -1.27  -1.27 True
+ XRP maker_cons      300  -1.02  -1.02 True
+ XRP  maker_opt        1   0.76   0.70 True
+ XRP  maker_opt       10   0.66   0.66 True
+ XRP  maker_opt       60   0.66   0.66 True
+ XRP  maker_opt      300   0.69   0.69 True
+ XRP      taker        0   0.98   0.98 True
+-- V2
+coin    measure  horizon  proxy  quote   ok
+ BTC maker_cons        1  -0.70  -0.71 True
+ BTC maker_cons       10  -0.86  -0.86 True
+ BTC maker_cons       60  -0.79  -0.77 True
+ BTC maker_cons      300  -0.75  -0.75 True
+ BTC  maker_opt        1  -0.43  -0.45 True
+ BTC  maker_opt       10  -0.55  -0.54 True
+ BTC  maker_opt       60  -0.50  -0.49 True
+ BTC  maker_opt      300  -0.49  -0.49 True
+ BTC      taker        0   0.30   0.35 True
+ ETH maker_cons        1  -0.73  -0.76 True
+ ETH maker_cons       10  -0.86  -0.84 True
+ ETH maker_cons       60  -0.82  -0.77 True
+ ETH maker_cons      300  -0.82  -0.83 True
+ ETH  maker_opt        1  -0.41  -0.43 True
+ ETH  maker_opt       10  -0.50  -0.49 True
+ ETH  maker_opt       60  -0.48  -0.46 True
+ ETH  maker_opt      300  -0.46  -0.47 True
+ ETH      taker        0   0.31   0.33 True
+ SOL maker_cons        1  -1.05  -1.15 True
+ SOL maker_cons       10  -1.24  -1.25 True
+ SOL maker_cons       60  -1.19  -1.17 True
+ SOL maker_cons      300  -1.20  -1.20 True
+ SOL  maker_opt        1   0.35   0.31 True
+ SOL  maker_opt       10   0.28   0.28 True
+ SOL  maker_opt       60   0.28   0.28 True
+ SOL  maker_opt      300   0.26   0.26 True
+ SOL      taker        0   0.65   0.65 True
+ XRP maker_cons        1  -0.86  -1.08 True
+ XRP maker_cons       10  -1.14  -1.15 True
+ XRP maker_cons       60  -1.05  -1.05 True
+ XRP maker_cons      300  -0.98  -0.98 True
+ XRP  maker_opt        1   0.16   0.09 True
+ XRP  maker_opt       10   0.05   0.05 True
+ XRP  maker_opt       60   0.05   0.05 True
+ XRP  maker_opt      300   0.02   0.02 True
+ XRP      taker        0   0.52   0.49 True
+validated (coin, horizon): [('BTC', 1), ('BTC', 10), ('BTC', 60), ('BTC', 300), ('ETH', 1), ('ETH', 10), ('ETH', 60), ('ETH', 300), ('SOL', 1), ('SOL', 10), ('SOL', 60), ('SOL', 300), ('XRP', 1), ('XRP', 10), ('XRP', 60), ('XRP', 300)]
+
+== Second source: Tardis trades vs the archive's aggTrades, V2 days, proxy mid
+coin    measure  horizon  tardis  archive   ok
+ BTC maker_cons        1   -0.70    -0.71 True
+ BTC maker_cons       10   -0.86    -0.87 True
+ BTC maker_cons       60   -0.79    -0.79 True
+ BTC maker_cons      300   -0.75    -0.70 True
+ BTC  maker_opt        1   -0.43    -0.47 True
+ BTC  maker_opt       10   -0.55    -0.57 True
+ BTC  maker_opt       60   -0.50    -0.52 True
+ BTC  maker_opt      300   -0.49    -0.47 True
+ BTC      taker        0    0.30     0.34 True
+ ETH maker_cons        1   -0.73    -0.74 True
+ ETH maker_cons       10   -0.86    -0.84 True
+ ETH maker_cons       60   -0.82    -0.82 True
+ ETH maker_cons      300   -0.82    -0.74 True
+ ETH  maker_opt        1   -0.41    -0.44 True
+ ETH  maker_opt       10   -0.50    -0.50 True
+ ETH  maker_opt       60   -0.48    -0.48 True
+ ETH  maker_opt      300   -0.46    -0.41 True
+ ETH      taker        0    0.31     0.35 True
+ SOL maker_cons        1   -1.05    -1.05 True
+ SOL maker_cons       10   -1.24    -1.24 True
+ SOL maker_cons       60   -1.19    -1.18 True
+ SOL maker_cons      300   -1.20    -1.15 True
+ SOL  maker_opt        1    0.35     0.44 True
+ SOL  maker_opt       10    0.28     0.39 True
+ SOL  maker_opt       60    0.28     0.37 True
+ SOL  maker_opt      300    0.26     0.38 True
+ SOL      taker        0    0.65     0.64 True
+ XRP maker_cons        1   -0.86    -0.86 True
+ XRP maker_cons       10   -1.14    -1.14 True
+ XRP maker_cons       60   -1.05    -1.04 True
+ XRP maker_cons      300   -0.98    -0.96 True
+ XRP  maker_opt        1    0.16     0.21 True
+ XRP  maker_opt       10    0.05     0.12 True
+ XRP  maker_opt       60    0.05     0.12 True
+ XRP  maker_opt      300    0.02     0.14 True
+ XRP      taker        0    0.52     0.51 True
+replicated: True
+Hyperliquid cross-check: the collector's 1-minute candles start 2026-10-27; no Tardis free day overlaps them, so the Hyperliquid table stands on one source.
+
+== Q1 — measured cost per leg (bps), 'all' cells
+-- binance: taker fee 5.0, maker fee 2.0
+   BTC: half-spread +0.33 (days 210), taker round trip 10.67 vs the assumed 18.00
+        1s  maker markout optimistic -0.44 (t -63.95)   conservative -0.67 (t -118.85)
+       10s  maker markout optimistic -0.56 (t -69.72)   conservative -0.85 (t -99.46)
+       60s  maker markout optimistic -0.54 (t -53.31)   conservative -0.81 (t -65.70)
+      300s  maker markout optimistic -0.46 (t -33.12)   conservative -0.70 (t -39.01)
+   ETH: half-spread +0.37 (days 210), taker round trip 10.74 vs the assumed 18.00
+        1s  maker markout optimistic -0.43 (t -63.97)   conservative -0.71 (t -118.87)
+       10s  maker markout optimistic -0.50 (t -65.92)   conservative -0.83 (t -85.37)
+       60s  maker markout optimistic -0.49 (t -39.85)   conservative -0.80 (t -48.76)
+      300s  maker markout optimistic -0.43 (t -27.31)   conservative -0.72 (t -32.74)
+   SOL: half-spread +0.66 (days 210), taker round trip 11.31 vs the assumed 18.00
+        1s  maker markout optimistic +0.45 (t +45.71)   conservative -1.01 (t -47.04)
+       10s  maker markout optimistic +0.40 (t +40.08)   conservative -1.20 (t -50.16)
+       60s  maker markout optimistic +0.39 (t +33.64)   conservative -1.18 (t -37.77)
+      300s  maker markout optimistic +0.42 (t +27.66)   conservative -1.05 (t -29.73)
+   XRP: half-spread +0.54 (days 210), taker round trip 11.09 vs the assumed 18.00
+        1s  maker markout optimistic +0.20 (t +20.62)   conservative -0.87 (t -77.12)
+       10s  maker markout optimistic +0.10 (t +9.60)   conservative -1.16 (t -105.88)
+       60s  maker markout optimistic +0.10 (t +8.27)   conservative -1.10 (t -62.01)
+      300s  maker markout optimistic +0.09 (t +5.39)   conservative -1.04 (t -41.40)
+-- hyperliquid: taker fee 4.5, maker fee 1.5
+   BTC: half-spread +0.46 (days 24), taker round trip 9.91 vs the assumed 18.00
+        1s  maker markout optimistic -0.17 (t -3.55)   conservative -0.60 (t -5.82)
+       10s  maker markout optimistic -0.51 (t -12.14)   conservative -1.31 (t -27.44)
+       60s  maker markout optimistic -0.59 (t -12.29)   conservative -1.42 (t -25.23)
+      300s  maker markout optimistic -0.54 (t -8.16)   conservative -1.24 (t -13.20)
+   ETH: half-spread +0.63 (days 24), taker round trip 10.26 vs the assumed 18.00
+        1s  maker markout optimistic -0.07 (t -1.29)   conservative -1.14 (t -7.18)
+       10s  maker markout optimistic -0.36 (t -8.24)   conservative -1.83 (t -20.91)
+       60s  maker markout optimistic -0.38 (t -8.17)   conservative -1.81 (t -18.77)
+      300s  maker markout optimistic -0.32 (t -3.41)   conservative -1.55 (t -9.24)
+   SOL: half-spread +0.81 (days 24), taker round trip 10.61 vs the assumed 18.00
+        1s  maker markout optimistic -0.00 (t -0.01)   conservative -1.37 (t -7.54)
+       10s  maker markout optimistic -0.38 (t -6.72)   conservative -2.06 (t -24.32)
+       60s  maker markout optimistic -0.39 (t -6.39)   conservative -2.08 (t -21.79)
+      300s  maker markout optimistic -0.44 (t -4.14)   conservative -2.00 (t -15.25)
+   XRP: half-spread +0.96 (days 24), taker round trip 10.91 vs the assumed 18.00
+        1s  maker markout optimistic +0.15 (t +1.29)   conservative -2.00 (t -8.86)
+       10s  maker markout optimistic -0.22 (t -2.67)   conservative -2.52 (t -14.63)
+       60s  maker markout optimistic -0.26 (t -2.74)   conservative -2.52 (t -14.92)
+      300s  maker markout optimistic -0.24 (t -1.44)   conservative -2.34 (t -9.77)
+
+== Q1 by condition (taker half-spread; conservative maker markout at 60 s)
+-- binance taker 0s
+coin                 BTC   ETH   SOL   XRP
+cond    level                             
+flow    against     0.18  0.23  0.52  0.35
+        neutral     0.28  0.34  0.63  0.53
+        with        0.44  0.49  0.79  0.70
+funding other       0.33  0.37  0.66  0.54
+        settlement  0.30  0.32  0.63  0.52
+liq     other       0.33  0.37  0.66  0.54
+spread  tight       0.15  0.17  0.62  0.47
+        wide        0.53  0.60  0.88  0.81
+-- binance maker_cons 60s
+coin                 BTC   ETH   SOL   XRP
+cond    level                             
+flow    against    -0.72 -0.69 -1.04 -0.90
+        neutral    -0.87 -0.84 -1.25 -1.17
+        with       -1.04 -1.05 -1.54 -1.60
+funding other      -0.82 -0.80 -1.18 -1.11
+        settlement -0.68 -0.66 -1.06 -0.96
+liq     other      -0.81 -0.80 -1.18 -1.10
+spread  tight      -0.81 -0.83 -1.21 -1.14
+        wide       -0.81 -0.79 -1.07 -1.04
+-- hyperliquid taker 0s
+coin                 BTC   ETH   SOL   XRP
+cond    level                             
+flow    against     0.32  0.43  0.59  0.73
+        neutral     0.42  0.60  0.76  0.88
+        with        0.57  0.78  0.98  1.16
+funding other       0.46  0.63  0.81  0.95
+        settlement  0.46  0.50  0.73  1.05
+spread  tight       0.41  0.57  0.75  0.79
+        wide        0.91  1.38  1.47  1.61
+-- hyperliquid maker_cons 60s
+coin                 BTC   ETH   SOL   XRP
+cond    level                             
+flow    against    -1.43 -1.74 -2.04 -2.06
+        neutral    -1.33 -1.81 -2.09 -2.78
+        with       -1.45 -1.91 -2.08 -2.73
+funding other      -1.42 -1.81 -2.07 -2.57
+        settlement -1.39 -1.67 -2.06 -1.45
+spread  tight      -1.42 -1.82 -2.41 -2.81
+        wide       -1.38 -1.64 -2.05 -2.16
+
+== Q3 — conservative maker markout net of the maker fee, t >= 4.60, both halves
+      venue coin  horizon    cond      level   days   net  t_net  net_h1  net_h2  pass
+hyperliquid  XRP      300 funding settlement  24.00 -3.49  -2.66   -3.22   -3.76 False
+hyperliquid  XRP       60 funding settlement  24.00 -2.95  -3.11   -2.53   -3.37 False
+hyperliquid  SOL      300 funding settlement  24.00 -3.81  -5.14   -4.96   -2.67 False
+hyperliquid  BTC      300 funding settlement  24.00 -3.06  -5.68   -2.46   -3.66 False
+hyperliquid  ETH      300 funding settlement  24.00 -2.89  -6.47   -3.03   -2.75 False
+hyperliquid  SOL      300  spread      tight  24.00 -4.14  -6.91   -3.54   -4.73 False
+hyperliquid  ETH      300  spread       wide  24.00 -2.67  -7.22   -2.54   -2.79 False
+hyperliquid  XRP      300  spread       wide  24.00 -2.82  -7.37   -3.10   -2.54 False
+hyperliquid  ETH      300    flow    against  24.00 -2.75  -9.40   -2.27   -3.23 False
+hyperliquid  SOL        1  spread       wide  24.00 -2.80  -9.96   -3.17   -2.42 False
+    binance  SOL      300    flow    against 210.00 -2.40  -9.97   -2.81   -2.09 False
+hyperliquid  XRP      300    flow    against  24.00 -3.40 -10.71   -3.54   -3.25 False
+hyperliquid  SOL       60  spread      tight  24.00 -3.91 -10.88   -3.74   -4.09 False
+hyperliquid  XRP        1  spread      tight  24.00 -3.75 -10.97   -4.11   -3.39 False
+hyperliquid  ETH        1  spread       wide  24.00 -2.76 -11.35   -2.79   -2.74 False
+cells examined: 272; passing: 0
+optimistic-bound cells with net > 0 and t >= bar (the front of the queue; do not count): 0
+Q3 ANSWER: NO
+
+== Q2 — open leads re-priced with the measured taker legs (information; forward tests unchanged)
+  #29 fade, 16:00 → 16:15 ET         binance      days  596  gross    +6.0 bps (t +5.62)  net    -4.7 bps (t -4.41)  survives: no  clears 4.60: no
+  #29 fade, 16:00 → 16:15 ET         hyperliquid  days  596  gross    +6.0 bps (t +5.62)  net    -4.1 bps (t -3.83)  survives: no  clears 4.60: no
+  #29 fade, 16:00 → 17:00 ET         binance      days  596  gross    +8.1 bps (t +3.74)  net    -2.6 bps (t -1.23)  survives: no  clears 4.60: no
+  #29 fade, 16:00 → 17:00 ET         hyperliquid  days  596  gross    +8.1 bps (t +3.74)  net    -2.0 bps (t -0.94)  survives: no  clears 4.60: no
+  #31 2-ATR bid, 4h exit (4 coins)   binance      days  158  gross   +16.0 bps (t +5.35)  net   +11.2 bps (t +3.68)  survives: YES  clears 4.60: no
+  #31 2-ATR bid, 4h exit (4 coins)   hyperliquid  days  158  gross   +16.0 bps (t +5.35)  net   +12.2 bps (t +3.99)  survives: YES  clears 4.60: no
+  #38 short, Mondays 00:00 2020–26   binance      days    9  gross   +49.2 bps (t +1.03)  net   +38.1 bps (t +0.79)  survives: no  clears 4.60: no
+  #38 short, Mondays 00:00 2020–26   hyperliquid  days    9  gross   +49.2 bps (t +1.03)  net   +38.8 bps (t +0.81)  survives: no  clears 4.60: no
+  #38 short, every settlement, set B no events
+  #34 and #37: out of this model's reach (see the pre-registration's Scope).
+
+== Information: conservative maker markout at 60 s by UTC hour (all coins' mean)
+level          00    01    02    03    04    05    06    07    08    09    10    11    12    13    14    15    16    17    18    19    20    21    22    23
+venue                                                                                                                                                      
+binance     -0.94 -1.07 -0.99 -0.91 -0.94 -0.96 -0.90 -0.89 -0.88 -0.91 -0.87 -0.89 -0.87 -0.88 -0.93 -0.93 -0.91 -0.91 -0.91 -0.87 -0.99 -1.00 -0.95 -0.89
+hyperliquid -1.88 -2.08 -1.98 -1.77 -1.69 -1.89 -1.76 -2.03 -1.99 -1.57 -2.11 -1.55 -1.65 -1.91 -1.86 -2.11 -1.95 -2.07 -2.00 -1.69 -1.87 -1.94 -2.03 -1.83
+
+== Information: by print size (taker half-spread; optimistic maker 60 s)
+coin                          BTC   ETH   SOL   XRP
+venue       measure   level                        
+binance     maker_opt big   -0.40 -0.38  0.15 -0.15
+                      small -0.66 -0.59  0.62  0.34
+            taker     big    0.32  0.38  0.74  0.65
+                      small  0.34  0.36  0.57  0.44
+hyperliquid maker_opt big   -0.47 -0.46 -0.38 -0.29
+                      small -0.71 -0.29 -0.40 -0.23
+            taker     big    0.54  0.81  1.00  1.28
+                      small  0.37  0.45  0.62  0.64
+
+== Information: 2023–24 (V1, real quotes) next to 2026 (B, proxy), 'all' cells
+coin    measure  horizon  mean_2023  mean_2026
+ BTC maker_cons        1      -0.60      -0.67
+ BTC maker_cons       10      -0.78      -0.85
+ BTC maker_cons       60      -0.69      -0.81
+ BTC maker_cons      300      -0.69      -0.70
+ BTC  maker_opt        1      -0.30      -0.44
+ BTC  maker_opt       10      -0.39      -0.56
+ BTC  maker_opt       60      -0.34      -0.54
+ BTC  maker_opt      300      -0.35      -0.46
+ BTC      taker        0       0.37       0.33
+ ETH maker_cons        1      -0.59      -0.71
+ ETH maker_cons       10      -0.99      -0.83
+ ETH maker_cons       60      -0.92      -0.80
+ ETH maker_cons      300      -0.50      -0.72
+ ETH  maker_opt        1      -0.30      -0.43
+ ETH  maker

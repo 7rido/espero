@@ -53,20 +53,21 @@ def months(now: pd.Timestamp) -> List[str]:
     return [m.strftime("%Y-%m") for m in pd.period_range(first, last, freq="M").to_timestamp()]
 
 
-def parse(blob: bytes) -> pd.DataFrame:
-    """An archive month: `ts` (seconds) and `rate`, scaled to 8 hours."""
+def parse(blob: bytes, scaled: bool = True) -> pd.DataFrame:
+    """An archive month: `ts` (seconds) and `rate`, scaled to 8 hours (as #32 and #38 read it);
+    `scaled=False` keeps the rate as settled, for summing over a hold (#45)."""
     with zipfile.ZipFile(io.BytesIO(blob)) as z:
         text = z.read(z.namelist()[0]).decode()
     header = text.split(",", 1)[0].strip() == "calc_time"
     df = pd.read_csv(io.StringIO(text), header=0 if header else None)
     df.columns = ["calc_time", "funding_interval_hours", "last_funding_rate"]
     return pd.DataFrame({"ts": (df["calc_time"].astype("int64") // 1000).to_numpy(),
-                         "rate": (df["last_funding_rate"].astype(float) * 8
-                                  / df["funding_interval_hours"].astype(float)).to_numpy()})
+                         "rate": (df["last_funding_rate"].astype(float)
+                                  * (8 / df["funding_interval_hours"].astype(float) if scaled else 1.0)).to_numpy()})
 
 
 def rates(sym: str, data: Path = DATA, now: Optional[pd.Timestamp] = None,
-          get: Callable[[str], Optional[bytes]] = _get) -> pd.DataFrame:
+          get: Callable[[str], Optional[bytes]] = _get, scaled: bool = True) -> pd.DataFrame:
     """Every settlement the archive has published for the window's months, cached per month.
     A month not published yet is tried again next time."""
     now = pd.Timestamp.now(tz="UTC") if now is None else now
@@ -79,7 +80,7 @@ def rates(sym: str, data: Path = DATA, now: Optional[pd.Timestamp] = None,
                 continue
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(blob)
-        frames.append(parse(path.read_bytes()))
+        frames.append(parse(path.read_bytes(), scaled))
     if not frames:
         return pd.DataFrame({"ts": pd.Series(dtype="int64"), "rate": pd.Series(dtype=float)})
     return pd.concat(frames, ignore_index=True).drop_duplicates("ts").sort_values("ts").reset_index(drop=True)

@@ -2,6 +2,7 @@
 
     tsmom -> xs -> mf (#8) -> mf-hl -> liqfwd (#22/#23) -> lowsfwd (#24) -> liqbreak (#27)
           -> fundsplit (#32) -> postclose (#29) -> levpush (#34) -> bidsfwd (#31) -> settlefwd (#38)
+          -> liqhold (#45)
           -> dashboard -> health.json
 
 Rules:
@@ -37,6 +38,7 @@ from . import fundsplit as fsp
 from . import levpush as lpu
 from . import liqbreak as lbk
 from . import liqfwd as lfm
+from . import liqhold as lhd
 from . import lowsfwd as lwf
 from . import mf as mfm
 from . import notify as notifier
@@ -220,7 +222,7 @@ def run_daily(state_dir: Path = Path("."), cash_tsmom: float = 100.0, cash_xs: f
     with Lock(state_dir / "daily.lock"):
         if dry_run:
             for name in ("tsmom", "xs", "mf", "mf-hl", "liqfwd", "lowsfwd", "liqbreak", "fundsplit", "postclose",
-                         "levpush", "bidsfwd", "settlefwd"):
+                         "levpush", "bidsfwd", "settlefwd", "liqhold"):
                 result.steps[name] = StepResult(True, 0.0, note="skipped (dry run)", skipped=True)
                 log.info("%s skipped (dry run)", name)
         else:
@@ -252,6 +254,9 @@ def run_daily(state_dir: Path = Path("."), cash_tsmom: float = 100.0, cash_xs: f
             # #38: the price after settlements where shorts pay hard (FORWARD_SHORTSPAY.md); reads
             # lowsfwd's bars and the funding archive #32 caches
             _step("settlefwd", lambda: sfw.run(state_dir), result, notify)
+            # #45: #27's forced down-breaks held 4 h, 12 h, 1 day (FORWARD_LIQHOLD.md); reads the ledger
+            # liqbreak wrote, lowsfwd's bars and the funding archive
+            _step("liqhold", lambda: lhd.run(state_dir), result, notify)
 
         def render():
             out = dash.write(state_dir / "dashboard.html", tsmom_db=tsmom_db, paper_db=paper_db,

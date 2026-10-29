@@ -628,6 +628,7 @@ FORWARD = [   # (tests, the daily step that keeps them, what they record)
     ("#34", "levpush", "SOL and XRP pushed into 16:00 ET by their 2x funds?"),
     ("#31", "bidsfwd", "bids 2 ATR under breakdowns, out at the breakdown price or after 4 hours"),
     ("#38", "settlefwd", "after settlements where shorts pay hard: does the price fall?"),
+    ("#45", "liqhold", "#27's forced down-breaks held 4 h, 12 h and 1 day, net of measured cost"),
 ]
 
 

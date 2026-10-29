@@ -62,3 +62,21 @@ def test_changed_rule():
     assert au.changed(a, {"mean": -1e-4, "t": -0.2}, *bar)              # sign flip
     assert au.changed({"mean": 5e-4, "t": 1}, {"mean": -5e-4, "t": -1}, *bar)   # flip, neither met
     assert not au.changed({"mean": 5e-4, "t": 1}, {"mean": 6e-4, "t": 1.5}, *bar)
+
+
+def test_nw_with_no_lags_equals_the_clustered_t():
+    rng = np.random.default_rng(1)
+    days = pd.Series(pd.date_range("2026-01-01", periods=60, freq="D").strftime("%Y-%m-%d")).repeat(5)
+    x = pd.Series(rng.normal(0.1, 1, len(days)), index=days.index)
+    a = au.trade_weighted(x, days)
+    b = au.trade_weighted_nw(x, days, lags=0)
+    assert b["mean"] == pytest.approx(a["mean"]) and b["t"] == pytest.approx(a["t"])
+
+
+def test_nw_lowers_t_when_neighbouring_days_share_a_shock():
+    rng = np.random.default_rng(2)
+    dates = pd.date_range("2026-01-01", periods=120, freq="D")
+    shock = np.convolve(rng.normal(0, 1, 121), [1, 1], mode="valid")       # adjacent days correlated
+    day = pd.Series(dates.strftime("%Y-%m-%d")).repeat(4).reset_index(drop=True)
+    x = pd.Series(0.2 + np.repeat(shock, 4) + rng.normal(0, 0.1, 480))
+    assert abs(au.trade_weighted_nw(x, day, lags=2)["t"]) < abs(au.trade_weighted(x, day)["t"])

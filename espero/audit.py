@@ -71,3 +71,24 @@ def changed(a: Dict[str, float], b: Dict[str, float], mean_rule, t_rule) -> bool
     """#44's rule: the sign flips, or the study's own bar is met under one and not the other."""
     flip = np.sign(a["mean"]) != np.sign(b["mean"])
     return bool(flip or meets(a, mean_rule, t_rule) != meets(b, mean_rule, t_rule))
+
+
+def trade_weighted_nw(x: pd.Series, day: pd.Series, lags: int = 1) -> Dict[str, float]:
+    """Trade-weighted mean whose t lets the day-clustered residual sums correlate across
+    neighbouring days (Newey-West, Bartlett weights): for holds that run past midnight."""
+    ok = np.isfinite(x)
+    x, day = x[ok].astype(float), day[ok]
+    n = int(x.size)
+    if n < 2 or day.nunique() < 2:
+        return {"mean": math.nan, "t": math.nan, "n": n, "days": int(day.nunique())}
+    m = float(x.mean())
+    s = (x - m).groupby(day).sum().sort_index()
+    idx = pd.to_datetime(pd.Series(s.index))
+    full = pd.Series(s.to_numpy(), index=idx).reindex(pd.date_range(idx.min(), idx.max(), freq="D"), fill_value=0.0)
+    v = full.to_numpy()
+    G = int(len(s))
+    lr = float(v @ v)
+    for lag in range(1, lags + 1):
+        lr += 2 * (1 - lag / (lags + 1)) * float(v[lag:] @ v[:-lag])
+    se = math.sqrt(max(lr, 0.0) * G / (G - 1)) / n
+    return {"mean": m, "t": m / se if se > 0 else math.nan, "n": n, "days": G}

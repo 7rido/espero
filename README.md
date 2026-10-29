@@ -413,7 +413,11 @@ reproduced; trade-weighted with day-clustered errors, #35's reversal, #21's long
 change, #20's bounce shrinks to +5.9 bps, and #26 holds (+19.2 bps, t 3.7). New tests report the
 trade-weighted mean. [research/RESULTS_DAYMEAN_AUDIT.md](research/RESULTS_DAYMEAN_AUDIT.md).
 
-Scoreboard: forty-five tests. Four passes (#4, #8, #12 provisional, #26), two real but not
+#45 is pre-registered and running from 2026-10-30: #26's forced-liquidation bounce held 4 h, 12 h and
+1 day on #27's live ledger, net of measured costs and funding, trade-weighted (in-sample +22 to +60 bps,
+t 3.6–4.4; forward power about 50–90%). [research/FORWARD_LIQHOLD.md](research/FORWARD_LIQHOLD.md).
+
+Scoreboard: forty-six tests. Four passes (#4, #8, #12 provisional, #26), two real but not
 tradable (#19, #20), two measurements (#39, #41), two plumbing checks (#40, #42), the rest failed (#37 the latest) or are running
 (#22–#24, #27, #29, #31, #32, #34, #38). Two are risk construction; the third is income (carry at
 maker fees) with a forward test still attached. No predictive edge has been found at any horizon,

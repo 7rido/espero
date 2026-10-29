@@ -1,0 +1,365 @@
+#41 — markouts down the liquidity ladder. 627,996 day rows; bar t >= 4.75 (computed 4.752, N = 601)
+dropped coin-days: 7; job errors: 0
+days per set:
+coin    ARB   DOGE   LINK     OP    TIA    WLD    XTZ    YFI
+set                                                         
+B     210.0  210.0  210.0  210.0  210.0  210.0  210.0  210.0
+H      24.0   24.0   24.0   24.0   24.0   24.0    NaN    NaN
+V1     10.0   10.0   10.0   10.0    5.0    8.0   10.0   10.0
+V2      7.0    7.0    7.0    7.0    7.0    7.0    7.0    7.0
+
+== Proxy validation V1
+coin    measure  horizon  proxy  quote    ok
+ ARB maker_cons        1  -0.77  -1.25 False
+ ARB maker_cons       10  -1.33  -1.33  True
+ ARB maker_cons       60  -1.31  -1.30  True
+ ARB maker_cons      300  -1.32  -1.29  True
+ ARB  maker_opt        1   0.11  -0.22 False
+ ARB  maker_opt       10  -0.25  -0.27  True
+ ARB  maker_opt       60  -0.25  -0.25  True
+ ARB  maker_opt      300  -0.35  -0.34  True
+ ARB      taker        0   0.98   0.83  True
+DOGE maker_cons        1  -0.85  -1.15 False
+DOGE maker_cons       10  -1.23  -1.25  True
+DOGE maker_cons       60  -1.13  -1.13  True
+DOGE maker_cons      300  -1.10  -1.11  True
+DOGE  maker_opt        1   0.43   0.30  True
+DOGE  maker_opt       10   0.25   0.24  True
+DOGE  maker_opt       60   0.24   0.24  True
+DOGE  maker_opt      300   0.29   0.28  True
+DOGE      taker        0   0.95   0.92  True
+LINK maker_cons        1  -0.82  -1.23 False
+LINK maker_cons       10  -1.34  -1.34  True
+LINK maker_cons       60  -1.26  -1.24  True
+LINK maker_cons      300  -1.18  -1.19  True
+LINK  maker_opt        1   0.27   0.05  True
+LINK  maker_opt       10  -0.01  -0.02  True
+LINK  maker_opt       60  -0.00  -0.00  True
+LINK  maker_opt      300  -0.02  -0.01  True
+LINK      taker        0   0.91   0.81  True
+  OP maker_cons        1  -0.70  -1.13 False
+  OP maker_cons       10  -1.18  -1.17  True
+  OP maker_cons       60  -1.16  -1.14  True
+  OP maker_cons      300  -1.04  -1.02  True
+  OP  maker_opt        1  -0.04  -0.37 False
+  OP  maker_opt       10  -0.41  -0.41  True
+  OP  maker_opt       60  -0.42  -0.41  True
+  OP  maker_opt      300  -0.38  -0.37  True
+  OP      taker        0   1.08   0.84  True
+ TIA maker_cons        1  -0.70  -0.95  True
+ TIA maker_cons       10  -0.94  -0.90  True
+ TIA maker_cons       60  -0.88  -0.88  True
+ TIA maker_cons      300  -0.63  -0.59  True
+ TIA  maker_opt        1  -0.27  -0.51  True
+ TIA  maker_opt       10  -0.51  -0.49  True
+ TIA  maker_opt       60  -0.48  -0.48  True
+ TIA  maker_opt      300  -0.32  -0.28  True
+ TIA      taker        0   2.23   2.04  True
+ WLD maker_cons        1  -0.64  -1.01 False
+ WLD maker_cons       10  -1.00  -0.97  True
+ WLD maker_cons       60  -0.80  -0.79  True
+ WLD maker_cons      300  -0.66  -0.67  True
+ WLD  maker_opt        1  -0.10  -0.42 False
+ WLD  maker_opt       10  -0.41  -0.40  True
+ WLD  maker_opt       60  -0.27  -0.26  True
+ WLD  maker_opt      300  -0.18  -0.19  True
+ WLD      taker        0   1.49   1.26  True
+ XTZ maker_cons        1  -4.61  -5.70  True
+ XTZ maker_cons       10  -4.87  -4.85  True
+ XTZ maker_cons       60  -4.28  -4.15  True
+ XTZ maker_cons      300  -4.31  -4.20  True
+ XTZ  maker_opt        1   4.75   4.48  True
+ XTZ  maker_opt       10   4.40   4.33  True
+ XTZ  maker_opt       60   4.11   4.15  True
+ XTZ  maker_opt      300   3.88   3.95  True
+ XTZ      taker        0   5.24   5.97  True
+ YFI maker_cons        1  -0.66  -1.95 False
+ YFI maker_cons       10  -1.90  -2.17  True
+ YFI maker_cons       60  -2.10  -2.05  True
+ YFI maker_cons      300  -1.97  -1.95  True
+ YFI  maker_opt        1   0.62  -0.32 False
+ YFI  maker_opt       10  -0.25  -0.50 False
+ YFI  maker_opt       60  -0.42  -0.42  True
+ YFI  maker_opt      300  -0.40  -0.40  True
+ YFI      taker        0   1.47   1.30  True
+
+== Proxy validation V2
+coin    measure  horizon  proxy  quote    ok
+ ARB maker_cons        1  -2.07  -2.84 False
+ ARB maker_cons       10  -2.46  -2.36  True
+ ARB maker_cons       60  -2.17  -2.17  True
+ ARB maker_cons      300  -1.90  -1.92  True
+ ARB  maker_opt        1   1.75   1.28 False
+ ARB  maker_opt       10   1.31   1.29  True
+ ARB  maker_opt       60   1.30   1.32  True
+ ARB  maker_opt      300   1.46   1.45  True
+ ARB      taker        0   2.77   2.77  True
+DOGE maker_cons        1  -1.01  -1.27 False
+DOGE maker_cons       10  -1.30  -1.25  True
+DOGE maker_cons       60  -1.16  -1.15  True
+DOGE maker_cons      300  -1.13  -1.13  True
+DOGE  maker_opt        1   0.28   0.14  True
+DOGE  maker_opt       10   0.11   0.09  True
+DOGE  maker_opt       60   0.12   0.12  True
+DOGE  maker_opt      300   0.10   0.09  True
+DOGE      taker        0   0.76   0.70  True
+LINK maker_cons        1  -0.81  -1.50 False
+LINK maker_cons       10  -1.58  -1.63  True
+LINK maker_cons       60  -1.63  -1.59  True
+LINK maker_cons      300  -1.59  -1.60  True
+LINK  maker_opt        1   0.21  -0.24 False
+LINK  maker_opt       10  -0.28  -0.32  True
+LINK  maker_opt       60  -0.37  -0.37  True
+LINK  maker_opt      300  -0.37  -0.37  True
+LINK      taker        0   0.88   0.64  True
+  OP maker_cons        1  -2.71  -3.91 False
+  OP maker_cons       10  -3.42  -3.39  True
+  OP maker_cons       60  -3.09  -3.06  True
+  OP maker_cons      300  -3.01  -3.01  True
+  OP  maker_opt        1   3.01   2.41 False
+  OP  maker_opt       10   2.44   2.37  True
+  OP  maker_opt       60   2.32   2.32  True
+  OP  maker_opt      300   2.18   2.18  True
+  OP      taker        0   3.86   3.91  True
+ TIA maker_cons        1  -1.19  -2.57 False
+ TIA maker_cons       10  -2.49  -2.63  True
+ TIA maker_cons       60  -2.47  -2.47  True
+ TIA maker_cons      300  -2.27  -2.26  True
+ TIA  maker_opt        1   1.01   0.11 False
+ TIA  maker_opt       10   0.13  -0.01  True
+ TIA  maker_opt       60   0.01   0.00  True
+ TIA  maker_opt      300   0.10   0.10  True
+ TIA      taker        0   2.01   1.83  True
+ WLD maker_cons        1  -1.61  -2.22 False
+ WLD maker_cons       10  -2.14  -2.14  True
+ WLD maker_cons       60  -2.05  -2.03  True
+ WLD maker_cons      300  -1.71  -1.71  True
+ WLD  maker_opt        1   0.85   0.51 False
+ WLD  maker_opt       10   0.48   0.46  True
+ WLD  maker_opt       60   0.48   0.48  True
+ WLD  maker_opt      300   0.54   0.54  True
+ WLD      taker        0   1.92   1.94  True
+ XTZ maker_cons        1  -2.78  -4.96 False
+ XTZ maker_cons       10  -3.90  -4.71  True
+ XTZ maker_cons       60  -4.24  -4.02  True
+ XTZ maker_cons      300  -3.75  -3.29  True
+ XTZ  maker_opt        1   3.05   1.81 False
+ XTZ  maker_opt       10   2.19   1.62 False
+ XTZ  maker_opt       60   1.49   1.48  True
+ XTZ  maker_opt      300   1.44   1.56  True
+ XTZ      taker        0   4.13   4.22  True
+ YFI maker_cons        1  -1.45  -3.71 False
+ YFI maker_cons       10  -2.80  -3.84 False
+ YFI maker_cons       60  -3.78  -3.64  True
+ YFI maker_cons      300  -3.74  -3.49  True
+ YFI  maker_opt        1   2.01   0.51 False
+ YFI  maker_opt       10   1.09   0.32 False
+ YFI  maker_opt       60   0.39   0.35  True
+ YFI  maker_opt      300   0.25   0.34  True
+ YFI      taker        0   3.17   3.07  True
+validated (coin, horizon): [('ARB', 10), ('ARB', 60), ('ARB', 300), ('DOGE', 10), ('DOGE', 60), ('DOGE', 300), ('LINK', 10), ('LINK', 60), ('LINK', 300), ('OP', 10), ('OP', 60), ('OP', 300), ('TIA', 10), ('TIA', 60), ('TIA', 300), ('WLD', 10), ('WLD', 60), ('WLD', 300), ('XTZ', 60), ('XTZ', 300), ('YFI', 60), ('YFI', 300)]
+validated on V2 alone (no V1 days): []
+
+== Second source (Tardis trades vs archive aggTrades, V2 days)
+coin    measure  horizon  tardis  archive    ok
+ ARB maker_cons        1   -2.07    -2.08  True
+ ARB maker_cons       10   -2.46    -2.46  True
+ ARB maker_cons       60   -2.17    -2.17  True
+ ARB maker_cons      300   -1.90    -1.87  True
+ ARB  maker_opt        1    1.75     1.86  True
+ ARB  maker_opt       10    1.31     1.51  True
+ ARB  maker_opt       60    1.30     1.51  True
+ ARB  maker_opt      300    1.46     1.69  True
+ ARB      taker        0    2.77     2.80  True
+DOGE maker_cons        1   -1.01    -1.01  True
+DOGE maker_cons       10   -1.30    -1.29  True
+DOGE maker_cons       60   -1.16    -1.16  True
+DOGE maker_cons      300   -1.13    -1.09  True
+DOGE  maker_opt        1    0.28     0.35  True
+DOGE  maker_opt       10    0.11     0.21  True
+DOGE  maker_opt       60    0.12     0.23  True
+DOGE  maker_opt      300    0.10     0.25  True
+DOGE      taker        0    0.76     0.73  True
+LINK maker_cons        1   -0.81    -0.82  True
+LINK maker_cons       10   -1.58    -1.59  True
+LINK maker_cons       60   -1.63    -1.64  True
+LINK maker_cons      300   -1.59    -1.58  True
+LINK  maker_opt        1    0.21     0.26  True
+LINK  maker_opt       10   -0.28    -0.21  True
+LINK  maker_opt       60   -0.37    -0.27  True
+LINK  maker_opt      300   -0.37    -0.23  True
+LINK      taker        0    0.88     0.85  True
+  OP maker_cons        1   -2.71    -2.71  True
+  OP maker_cons       10   -3.42    -3.41  True
+  OP maker_cons       60   -3.09    -3.07  True
+  OP maker_cons      300   -3.01    -2.97  True
+  OP  maker_opt        1    3.01     3.15  True
+  OP  maker_opt       10    2.44     2.70  True
+  OP  maker_opt       60    2.32     2.59  True
+  OP  maker_opt      300    2.18     2.48  True
+  OP      taker        0    3.86     3.88  True
+ TIA maker_cons        1   -1.19    -1.19  True
+ TIA maker_cons       10   -2.49    -2.46  True
+ TIA maker_cons       60   -2.47    -2.43  True
+ TIA maker_cons      300   -2.27    -2.22  True
+ TIA  maker_opt        1    1.01     1.10  True
+ TIA  maker_opt       10    0.13     0.32  True
+ TIA  maker_opt       60    0.01     0.26  True
+ TIA  maker_opt      300    0.10     0.33  True
+ TIA      taker        0    2.01     1.97  True
+ WLD maker_cons        1   -1.61    -1.61  True
+ WLD maker_cons       10   -2.14    -2.13  True
+ WLD maker_cons       60   -2.05    -2.04  True
+ WLD maker_cons      300   -1.71    -1.68  True
+ WLD  maker_opt        1    0.85     1.01  True
+ WLD  maker_opt       10    0.48     0.71  True
+ WLD  maker_opt       60    0.48     0.73  True
+ WLD  maker_opt      300    0.54     0.83 False
+ WLD      taker        0    1.92     1.90  True
+ XTZ maker_cons        1   -2.78    -2.80  True
+ XTZ maker_cons       10   -3.90    -3.91  True
+ XTZ maker_cons       60   -4.24    -4.26  True
+ XTZ maker_cons      300   -3.75    -3.76  True
+ XTZ  maker_opt        1    3.05     3.21  True
+ XTZ  maker_opt       10    2.19     2.47  True
+ XTZ  maker_opt       60    1.49     1.90 False
+ XTZ  maker_opt      300    1.44     1.84 False
+ XTZ      taker        0    4.13     4.17  True
+ YFI maker_cons        1   -1.45    -1.46  True
+ YFI maker_cons       10   -2.80    -2.82  True
+ YFI maker_cons       60   -3.78    -3.78  True
+ YFI maker_cons      300   -3.74    -3.68  True
+ YFI  maker_opt        1    2.01     2.03  True
+ YFI  maker_opt       10    1.09     1.23  True
+ YFI  maker_opt       60    0.39     0.62  True
+ YFI  maker_opt      300    0.25     0.61 False
+ YFI      taker        0    3.17     3.15  True
+replicated: False
+
+== Cost per leg (bps), 'all' cells
+-- binance: taker fee 5.0, maker fee 2.0
+   DOGE: half-spread +0.77 (days 210), taker round trip 11.53
+        1s  maker optimistic +0.36 (t +31.44)   conservative -0.99 (t -62.78)
+       10s  maker optimistic +0.22 (t +16.43)   conservative -1.34 (t -70.52)
+       60s  maker optimistic +0.23 (t +9.22)   conservative -1.24 (t -26.20)
+      300s  maker optimistic +0.30 (t +13.96)   conservative -1.11 (t -24.41)
+   LINK: half-spread +0.91 (days 210), taker round trip 11.81
+        1s  maker optimistic +0.26 (t +13.51)   conservative -0.78 (t -26.40)
+       10s  maker optimistic -0.15 (t -9.02)   conservative -1.50 (t -76.14)
+       60s  maker optimistic -0.17 (t -10.16)   conservative -1.52 (t -62.74)
+      300s  maker optimistic -0.12 (t -3.25)   conservative -1.45 (t -25.36)
+   WLD: half-spread +1.84 (days 210), taker round trip 13.67
+        1s  maker optimistic +0.90 (t +22.01)   conservative -1.55 (t -33.62)
+       10s  maker optimistic +0.60 (t +17.41)   conservative -2.03 (t -47.64)
+       60s  maker optimistic +0.64 (t +18.70)   conservative -1.85 (t -41.18)
+      300s  maker optimistic +0.78 (t +12.63)   conservative -1.63 (t -14.87)
+   ARB: half-spread +2.41 (days 210), taker round trip 14.82
+        1s  maker optimistic +1.40 (t +10.74)   conservative -1.66 (t -19.69)
+       10s  maker optimistic +0.95 (t +6.93)   conservative -2.26 (t -32.49)
+       60s  maker optimistic +0.92 (t +6.63)   conservative -2.17 (t -31.84)
+      300s  maker optimistic +0.99 (t +7.07)   conservative -2.08 (t -28.53)
+   OP: half-spread +3.55 (days 210), taker round trip 17.10
+        1s  maker optimistic +2.78 (t +20.46)   conservative -2.48 (t -25.81)
+       10s  maker optimistic +2.27 (t +14.88)   conservative -3.17 (t -39.31)
+       60s  maker optimistic +2.20 (t +14.47)   conservative -2.93 (t -36.24)
+      300s  maker optimistic +2.25 (t +14.54)   conservative -2.78 (t -33.00)
+   TIA: half-spread +2.07 (days 210), taker round trip 14.14
+        1s  maker optimistic +0.93 (t +34.66)   conservative -1.26 (t -58.92)
+       10s  maker optimistic +0.22 (t +6.95)   conservative -2.36 (t -70.72)
+       60s  maker optimistic +0.07 (t +1.34)   conservative -2.52 (t -26.79)
+      300s  maker optimistic +0.21 (t +4.28)   conservative -2.27 (t -37.53)
+   XTZ: half-spread +3.82 (days 210), taker round trip 17.64
+        1s  maker optimistic +2.69 (t +12.56)   conservative -2.40 (t -12.09)
+       10s  maker optimistic +1.98 (t +9.00)   conservative -3.51 (t -19.65)
+       60s  maker optimistic +1.50 (t +6.58)   conservative -4.01 (t -32.74)
+      300s  maker optimistic +1.55 (t +6.61)   conservative -3.69 (t -33.07)
+   YFI: half-spread +3.22 (days 210), taker round trip 16.44
+        1s  maker optimistic +2.11 (t +89.48)   conservative -1.36 (t -36.39)
+       10s  maker optimistic +1.34 (t +44.65)   conservative -2.62 (t -52.13)
+       60s  maker optimistic +0.74 (t +17.44)   conservative -3.50 (t -49.81)
+      300s  maker optimistic +0.75 (t +12.09)   conservative -3.31 (t -37.13)
+-- hyperliquid: taker fee 4.5, maker fee 1.5
+   DOGE: half-spread +1.11 (days 24), taker round trip 11.22
+        1s  maker optimistic -0.02 (t -0.18)   conservative -2.46 (t -10.54)
+       10s  maker optimistic -0.59 (t -5.92)   conservative -3.25 (t -16.88)
+       60s  maker optimistic -0.58 (t -6.49)   conservative -3.25 (t -14.65)
+      300s  maker optimistic -0.64 (t -3.79)   conservative -3.18 (t -13.96)
+   LINK: half-spread +1.36 (days 24), taker round trip 11.72
+        1s  maker optimistic +0.33 (t +3.13)   conservative -3.22 (t -9.35)
+       10s  maker optimistic -0.30 (t -3.23)   conservative -4.00 (t -13.66)
+       60s  maker optimistic -0.42 (t -3.24)   conservative -4.07 (t -12.59)
+      300s  maker optimistic -0.37 (t -1.69)   conservative -3.89 (t -10.17)
+   WLD: half-spread +2.20 (days 24), taker round trip 13.41
+        1s  maker optimistic +0.60 (t +3.48)   conservative -4.23 (t -6.93)
+       10s  maker optimistic -0.24 (t -2.03)   conservative -5.38 (t -11.54)
+       60s  maker optimistic -0.39 (t -2.24)   conservative -5.68 (t -11.56)
+      300s  maker optimistic +0.29 (t +0.88)   conservative -4.32 (t -6.52)
+   ARB: half-spread +1.95 (days 24), taker round trip 12.90
+        1s  maker optimistic +0.75 (t +3.59)   conservative -3.60 (t -7.49)
+       10s  maker optimistic -0.03 (t -0.27)   conservative -4.67 (t -14.77)
+       60s  maker optimistic -0.16 (t -1.00)   conservative -4.75 (t -13.48)
+      300s  maker optimistic -0.23 (t -0.85)   conservative -4.64 (t -9.90)
+   OP: half-spread +2.42 (days 24), taker round trip 13.83
+        1s  maker optimistic +1.43 (t +6.29)   conservative -4.64 (t -11.10)
+       10s  maker optimistic +0.74 (t +3.57)   conservative -5.58 (t -17.76)
+       60s  maker optimistic +0.62 (t +2.63)   conservative -5.72 (t -14.35)
+      300s  maker optimistic +0.40 (t +1.36)   conservative -5.81 (t -15.50)
+   TIA: half-spread +1.83 (days 24), taker round trip 12.65
+        1s  maker optimistic +0.64 (t +4.13)   conservative -4.79 (t -21.71)
+       10s  maker optimistic -0.11 (t -0.85)   conservative -5.81 (t -31.61)
+       60s  maker optimistic -0.14 (t -0.75)   conservative -5.81 (t -23.22)
+      300s  maker optimistic -0.44 (t -1.42)   conservative -5.81 (t -18.25)
+   XTZ: no data
+   YFI: no data
+
+== The answer — conservative maker markout net of the maker fee, t >= 4.75, both halves
+      venue coin  horizon    cond      level   days   net  t_net  net_h1  net_h2  pass
+hyperliquid  ARB      300 funding settlement  24.00 -2.10  -1.27   -1.57   -2.62 False
+hyperliquid   OP      300 funding settlement  24.00 -6.94  -2.07   -6.86   -7.02 False
+hyperliquid  WLD      300    flow    against  24.00 -2.57  -2.19   -0.91   -4.23 False
+hyperliquid  TIA      300 funding settlement  24.00 -5.43  -2.76   -5.32   -5.53 False
+hyperliquid  WLD      300 funding settlement  24.00 -9.89  -3.38   -7.59  -12.18 False
+hyperliquid LINK      300 funding settlement  24.00 -6.68  -3.75   -6.37   -6.99 False
+hyperliquid DOGE      300 funding settlement  24.00 -6.70  -4.47   -8.50   -4.90 False
+    binance  WLD      300    flow    against 210.00 -2.26  -5.41   -2.68   -1.94 False
+hyperliquid  ARB      300    flow    against  24.00 -4.14  -5.46   -3.70   -4.58 False
+hyperliquid   OP        1    flow    against  24.00 -3.04  -6.55   -3.12   -2.97 False
+hyperliquid   OP      300    flow    against  24.00 -4.91  -6.63   -4.48   -5.34 False
+hyperliquid  ARB        1    flow       with  24.00 -5.12  -6.78   -6.18   -4.07 False
+hyperliquid   OP      300    flow       with  24.00 -7.85  -6.80   -9.07   -6.64 False
+hyperliquid  ARB        1    flow    against  24.00 -3.20  -6.85   -3.25   -3.16 False
+hyperliquid LINK      300    flow    against  24.00 -3.73  -6.88   -2.87   -4.60 False
+cells examined: 464; passing: 0; positive before the fee (any t): 1
+ANSWER: NO
+
+== Information: the ladder (Binance, 'all', 60 s), majors from #39
+coin  volume_$M  half_spread  opt_60s  cons_60s
+ BTC      13959         0.33    -0.54     -0.81
+ ETH      11175         0.37    -0.49     -0.80
+ SOL       2172         0.66     0.39     -1.18
+ XRP        796         0.54     0.10     -1.10
+DOGE        600         0.77     0.23     -1.24
+LINK        126         0.91    -0.17     -1.52
+ WLD         82         1.84     0.64     -1.85
+ ARB         41         2.41     0.92     -2.17
+  OP         33         3.55     2.20     -2.93
+ TIA         18         2.07     0.07     -2.52
+ XTZ          6         3.82     1.50     -4.01
+ YFI          2         3.22     0.74     -3.50
+  Spearman(log volume, half_spread) = -0.94 over 12 coins
+  Spearman(log volume, opt_60s) = -0.70 over 12 coins
+  Spearman(log volume, cons_60s) = +0.97 over 12 coins
+
+== Information: by print size (taker half-spread; optimistic maker 60 s)
+coin                          ARB  DOGE  LINK    OP   TIA   WLD   XTZ   YFI
+venue       measure   level                                                
+binance     maker_opt big    0.54 -0.06 -0.49  1.65 -0.50  0.14  0.54  0.03
+                      small  1.29  0.52  0.14  2.76  0.64  1.13  2.51  1.46
+            taker     big    2.59  0.91  1.10  3.62  2.55  2.20  4.28  3.89
+                      small  2.23  0.62  0.71  3.48  1.59  1.48  3.36  2.56
+hyperliquid maker_opt big   -0.37 -0.45 -0.50  0.28 -0.46 -0.53   NaN   NaN
+                      small  0.04 -0.71 -0.34  0.97  0.18 -0.25   NaN   NaN
+            taker     big    2.54  1.44  1.87  2.95  2.50  2.90   NaN   NaN
+                      small  1.36  0.78  0.86  1.89  1.16  1.51   NaN   NaN
+
+added 240 cells to /Users/fredp/Espero Trading QuantBot/espero/espero/costs_table.py

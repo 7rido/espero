@@ -100,3 +100,9 @@ Computed on request, 2026-10-29. Hindsight: #43 had shown these horizons as day-
   4 h – 1 day.
 - **What it would take.** Testing this needs a new forward test pre-registered on days that do not
   exist yet. #27, which is frozen at #26's own horizon, cannot test it.
+
+> **Correction 2026-10-29.** The table above entered 5 minutes late. #26's ledger `ts` is the break bar's
+> close, already the next bar's open, and 5 minutes were added again. With the entry at `ts` (the 1 h gross
+> then equals the file's own y60, +16.4 bps on these coins), net trade-weighted is: 1 h **+5.4** (t 1.52),
+> 4 h **+21.9** (t 4.38), 12 h **+36.5** (t 3.57), 1 day **+60.4** (t 3.63). Both years remain positive at
+> every horizon from 4 h.

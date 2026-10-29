@@ -20,6 +20,12 @@ liquid coins. **If the bounce is tradable at this account's cost, it is at 4 h �
 numbers were found after looking, on 2023-06 → 2024-10 only, so they can be confirmed only on days
 that do not exist yet. This test runs on those days.
 
+> **Amendment 2026-10-29, before the window opens.** The "Why" table above came from an entry 5 minutes
+> late. Corrected, net trade-weighted is: 1 h +5.4, 4 h **+21.9** (t 4.38), 12 h **+36.5** (t 3.57),
+> 1 day **+60.4** (t 3.63). The rule, the horizons and the criteria below are unchanged. The entry is
+> the ledger's `ts`, which is already the next bar's open. With the larger in-sample sizes, the power
+> estimate rises to roughly 2.9–3.2 expected t at 4 h.
+
 ## Data — fixed
 
 - **Events.** #27's ledger, `espero.liqbreak.ledger`, unchanged:
@@ -28,7 +34,7 @@ that do not exist yet. This test runs on those days.
   - UTC days **2026-10-30 → 2027-03-31**.
 - **The trade.** **Forced down-breaks** (direction −1, group "forced"), bought long.
 - **Prices.** Binance USDⓈ-M 5-minute bars as #24 records them (`data/lows/forward/`).
-  - Entry: the open of the bar after the break bar, as #26's y.
+  - Entry: the ledger's `ts`. That is the break bar's close, which is the open of the bar after it, as #26's y.
   - Exit: the close of the bar ending at entry + h.
   - A missing bar drops that trade.
 - **Funding over the hold.** Binance's settled rates in (entry, exit], from the public monthly

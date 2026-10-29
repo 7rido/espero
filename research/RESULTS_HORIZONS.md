@@ -128,3 +128,7 @@ found.**
   the running forward tests can show.
 - **The days-to-weeks question, as asked, is answered: nothing confirmed tradably.** At a week or
   more the study could not detect anything under about 100 bps.
+
+> **Correction 2026-10-29.** S5 (#26, information only) entered 5 minutes late: `s5_events` added a bar
+> to a `ts` that is already the break bar's close. S1–S4 and the verdict are unaffected. #26's
+> corrected longer-hold numbers are in RESULTS_DAYMEAN_AUDIT.md.

@@ -1,0 +1,121 @@
+session start 1793305314724; coins (by rule): ['BTC', 'ETH', 'NEAR', 'PUMP', 'kPEPE']
+ETH buy 1/20: filled 0.0052
+BTC buy 1/20: filled 0.00016
+kPEPE buy 1/20: filled 2315.0
+NEAR buy 1/20: filled 2.8
+BTC sell 2/20: filled 0.00016
+kPEPE sell 2/20: filled 2315.0
+BTC buy 3/20: filled 0.00016
+ETH sell 2/20: filled 0.0052
+PUMP buy 1/20: canceled 0.0
+BTC sell 4/20: filled 0.00016
+BTC buy 5/20: filled 0.00016
+ETH buy 3/20: filled 0.0052
+NEAR sell 2/20: filled 2.8
+BTC sell 6/20: filled 0.00016
+ETH sell 4/20: filled 0.0052
+PUMP sell 2/20: filled 2745.0
+kPEPE buy 3/20: filled 2315.0
+ETH buy 5/20: filled 0.0052
+BTC buy 7/20: filled 0.00016
+NEAR buy 3/20: canceled 0.0
+BTC sell 8/20: filled 0.00016
+ETH sell 6/20: filled 0.0052
+PUMP buy 3/20: canceled 0.0
+BTC buy 9/20: filled 0.00016
+ETH buy 7/20: filled 0.0052
+kPEPE sell 4/20: canceled 0.0
+ETH sell 8/20: filled 0.0052
+ETH buy 9/20: filled 0.0052
+ETH sell 10/20: filled 0.0052
+NEAR sell 4/20: canceled 0.0
+BTC sell 10/20: filled 0.00016
+ETH buy 11/20: filled 0.0052
+PUMP sell 4/20: canceled 0.0
+kPEPE buy 5/20: filled 2315.0
+BTC buy 11/20: filled 0.00016
+ETH sell 12/20: filled 0.0052
+BTC sell 12/20: filled 0.00016
+kPEPE sell 6/20: filled 2315.0
+BTC buy 13/20: filled 0.00016
+NEAR buy 5/20: canceled 0.0
+BTC buy 15/20: filled 0.00016
+PUMP buy 5/20: canceled 0.0
+BTC sell 16/20: filled 0.00016
+ETH buy 13/20: canceled 0.0
+BTC buy 17/20: filled 0.00016
+kPEPE buy 7/20: filled 2315.0
+BTC sell 18/20: filled 0.00016
+ETH sell 14/20: filled 0.0052
+kPEPE sell 8/20: filled 2315.0
+BTC buy 19/20: filled 0.00016
+ETH buy 15/20: filled 0.0052
+NEAR sell 6/20: canceled 0.0
+BTC sell 20/20: filled 0.00016
+PUMP sell 6/20: canceled 0.0
+ETH sell 16/20: filled 0.0052
+kPEPE buy 9/20: filled 2315.0
+ETH buy 17/20: filled 0.0052
+ETH sell 18/20: filled 0.0052
+ETH buy 19/20: filled 0.0052
+NEAR buy 7/20: canceled 0.0
+PUMP buy 7/20: filled 2745.0
+kPEPE sell 10/20: canceled 0.0
+ETH sell 20/20: filled 0.0052
+NEAR sell 8/20: filled 2.8
+PUMP sell 8/20: canceled 0.0
+kPEPE buy 11/20: canceled 0.0
+kPEPE sell 12/20: filled 2315.0
+NEAR buy 9/20: canceled 0.0
+NEAR sell 10/20: filled 2.8
+PUMP buy 9/20: canceled 0.0
+kPEPE buy 13/20: canceled 0.0
+NEAR buy 11/20: canceled 0.0
+PUMP sell 10/20: canceled 0.0
+kPEPE sell 14/20: canceled 0.0
+kPEPE buy 15/20: filled 2315.0
+PUMP buy 11/20: filled 2745.0
+NEAR sell 12/20: canceled 0.0
+NEAR buy 13/20: filled 2.8
+kPEPE sell 16/20: canceled 0.0
+PUMP sell 12/20: canceled 0.0
+NEAR sell 14/20: canceled 0.0
+NEAR buy 15/20: filled 2.8
+kPEPE buy 17/20: canceled 0.0
+PUMP buy 13/20: canceled 0.0
+NEAR sell 16/20: canceled 0.0
+NEAR buy 17/20: filled 2.8
+NEAR sell 18/20: filled 2.8
+kPEPE sell 18/20: canceled 0.0
+PUMP sell 14/20: canceled 0.0
+NEAR buy 19/20: canceled 0.0
+kPEPE buy 19/20: canceled 0.0
+PUMP buy 15/20: canceled 0.0
+NEAR sell 20/20: canceled 0.0
+kPEPE sell 20/20: canceled 0.0
+PUMP sell 16/20: canceled 0.0
+PUMP buy 17/20: canceled 0.0
+PUMP sell 18/20: canceled 0.0
+PUMP buy 19/20: canceled 0.0
+PUMP sell 20/20: canceled 0.0
+orders done; recording the book for 360 s more
+
+#42 — 74 exchange fills (69 maker); 7990 book rows (0 read errors)
+  1a post-only never takes: met
+  1b every fill reconciles: met
+  1c fees are the schedule's: met
+  1d flags agree with the order type: met
+  2 position holds what was intended: met
+  3 every maker fill is marked: met
+  4 no orphan orders: met
+  5 the rule chose five coins: met
+VERDICT: PASS
+
+information only — testnet, NOT representative of mainnet:
+  BTC: filled 19 of 19 within 60 s; markout bps +1s -0.28  +10s -0.93  +60s -0.01  +300s +0.35   #39 mainnet conservative: +1s -0.60  +10s -1.31  +60s -1.42  +300s -1.24
+  ETH: filled 19 of 20 within 60 s; markout bps +1s -1.11  +10s -2.59  +60s -1.49  +300s +2.01   #39 mainnet conservative: +1s -1.14  +10s -1.83  +60s -1.81  +300s -1.55
+  NEAR: filled 8 of 20 within 60 s; markout bps +1s +4.96  +10s +1.79  +60s +4.38  +300s +22.60
+  PUMP: filled 3 of 20 within 60 s; markout bps +1s -10.30  +10s -25.59  +60s -46.62  +300s -104.56
+  kPEPE: filled 10 of 20 within 60 s; markout bps +1s +4.36  +10s +1.39  +60s -11.06  +300s +3.36
+  send → ack: median 872 ms, p90 928 ms
+-> /Users/fredp/Espero Trading QuantBot/espero/research/rehearsal_session.json

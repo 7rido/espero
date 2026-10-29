@@ -389,8 +389,13 @@ selection at the back of the queue, before fees, in every one of 288 cells: no c
 passive fills pay. #29's reversal does not survive the measured cost; #31 does, on its four majors.
 [research/RESULTS_MARKOUT.md](research/RESULTS_MARKOUT.md); the table ships as `espero/costs.py`.
 
-Scoreboard: forty tests. Four passes (#4, #8, #12 provisional, #26), two real but not
-tradable (#19, #20), one measurement (#39), the rest failed (#37 the latest) or are running
+#40 ran the fill-reconciliation plumbing on Hyperliquid's testnet: post-only refusals, fills, fees
+and maker/taker flags all reconciled with the exchange's own record (PASS, BTC and ETH; SOL refused
+by the testnet's oracle band). It also caught a sizing bug that reconciliation cannot see, now
+fixed. [research/RESULTS_TESTNET.md](research/RESULTS_TESTNET.md).
+
+Scoreboard: forty-one tests. Four passes (#4, #8, #12 provisional, #26), two real but not
+tradable (#19, #20), one measurement (#39), one plumbing check (#40), the rest failed (#37 the latest) or are running
 (#22–#24, #27, #29, #31, #32, #34, #38). Two are risk construction; the third is income (carry at
 maker fees) with a forward test still attached. No predictive edge has been found at any horizon,
 and across #4, #8 and #15 the one effect that survives is volatility sizing.

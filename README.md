@@ -382,8 +382,16 @@ differed earned +0.9 cents a share (t 1.0), and the crowd was the better forecas
 against 0.1733). FAIL: [research/RESULTS_POLYHOUR.md](research/RESULTS_POLYHOUR.md). As
 information, the same bet at minute 15 earned +4.7 cents (t 4.3).
 
-Scoreboard: thirty-eight tests. Four passes (#4, #8, #12 provisional, #26), two real but not
-tradable (#19, #20), the rest failed (#37 the latest) or are running (#22–#24, #27, #29, #31, #32, #34). Two are risk construction; the third is income (carry at
+#39 stopped adding ideas and measured what a fill costs, on 1,004 coin-days of prints (Binance's
+archive with a trade-derived mid validated against real quotes, and Hyperliquid via Tardis). A small
+taker round trip costs 9.9–11.3 bps, not the assumed 18. Resting orders lose 0.7–2.5 bps to adverse
+selection at the back of the queue, before fees, in every one of 288 cells: no condition makes
+passive fills pay. #29's reversal does not survive the measured cost; #31 does, on its four majors.
+[research/RESULTS_MARKOUT.md](research/RESULTS_MARKOUT.md); the table ships as `espero/costs.py`.
+
+Scoreboard: forty tests. Four passes (#4, #8, #12 provisional, #26), two real but not
+tradable (#19, #20), one measurement (#39), the rest failed (#37 the latest) or are running
+(#22–#24, #27, #29, #31, #32, #34, #38). Two are risk construction; the third is income (carry at
 maker fees) with a forward test still attached. No predictive edge has been found at any horizon,
 and across #4, #8 and #15 the one effect that survives is volatility sizing.
 

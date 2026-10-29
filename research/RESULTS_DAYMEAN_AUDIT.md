@@ -81,3 +81,22 @@ Their frozen criteria stay frozen. At each verdict the trade-weighted value is p
 
 `espero/audit.py` is the standard. New pre-registrations report the **trade-weighted mean with
 day-clustered errors** as the headline, and the day-mean only as information.
+
+## Information, after the audit — #26's bounce held longer, trade-weighted
+
+Computed on request, 2026-10-29. Hindsight: #43 had shown these horizons as day-means.
+
+| hold | gross, all 26 coins | net after Hyperliquid cost and Binance funding, 8 priced coins (t) | net 2023 / 2024 |
+|---|---|---|---|
+| 1 h | +19.2 | −0.7 (−0.21) | −2.8 / +0.5 |
+| 4 h | +42.6 | +15.5 (3.15) | +9.9 / +18.7 |
+| 12 h | — | +31.3 (3.07) | +31.2 / +31.3 |
+| 1 day | — | +55.9 (3.37) | +63.5 / +51.6 |
+
+- **Data.** Every event counted, as #26 counts them. Only 2023-06 → 2024-10 exists.
+- **Errors.** At 12 h and 1 day the holds overlap across days, so day-clustered t-statistics are
+  optimistic.
+- **What it says.** On the liquid coins, the 1 h leg nets about zero. The edge that clears costs is at
+  4 h – 1 day.
+- **What it would take.** Testing this needs a new forward test pre-registered on days that do not
+  exist yet. #27, which is frozen at #26's own horizon, cannot test it.

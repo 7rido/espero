@@ -156,7 +156,8 @@ def liq_hours() -> Dict[str, np.ndarray]:
         tot = (df["long"] + df["short"]).dropna()
         cut = tot.quantile(LIQ_TOP)
         hrs = tot.index[tot > cut]
-        out[c] = (hrs.asi8 // 10 ** 6).astype(np.int64)
+        out[c] = pd.DatetimeIndex(hrs).as_unit("ms").asi8.astype(np.int64)   # the index's unit varies (s here)
+        assert len(out[c]) and (out[c] > 1.7e12).all() and (out[c] < 1.8e12).all(), c
     return out
 
 

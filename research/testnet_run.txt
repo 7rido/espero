@@ -1,0 +1,36 @@
+session start 1793303286502; fees maker 0.00015 taker 0.00045
+post-only: 30 of 30 refused
+BTC maker 1: filled, filled 0.00014
+BTC maker 2: filled, filled 0.00014
+BTC maker 3: filled, filled 0.00014
+BTC maker 4: canceled, filled 0.0
+BTC maker 5: filled, filled 0.00014
+BTC maker 6: canceled, filled 0.0
+BTC maker 7: filled, filled 0.00014
+BTC maker 8: filled, filled 0.00014
+BTC maker 9: filled, filled 0.00014
+BTC maker 10: filled, filled 0.00014
+ETH maker 1: filled, filled 0.0052
+ETH maker 2: canceled, filled 0.0
+ETH maker 3: filled, filled 0.0052
+ETH maker 4: filled, filled 0.0052
+ETH maker 5: filled, filled 0.0052
+ETH maker 7: filled, filled 0.0052
+ETH maker 8: filled, filled 0.0052
+ETH maker 9: filled, filled 0.0052
+ETH maker 10: filled, filled 0.0052
+positions at the end: {'equity': 0.882002, 'margin_used': 0.441001, 'notional': 8.82002, 'withdrawable': 0.0, 'positions': [{'coin': 'BTC', 'size': 0.00011, 'side': 'long', 'entry': 80181.6, 'notional': 8.82002, 'unrealized': 4e-05, 'funding_paid': 0.0, 'liquidation': None, 'leverage': 20.0}]}
+
+#40 — 46 exchange fills since 1793303286502; 47 orders in our record
+  1 post-only refuses: met
+  2 every fill reconciles: met
+  3 fees are the schedule's: met
+  4 flags agree with the order type: met
+VERDICT: PASS
+
+information only:
+  send → ack latency Alo: median 906 ms, p90 967 ms, n 60
+  send → ack latency Ioc: median 903 ms, p90 974 ms, n 31
+  maker fill rate within 60 s: 16 of 19
+  testnet 60 s maker markout (NOT representative of mainnet): -0.63 bps, n 16
+-> /Users/fredp/Espero Trading QuantBot/espero/research/testnet_session.json

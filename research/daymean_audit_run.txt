@@ -1,0 +1,22 @@
+#44 — the day-mean audit. bps unless noted (#37 in dollars a share).
+
+id     study                           headline  events  days  published  day_mean  day_t  reproduced  trade_weighted  trade_t  ratio  quiet_share  met_day  met_trade  changed
+ 1       #18    leg (a) forced down-breaks, 1 h    2012    82      26.40     26.43   3.85        True           22.89     2.98   0.87         0.05     True       True    False
+ 2       #18            D forced − organic, 1 h    6158    82     -11.40    -11.41  -2.11        True          -14.35    -2.68   1.26         0.00    False      False    False
+ 3       #19               g, settlement excess    9579  1452      15.50     15.46   3.52        True           14.97     3.15   0.97         0.55     True       True    False
+4a       #20   new-low bounce, 1 h (the bounce)  136522  2055      14.80     14.75   9.78        True            5.91     3.50   0.40         0.01     True       True    False
+4b       #20      new-low bounce, 1 h (it pays)  136522  2055      14.80     14.75   9.78        True            5.91     3.50   0.40         0.01    False      False    False
+ 5       #21                 long leg, raw 24 h     620   101      51.10     51.22   2.46        True           18.50     0.75   0.36         0.48     True      False     True
+ 6       #25                    forced leg, 1 h   35319  1430      12.30     12.34   6.00        True            6.06     2.40   0.49         0.01    False      False    False
+ 7       #25                   D (oi_drop), 1 h   69666  1430       3.20      3.19   2.36        True            3.31     1.93   1.04         0.00    False      False    False
+ 8       #26    leg (a) forced down-breaks, 1 h    5971   415      23.50     23.54   7.13        True           19.19     3.67   0.81         0.14     True       True    False
+ 9       #26            D forced − organic, 1 h   11096   147     -23.60    -23.61  -4.06        True          -22.17    -3.54   0.94         0.00     True       True    False
+10       #28    the push, with-era trading days    1192   596      -1.50     -1.50  -1.44        True           -1.50    -1.44   1.00         1.00    False      False    False
+11 #29 basis        post-close reversal, 15 min    1192   596      -6.00     -6.00  -5.62        True           -6.00    -5.62   1.00         1.00     True       True    False
+12       #30                   filled bids' net    8602   189       1.70      1.66   0.97        True           -3.61    -1.65  -2.18         0.01    False      False     True
+13       #33               shorts pay hard, m30     197   132     -34.00    -34.01  -2.62        True          -20.14    -0.77   0.59         0.96     True       True    False
+14       #35              reclaimed sweeps, 1 h   27008  2122      15.30     15.27   6.99        True            2.08     0.79   0.14         0.22     True      False     True
+15       #37 the model's bets (dollars a share)    2271   180       0.01      0.01   0.99        True            0.01     1.34   1.30         0.00    False      False    False
+
+not reproduced (not audited): none
+CHANGED: 5 #21 (long leg, raw 24 h), 12 #30 (filled bids' net), 14 #35 (reclaimed sweeps, 1 h)

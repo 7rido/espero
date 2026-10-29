@@ -69,3 +69,6 @@ not touch these months.
 | 18 | Liquidations sort breakouts into forced and organic | fail — right direction, t −2.1, second half only |
 | 19 | The funding settlement moves prices | real, not tradable — +15.5 bps, t 3.5 |
 | **21** | **Liquidation spikes reverse (sealed July–October)** | **fail** — R +4.8 bps, t 0.3; the long leg's +51 bps was mostly a rising market |
+
+
+> **Note 2026-10-29 (#44):** re-estimated trade-weighted with day-clustered errors, this study's headline changes. See [RESULTS_DAYMEAN_AUDIT.md](RESULTS_DAYMEAN_AUDIT.md). The verdict above stands as published.

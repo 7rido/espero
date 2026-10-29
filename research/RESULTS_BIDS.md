@@ -86,3 +86,6 @@ seen: #31 ([FORWARD_BIDS2.md](FORWARD_BIDS2.md)) tests a 2-ATR bid with a 4-hour
 |---|---|---|
 | 20 | New 4-hour lows on volume bounce | real, not tradable: +14.8 bps in 1h, t 9.8 |
 | **30** | **A resting bid 1 ATR under #20's breakdowns, sold at the breakdown price** | **fail**: +1.7 bps net per fill, t 1.0; adverse selection. Lead: 2-ATR bids, +12.5 to +20 bps |
+
+
+> **Note 2026-10-29 (#44):** re-estimated trade-weighted with day-clustered errors, this study's headline changes. See [RESULTS_DAYMEAN_AUDIT.md](RESULTS_DAYMEAN_AUDIT.md). The verdict above stands as published.

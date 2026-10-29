@@ -67,3 +67,5 @@ chances.
   but the results it killed were killed by more than the extra 7 bps, or they have decayed since.
 - **#24 (the 4-hour bounce, forward) is the one live test this bears on.** At its verdict after
   2027-03-31, its re-priced net should be read next to its frozen 18 bps result, as information.
+
+> **Note 2026-10-29 (#44):** #35's reversal does not survive trade-weighting (+2.1 bps, t 0.8), so the "same bounce" link above is withdrawn; #20's own 1 h bounce is +5.9 bps trade-weighted, not +14.8. See [RESULTS_DAYMEAN_AUDIT.md](RESULTS_DAYMEAN_AUDIT.md).

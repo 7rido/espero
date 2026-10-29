@@ -408,7 +408,12 @@ pre-registered confirmation on 2025–26 (+21.8 bps a day-mean), but trade-weigh
 lose 9.6 bps: the day-mean convention gave 50 quiet-day trades the result. Not tradable, and a
 warning for every day-mean in this repo. [research/RESULTS_HORIZONS.md](research/RESULTS_HORIZONS.md).
 
-Scoreboard: forty-four tests. Four passes (#4, #8, #12 provisional, #26), two real but not
+#44 audited the day-mean convention behind most event studies here. All 16 published headlines
+reproduced; trade-weighted with day-clustered errors, #35's reversal, #21's long leg and #30's fills
+change, #20's bounce shrinks to +5.9 bps, and #26 holds (+19.2 bps, t 3.7). New tests report the
+trade-weighted mean. [research/RESULTS_DAYMEAN_AUDIT.md](research/RESULTS_DAYMEAN_AUDIT.md).
+
+Scoreboard: forty-five tests. Four passes (#4, #8, #12 provisional, #26), two real but not
 tradable (#19, #20), two measurements (#39, #41), two plumbing checks (#40, #42), the rest failed (#37 the latest) or are running
 (#22–#24, #27, #29, #31, #32, #34, #38). Two are risk construction; the third is income (carry at
 maker fees) with a forward test still attached. No predictive edge has been found at any horizon,

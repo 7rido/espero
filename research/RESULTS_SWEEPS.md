@@ -60,3 +60,6 @@ rather than a new trade.
 |---|---|---|
 | 20 | New 4-hour lows on volume bounce | real, not tradable: +14.8 bps in 1h, t 9.8 |
 | **35** | **Sweeps of yesterday's low that reclaim it reverse (stop runs)** | **fail**: they bounce (+15 bps/h), but failed sweeps bounce more; the reclaim adds nothing |
+
+
+> **Note 2026-10-29 (#44):** re-estimated trade-weighted with day-clustered errors, this study's headline changes. See [RESULTS_DAYMEAN_AUDIT.md](RESULTS_DAYMEAN_AUDIT.md). The verdict above stands as published.

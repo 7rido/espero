@@ -1,0 +1,17 @@
+id,study,headline,events,days,published,published_t,day_mean,day_t,reproduced,trade_weighted,trade_t,ratio,quiet_share,met_day,met_trade,changed
+1,#18,"leg (a) forced down-breaks, 1 h",2012,82,26.4,3.85,26.4308,3.84556,True,22.8884,2.97634,0.865976,0.0487805,True,True,False
+2,#18,"D forced − organic, 1 h",6158,82,-11.4,-2.11,-11.4067,-2.10912,True,-14.3525,-2.6836,1.25826,0,False,False,False
+3,#19,"g, settlement excess",9579,1452,15.5,3.52,15.4648,3.51771,True,14.9701,3.1523,0.968011,0.554408,True,True,False
+4a,#20,"new-low bounce, 1 h (the bounce)",136522,2055,14.8,9.78,14.7503,9.77924,True,5.90876,3.50241,0.400585,0.00583942,True,True,False
+4b,#20,"new-low bounce, 1 h (it pays)",136522,2055,14.8,9.78,14.7503,9.77924,True,5.90876,3.50241,0.400585,0.00583942,False,False,False
+5,#21,"long leg, raw 24 h",620,101,51.1,2.45,51.2165,2.45539,True,18.5026,0.750254,0.361263,0.475248,True,False,True
+6,#25,"forced leg, 1 h",35319,1430,12.3,6,12.3438,6.00304,True,6.06092,2.40465,0.491008,0.00909091,False,False,False
+7,#25,"D (oi_drop), 1 h",69666,1430,3.2,2.36,3.19382,2.35512,True,3.3092,1.92966,1.03613,0,False,False,False
+8,#26,"leg (a) forced down-breaks, 1 h",5971,415,23.5,7.13,23.545,7.12991,True,19.1883,3.66923,0.814964,0.144578,True,True,False
+9,#26,"D forced − organic, 1 h",11096,147,-23.6,-4.06,-23.6065,-4.063,True,-22.1718,-3.53604,0.939224,0,True,True,False
+10,#28,"the push, with-era trading days",1192,596,-1.5,-1.44,-1.50308,-1.43921,True,-1.50308,-1.43921,1,1,False,False,False
+11,#29 basis,"post-close reversal, 15 min",1192,596,-6,-5.6,-5.99746,-5.61889,True,-5.99746,-5.61889,1,1,True,True,False
+12,#30,filled bids' net,8602,189,1.7,0.97,1.6594,0.96629,True,-3.61497,-1.65014,-2.17847,0.00529101,False,False,True
+13,#33,"shorts pay hard, m30",197,132,-34,-2.62,-34.015,-2.61858,True,-20.1441,-0.772339,0.592213,0.962121,True,True,False
+14,#35,"reclaimed sweeps, 1 h",27008,2122,15.3,6.99,15.2743,6.9869,True,2.07714,0.785908,0.135989,0.223374,True,False,True
+15,#37,the model's bets (dollars a share),2271,180,0.009,1,0.00914745,0.990246,True,0.0118822,1.33753,1.29896,0,False,False,False

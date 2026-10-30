@@ -211,17 +211,29 @@ def _cmd_paper_close(args: argparse.Namespace) -> int:
 def _paper_loop(args: argparse.Namespace) -> int:
     from .data import recent_closed_bars
 
+    hl_source = getattr(args, "source", "coinbase") == "hyperliquid"
+    if hl_source:
+        from . import hyperliquid as hl
+        fetch_bars = hl.closed_bars
+        venue = args.venue or "hyperliquid"
+    else:
+        fetch_bars, venue = recent_closed_bars, args.venue
     journal = Journal(args.state)
-    if args.venue:
-        cfg = PaperConfig.for_venue(args.venue, product=args.product,
+    if venue:
+        cfg = PaperConfig.for_venue(venue, product=args.product,
                                     granularity=args.granularity, initial=args.cash)
         if args.fee_bps is not None:
             cfg.fee = args.fee_bps / 1e4
     else:
         cfg = PaperConfig(product=args.product, granularity=args.granularity,
                           initial=args.cash, fee=(args.fee_bps or 0.0) / 1e4)
-    print(f"fees {1e4 * cfg.fee:.1f} bps per side"
-          + (f", funding {1e4 * cfg.funding_8h:.2f} bps per 8h on longs" if cfg.funding_8h else ""))
+    if hl_source:
+        # the perp's own hourly rates, as Hyperliquid publishes them, instead of an assumed constant
+        cfg.funding_rates, cfg.funding_8h, cfg.funding_period = hl.funding_rates(args.product), 0.0, 3600
+    print(f"prices: {'Hyperliquid perp ' + hl.hl_coin(args.product) if hl_source else 'Coinbase ' + args.product}"
+          f" · fees {1e4 * cfg.fee:.1f} bps per side"
+          + (" · funding: Hyperliquid's actual hourly rates" if hl_source else
+             f", funding {1e4 * cfg.funding_8h:.2f} bps per 8h on longs" if cfg.funding_8h else ""))
     trader = PaperTrader(journal, cfg)
     request = Path(str(args.state) + ".close")
     open_request = Path(str(args.state) + ".open")
@@ -241,7 +253,7 @@ def _paper_loop(args: argparse.Namespace) -> int:
                 usd = float(json.loads(open_request.read_text() or "{}").get("usd", 0))
                 print("  ", trader.request_open(int(row["ts"]), usd, float(row["close"])))
                 open_request.unlink()
-        df = recent_closed_bars(args.product, args.granularity, args.seed)
+        df = fetch_bars(args.product, args.granularity, args.seed)
         if df.empty:
             print("no candles returned")
             return
@@ -1199,6 +1211,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="per side; overrides the venue's taker fee")
     pp.add_argument("--venue", choices=sorted(VENUES), default=None,
                     help="take taker fee and perp funding from the venue table")
+    pp.add_argument("--source", choices=["coinbase", "hyperliquid"], default="coinbase",
+                    help="whose candles: Coinbase spot, or Hyperliquid's perp with its actual hourly funding "
+                         "(fees default to hyperliquid's; fills stay simulated)")
     pp.add_argument("--seed", type=int, default=300, help="bars of history to keep")
     pp.add_argument("--loop", action="store_true")
     pp.add_argument("--interval", type=float, default=60.0)

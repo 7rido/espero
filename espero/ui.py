@@ -535,12 +535,20 @@ def act_paper(console, state):
         bars = questionary.select("Bar size:", choices=["5 minutes (fills and P&L every 5 min)", "1 hour"],
                                   style=STYLE, pointer="❯").ask() or "1 hour"
         five = bars.startswith("5")
-        venue = questionary.select("Charge whose fees?", choices=["binanceus", "coinbase", "kraken", "hyperliquid"],
-                                   default="binanceus", style=STYLE, pointer="❯").ask() or "binanceus"
-        db = PAPER_DIR / f"paper-{product.lower()}{'-5m' if five else ''}.db"
+        hl_src = (questionary.select("Prices:", choices=[
+            "Hyperliquid perp (its fees and actual hourly funding)", "Coinbase spot (pick whose fees)"],
+            style=STYLE, pointer="❯").ask() or "Coinbase").startswith("Hyperliquid")
+        if hl_src:
+            venue = "hyperliquid"
+        else:
+            venue = questionary.select("Charge whose fees?", choices=["binanceus", "coinbase", "kraken", "hyperliquid"],
+                                       default="binanceus", style=STYLE, pointer="❯").ask() or "binanceus"
+        # one journal per price source: Coinbase and Hyperliquid bars must never mix in one book
+        db = PAPER_DIR / f"paper-{product.lower()}{'-hl' if hl_src else ''}{'-5m' if five else ''}.db"
         console.print(Text(f"ctrl-c returns to the menu; the book is {db}. Buy and close by hand from a second "
                            "espero ui window (Paper trading)", style=MUTED))
         _run(console, ["paper", "--product", product, "--granularity", "300" if five else "3600", "--venue", venue,
+                       "--source", "hyperliquid" if hl_src else "coinbase",
                        "--state", str(db), "--loop", "--interval", "30" if five else "60"], state)
         return
     books = paper_books()

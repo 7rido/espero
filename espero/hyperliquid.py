@@ -203,6 +203,17 @@ INTERVALS = {seconds: name for name, seconds in INTERVAL_S.items()}
 SPAN_DAYS = {"1y": 365, "2y": 730, "5y": 1826, "10y": 3652}
 
 
+def funding_rates(product: str, fetch: Optional[Fetch] = None):
+    """For the paper trader: (start_s, end_s) -> {settlement hour: hourly rate} for
+    `product`'s perp, from fundingHistory. Settlement times are rounded to the hour."""
+    coin = hl_coin(product)
+
+    def rates(start_s: int, end_s: int) -> Dict[int, float]:
+        df = funding_history(coin, (start_s - 60) * 1000, (end_s + 60) * 1000, fetch=fetch, sleep=lambda s: None)
+        return {int(round(ts / 3600)) * 3600: float(r) for ts, r in zip(df["ts"], df["funding"])}
+    return rates
+
+
 def hl_coin(symbol: str) -> str:
     """"BTC-USD" or "BTC" -> Hyperliquid's name for the perp."""
     base = symbol.upper().split("-")[0]

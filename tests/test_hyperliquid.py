@@ -47,6 +47,16 @@ class TestFunding(unittest.TestCase):
         self.assertEqual(df["ts"].iloc[-1], 500 * 3600)
         self.assertAlmostEqual(df["funding"].iloc[-1], 2e-5)
 
+    def test_funding_rates_for_the_paper_trader(self):
+        seen = []
+
+        def fetch(body):
+            seen.append(body)
+            return [{"time": 7_200_004, "fundingRate": "0.0000125"}, {"time": 10_799_998, "fundingRate": "-0.00002"}]
+        rates = hl.funding_rates("BCH-USD", fetch=fetch)(7200, 10800)
+        self.assertEqual(seen[0]["coin"], "BCH")
+        self.assertEqual(rates, {7200: 0.0000125, 10800: -0.00002})   # settlement times land on the hour
+
     def test_empty(self):
         df = hl.funding_history("X", 0, fetch=lambda b: [])
         self.assertTrue(df.empty)

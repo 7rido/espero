@@ -12,7 +12,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
-from typing import List
+from typing import Callable, Dict, List, Optional
 
 import pandas as pd
 
@@ -36,6 +36,8 @@ class PaperConfig:
     stop_pct: float = 0.05
     target_pct: float = 0.10
     limits: RiskLimits = field(default_factory=RiskLimits)
+    # the venue's actual rates instead of funding_8h: (start_s, end_s) -> {settlement ts: rate per period}
+    funding_rates: Optional[Callable[[int, int], Dict[int, float]]] = None
 
     @classmethod
     def for_venue(cls, venue: str, **kw) -> "PaperConfig":
@@ -58,6 +60,26 @@ def funding_due(prev_ts: int, ts: int, entry_ts: int, notional: float, rate: flo
     first = (prev_ts // period + 1) * period
     n = sum(1 for t in range(first, ts + 1, period) if t > entry_ts)
     return n * notional * rate * period / FUNDING_PERIOD_S
+
+
+class FundingNotPublished(RuntimeError):
+    pass
+
+
+def actual_funding(prev_ts: int, ts: int, entry_ts: int, notional: float,
+                   rates: Callable[[int, int], Dict[int, float]], period: int) -> float:
+    """Funding owed at the venue's own published rate for each settlement in
+    (prev_ts, ts] after `entry_ts`. A settlement whose rate is not published yet
+    raises, so the bar is rolled back and retried rather than charged nothing."""
+    first = (prev_ts // period + 1) * period
+    due = [t for t in range(first, ts + 1, period) if t > entry_ts]
+    if not due:
+        return 0.0
+    got = rates(due[0], due[-1])
+    missing = [t for t in due if t not in got]
+    if missing:
+        raise FundingNotPublished(f"no published funding rate for settlement ts {missing[0]} yet")
+    return sum(notional * got[t] for t in due)
 
 
 class PaperTrader:
@@ -97,10 +119,10 @@ class PaperTrader:
             return ["duplicate bar ignored"]
 
         # 0. perp funding for every settlement the open position was held through
-        if self.position is not None and self.cfg.funding_8h and prev_ts is not None:
+        if self.position is not None and (self.cfg.funding_8h or self.cfg.funding_rates) and prev_ts is not None:
             paid = self._funding(prev_ts, ts, close)
             if paid:
-                events.append(f"funding paid {paid:.4f}")
+                events.append(f"funding {'paid' if paid > 0 else 'received'} {abs(paid):.4f}")
 
         # 1. exits on the open position (never on the bar it was opened)
         if self.position is not None and self.position.entry_ts != ts:
@@ -175,8 +197,12 @@ class PaperTrader:
         """Charge funding for each settlement time in (prev_ts, ts] that falls
         after the position was opened. Longs pay a positive rate."""
         pos = self.position
-        paid = funding_due(prev_ts, ts, pos.entry_ts, pos.size * price, self.cfg.funding_8h,
-                           self.cfg.funding_period)
+        if self.cfg.funding_rates is not None:
+            paid = actual_funding(prev_ts, ts, pos.entry_ts, pos.size * price, self.cfg.funding_rates,
+                                  self.cfg.funding_period)
+        else:
+            paid = funding_due(prev_ts, ts, pos.entry_ts, pos.size * price, self.cfg.funding_8h,
+                               self.cfg.funding_period)
         if not paid:
             return 0.0
         self.cash -= paid

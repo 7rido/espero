@@ -190,6 +190,57 @@ class TestPerpFunding(PaperTestCase):
         self.assertAlmostEqual(pnl, (90.0 - 100.0) * size - size * 100.0 * 0.0001)
 
 
+class TestActualFunding(PaperTestCase):
+    """With the venue's published rates (Hyperliquid, hourly): each settlement after
+    entry is charged at its own rate, a negative rate is received, and an unpublished
+    one rolls the bar back. Settlements every 3600 s fall at 1_004_400 (bar 5),
+    1_008_000 (bar 8) and 1_011_600 (bar 12)."""
+
+    RATES = {1_000_800: 0.5, 1_004_400: 0.0001, 1_008_000: -0.0003, 1_011_600: 0.0002}
+
+    def _long(self, rates) -> PaperTrader:
+        self.asked = []
+
+        def lookup(start, end):
+            self.asked.append((start, end))
+            return {t: r for t, r in rates.items() if start <= t <= end}
+        self.cfg.funding_rates, self.cfg.funding_period = lookup, 3600
+        t = self.trader()
+        paper_mod.combine = ScriptedSignal(nth=1)
+        self.prime(t)                               # bar 1 holds the 1_000_800 settlement: not held, not charged
+        t.on_bar(bar(3, 100.0))
+        self.assertIsNotNone(t.position)
+        return t
+
+    def test_each_settlement_at_its_own_rate(self):
+        t = self._long(self.RATES)
+        size, cash = t.position.size, t.cash
+        events = [e for i in range(4, 9) for e in t.on_bar(bar(i, 100.0)) if "funding" in e]
+        self.assertEqual(events, [f"funding paid {size * 100 * 0.0001:.4f}",
+                                  f"funding received {size * 100 * 0.0003:.4f}"])
+        self.assertAlmostEqual(cash - t.cash, size * 100.0 * (0.0001 - 0.0003))
+
+    def test_no_charge_before_entry_or_without_a_settlement(self):
+        t = self._long(self.RATES)
+        cash = t.cash
+        t.on_bar(bar(4, 100.0))                     # (1_003_000, 1_004_000]: no settlement
+        self.assertAlmostEqual(t.cash, cash)
+        self.assertEqual(self.asked, [])            # nothing to look up, nothing asked
+
+    def test_unpublished_rate_rolls_the_bar_back(self):
+        rates = {k: v for k, v in self.RATES.items() if k != 1_004_400}
+        t = self._long(rates)
+        t.on_bar(bar(4, 100.0))
+        cash = t.cash
+        with self.assertRaises(paper_mod.FundingNotPublished):
+            t.on_bar(bar(5, 100.0))
+        self.assertAlmostEqual(t.cash, cash)
+        self.assertEqual(t.journal.last_bar_ts(self.cfg.product), bar(4, 100.0)["ts"])
+        rates[1_004_400] = 0.0001                   # published now: the same bar goes through
+        t.on_bar(bar(5, 100.0))
+        self.assertLess(t.cash, cash)
+
+
 class TestVenueCompare(unittest.TestCase):
     def test_same_trades_different_bill(self):
         orig = paper_mod.combine

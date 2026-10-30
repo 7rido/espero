@@ -1,0 +1,29 @@
+# espero's recorder: the Hyperliquid collector and the daily job, restarted if they stop.
+#
+#   docker compose up -d --build     # start both
+#   docker compose ps                # running?
+#   docker compose logs -f daily     # the daily job's output
+#
+# ESPERO_DATA_DIR / ESPERO_STATE_DIR choose the host folders (default ./data and ./docker-state).
+# On a machine that already records with launchd, point ESPERO_DATA_DIR at another folder:
+# two collectors must never write the same files. Details: docs/RUNBOOK.md.
+services:
+  hlcollect:
+    build: .
+    image: espero:latest
+    command: ["espero", "hlcollect", "--loop"]
+    restart: always
+    volumes:
+      - ${ESPERO_DATA_DIR:-./data}:/app/data
+
+  daily:
+    image: espero:latest
+    depends_on: [hlcollect]
+    command: ["./scripts/docker-daily.sh"]
+    restart: always
+    environment:
+      ESPERO_DAILY_UTC: ${ESPERO_DAILY_UTC:-07:30}
+      ESPERO_LOG_DIR: /app/state/logs
+    volumes:
+      - ${ESPERO_DATA_DIR:-./data}:/app/data
+      - ${ESPERO_STATE_DIR:-./docker-state}:/app/state

@@ -29,6 +29,8 @@ every command, and `espero <command> --help` its flags.
 - **Delete or overwrite** the ledgers, `*.db` books, `data/hlcollect/` or `data/aggr/forward*`.
   Forward data can't be downloaded again.
 - **Push, merge or open a pull request** unless the user asks in those words.
+- **Start a second recorder into the same folder.** `docker compose up` and launchd's agents must
+  never write the same `data/`; on a machine that already records, set `ESPERO_DATA_DIR` elsewhere.
 
 ## The research discipline
 

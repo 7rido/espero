@@ -85,3 +85,4 @@ data/hlcollect/
 data/funding/
 # #37 Polymarket downloads (research/polyhour.py)
 data/polymarket/
+docker-state/

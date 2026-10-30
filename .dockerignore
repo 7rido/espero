@@ -1,0 +1,20 @@
+# never into the image: keys, account state, data, the virtualenv, git
+.env
+.env.*
+*.db
+*.db-*
+*.db.lock
+*.csv
+health.json
+dashboard.html
+KILL
+data/
+state/
+docker-state/
+.venv/
+venv/
+.git/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/

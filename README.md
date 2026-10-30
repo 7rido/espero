@@ -571,7 +571,7 @@ your actual fee tier.
   30-day plan this project is executing.
 - [docs/AUDIT_2026-10.md](docs/AUDIT_2026-10.md) — the second audit: ten findings, five money bugs
   fixed, the deployment gaps closed, and what a factor shop would add.
-- [docs/RUNBOOK.md](docs/RUNBOOK.md) — running it unattended on a Mac.
+- [docs/RUNBOOK.md](docs/RUNBOOK.md) — running it unattended: launchd on a Mac, or Docker anywhere.
 - [docs/DATA.md](docs/DATA.md) — getting the data: what's committed, what each script downloads,
   and what can only be recorded live.
 - [docs/CHEATSHEET.md](docs/CHEATSHEET.md) — the two commands you need, and the drawers you don't.

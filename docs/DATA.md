@@ -73,6 +73,7 @@ To record them yourself, run the job once a day, or install it on macOS:
 ```bash
 espero daily                        # one run: every account, every forward ledger, the dashboard
 ./scripts/install-launchd.sh        # macOS: every day at 07:30 local time (docs/RUNBOOK.md)
+docker compose up -d --build        # any OS: the daily job and the collector (docs/RUNBOOK.md)
 ```
 
 **aggr keeps its 5-minute bars only for a few days.** A day not saved in that time is gone, and the
@@ -83,7 +84,7 @@ stay in Binance's archive and can be fetched again.
 
 | folder | what | how to record |
 |---|---|---|
-| `data/hlcollect/` | Hyperliquid snapshots: top accounts' positions, HLP, asset contexts, 1-minute candles | `espero hlcollect --loop`, or `./scripts/install-hlcollect-launchd.sh` (macOS, runs always) |
+| `data/hlcollect/` | Hyperliquid snapshots: top accounts' positions, HLP, asset contexts, 1-minute candles | `espero hlcollect --loop`, `./scripts/install-hlcollect-launchd.sh` (macOS), or `docker compose up -d` (any OS) |
 | `data/book/` | order-book recordings from the fast screen and the testnet rehearsal (#42) | `espero fast`, `research/rehearsal.py` |
 
 Hyperliquid's API serves the current state, not history. A snapshot not taken is never available.

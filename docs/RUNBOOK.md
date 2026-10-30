@@ -125,6 +125,38 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlcollect-
 - A restart fetches only the slots not on disk. Slots missed while the Mac slept are lost:
   Hyperliquid keeps no history of positions, and only about three days of 1-minute candles.
 
+## Running it in Docker — any machine
+
+`Dockerfile` and `docker-compose.yml` package the same two jobs launchd runs here: the Hyperliquid
+collector and the daily job. They run on Linux, Windows or a Mac with Docker (or OrbStack), and on a
+server unchanged. No key goes into the image (`.dockerignore` excludes `.env`, every `*.db` and
+`data/`).
+
+```bash
+docker compose up -d --build     # start both; restarted if they stop or the machine reboots
+docker compose ps                # running?
+docker compose logs -f daily     # the daily job's output
+```
+
+| | |
+|---|---|
+| `hlcollect` | `espero hlcollect --loop` into `data/hlcollect/` |
+| `daily` | `espero daily` once per UTC day at or after `ESPERO_DAILY_UTC` (default 07:30). It checks every 10 minutes, so a day missed while the machine slept runs when it wakes, as launchd's catch-up does |
+| `ESPERO_DATA_DIR` | host folder mounted as `data/` (default `./data`) |
+| `ESPERO_STATE_DIR` | host folder for the books, `health.json`, the dashboard and logs (default `./docker-state`) |
+
+**What Docker does not change:**
+
+- **A sleeping or powered-off machine records nothing.** On a Mac, Docker runs inside a virtual
+  machine on the same laptop. Only an always-on machine closes those gaps.
+- **Never run two collectors into one folder.** On a machine that already records with launchd,
+  either stop launchd's agents first or set `ESPERO_DATA_DIR` to another folder, so the container
+  becomes a separate replica.
+- **It doesn't publish.** The Monday release needs the maintainer's GitHub token, which isn't in the
+  container. That stays with the maintainer's launchd job.
+- **A teammate's recording is a replica.** It starts on the day it's started. Fetch the
+  maintainer's history first: `./scripts/fetch-data.sh live`.
+
 ## Live trading
 
 Off, and out of scope for the scheduler. `espero live` is an experimental dry-run tool; see the

@@ -40,7 +40,7 @@ others read its 5-minute cache instead of downloading it again.
 | — | `data/polymarket/` | ~17 MB | `python research/polyhour.py` | Polymarket's public market API | #37 |
 | — | `data/cache/` | ~35 MB | fetched by `espero tsmom`, `espero board`, `research/tsmom.py` | Yahoo Finance and FRED | #4, #15 |
 | — | `data/funding/` | <1 MB | fetched by the daily job (`fundsplit`) | Binance funding history (`fapi/v1/fundingRate`) | #32 |
-| — | `research/data/` | ~70 MB | `python research/pead.py`, `research/carry*.py`, `research/odds_signal.py` | SEC EDGAR, Hyperliquid, Kraken, odds histories | #5, #6, #11, #12 |
+| — | `research/data/` | ~70 MB | `python research/pead.py`, `python research/carry.py fetch`, `python research/odds_signal.py` | SEC EDGAR, Hyperliquid, Kraken, odds histories | #5, #6, #11, #12 |
 
 These scripts need only the network: no key, no account. Binance's public archive is reachable from
 places where Binance's exchange is not.

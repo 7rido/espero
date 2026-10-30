@@ -2,7 +2,7 @@
 
     tsmom -> xs -> mf (#8) -> mf-hl -> liqfwd (#22/#23) -> lowsfwd (#24) -> liqbreak (#27)
           -> fundsplit (#32) -> postclose (#29) -> levpush (#34) -> bidsfwd (#31) -> settlefwd (#38)
-          -> liqhold (#45)
+          -> liqhold (#45) -> publish (Mondays, maintainer only)
           -> dashboard -> health.json
 
 Rules:
@@ -146,6 +146,31 @@ def _hl_daily():
     return hl.daily
 
 
+PUBLISH_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "publish-data.sh"
+
+
+def publish_data(now: datetime, env: Optional[dict] = None, run=None) -> dict:
+    """Mondays (UTC) only: publish the live recordings as a GitHub release (scripts/publish-data.sh)
+    so teammates can fetch them. Off unless ESPERO_PUBLISH_AS names the gh account that owns the
+    repo, so a teammate's daily run never publishes. The token is that account's, passed to the
+    script alone: the machine's active gh account is never switched."""
+    import shutil
+    import subprocess
+    env = dict(os.environ if env is None else env)
+    run = run or subprocess.run
+    account = (env.get("ESPERO_PUBLISH_AS") or "").strip()
+    if not account:
+        return {"note": "off (ESPERO_PUBLISH_AS not set)"}
+    if now.weekday() != 0:
+        return {"note": "not Monday"}
+    gh = shutil.which("gh", path=env.get("PATH")) or "gh"
+    token = run([gh, "auth", "token", "-u", account], capture_output=True, text=True, check=True).stdout.strip()
+    out = run([str(PUBLISH_SCRIPT)], capture_output=True, text=True, check=True,
+              env={**env, "GH_TOKEN": token})
+    last = (out.stdout.strip().splitlines() or [""])[-1]
+    return {"note": last}
+
+
 # -------------------------------------------------------------------- steps
 def _step(name: str, fn: Callable[[], dict], result: DailyResult, notify: bool) -> Optional[dict]:
     t0 = time.time()
@@ -222,7 +247,7 @@ def run_daily(state_dir: Path = Path("."), cash_tsmom: float = 100.0, cash_xs: f
     with Lock(state_dir / "daily.lock"):
         if dry_run:
             for name in ("tsmom", "xs", "mf", "mf-hl", "liqfwd", "lowsfwd", "liqbreak", "fundsplit", "postclose",
-                         "levpush", "bidsfwd", "settlefwd", "liqhold"):
+                         "levpush", "bidsfwd", "settlefwd", "liqhold", "publish"):
                 result.steps[name] = StepResult(True, 0.0, note="skipped (dry run)", skipped=True)
                 log.info("%s skipped (dry run)", name)
         else:
@@ -257,6 +282,8 @@ def run_daily(state_dir: Path = Path("."), cash_tsmom: float = 100.0, cash_xs: f
             # #45: #27's forced down-breaks held 4 h, 12 h, 1 day (FORWARD_LIQHOLD.md); reads the ledger
             # liqbreak wrote, lowsfwd's bars and the funding archive
             _step("liqhold", lambda: lhd.run(state_dir), result, notify)
+            # Mondays: the live recordings as a release, after every step that writes them (docs/DATA.md)
+            _step("publish", lambda: publish_data(now or datetime.now(timezone.utc)), result, notify)
 
         def render():
             out = dash.write(state_dir / "dashboard.html", tsmom_db=tsmom_db, paper_db=paper_db,

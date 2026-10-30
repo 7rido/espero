@@ -7,7 +7,9 @@
 #
 # Public market data only: Hyperliquid snapshots, order-book recordings, the forward
 # klines and aggr's liquidation bars. No .env, no *.db, no account state. Needs `gh`
-# logged in as an account that can write to the repo (gh auth switch -u <account>).
+# logged in as an account that can write to the repo, or GH_TOKEN set to its token
+# (the daily job's Monday step does that; see ESPERO_PUBLISH_AS in .env.example).
+# Re-running on a day already published does nothing.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -19,6 +21,10 @@ NAME="espero-live-data.tar.gz"
 PATHS=(data/hlcollect data/book data/lows/forward data/aggr/forward data/aggr/forward5m)
 
 cd "$REPO"
+if [ "${1:-}" != "--dry-run" ] && gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+    echo "already published today: https://github.com/$GH_REPO/releases/tag/$TAG"
+    exit 0
+fi
 present=()
 for p in "${PATHS[@]}"; do [ -d "$p" ] && present+=("$p"); done
 [ ${#present[@]} -gt 0 ] || { echo "nothing to publish: none of ${PATHS[*]} exists" >&2; exit 1; }

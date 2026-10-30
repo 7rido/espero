@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -51,6 +52,10 @@ class RunnerCase(unittest.TestCase):
         bf = mock.patch.object(runner.bfw, "run", return_value={"note": "mark: 0 fills", "equity": None})
         self.bf_run = bf.start()
         self.addCleanup(bf.stop)
+        # the Monday publish shells out to gh: never from a test, whatever .env says
+        pub = mock.patch.object(runner, "publish_data", return_value={"note": "off"})
+        self.pub_run = pub.start()
+        self.addCleanup(pub.stop)
         # the dashboard's signal board fetches 55 Yahoo series: no network in tests
         board = mock.patch.object(brd, "fetch_frames", return_value=({}, {}))
         board.start()
@@ -195,3 +200,52 @@ class TestGuards(RunnerCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestPublishData(unittest.TestCase):
+    """The Monday release: off unless the maintainer opts in, never on other days, and the
+    token goes to the script alone."""
+    MONDAY = datetime(2026, 11, 2, 11, 30, tzinfo=timezone.utc)
+
+    def fake_run(self):
+        calls = []
+
+        def run(cmd, **kw):
+            calls.append((cmd, kw))
+            out = "tok-123" if cmd[1:3] == ["auth", "token"] else "x\npublished: https://example/data-2026-11-02"
+            return mock.Mock(stdout=out)
+        return calls, run
+
+    def test_off_without_the_opt_in(self):
+        calls, run = self.fake_run()
+        out = runner.publish_data(self.MONDAY, env={"PATH": "/usr/bin"}, run=run)
+        self.assertIn("off", out["note"])
+        self.assertEqual(calls, [])
+
+    def test_only_on_mondays(self):
+        calls, run = self.fake_run()
+        tuesday = self.MONDAY + timedelta(days=1)
+        out = runner.publish_data(tuesday, env={"ESPERO_PUBLISH_AS": "7rido"}, run=run)
+        self.assertEqual(out["note"], "not Monday")
+        self.assertEqual(calls, [])
+
+    def test_monday_passes_that_accounts_token_to_the_script_only(self):
+        calls, run = self.fake_run()
+        out = runner.publish_data(self.MONDAY, env={"ESPERO_PUBLISH_AS": "7rido", "PATH": "/usr/bin"}, run=run)
+        (token_cmd, _), (script_cmd, kw) = calls
+        self.assertEqual(token_cmd[1:], ["auth", "token", "-u", "7rido"])
+        self.assertEqual(script_cmd, [str(runner.PUBLISH_SCRIPT)])
+        self.assertEqual(kw["env"]["GH_TOKEN"], "tok-123")
+        self.assertNotIn("switch", " ".join(c for cmd, _ in calls for c in cmd))
+        self.assertTrue(out["note"].startswith("published:"))
+
+
+
+class TestPublishStep(RunnerCase):
+    def test_runs_after_liqhold_and_lands_in_health(self):
+        res = self.run_daily()
+        self.pub_run.assert_called_once()
+        names = list(res.steps)
+        self.assertEqual(names.index("publish"), names.index("liqhold") + 1)
+        health = json.loads((self.state / "health.json").read_text())
+        self.assertIn("publish", health["steps"])

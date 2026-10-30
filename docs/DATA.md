@@ -96,7 +96,8 @@ verdicts, the maintainer's recording is the one of record.** A teammate's own re
 independent replica: useful for cross-checking gaps, but it starts on the day it was installed.
 
 The maintainer publishes a snapshot as a GitHub release (`data-YYYY-MM-DD`, made with
-`./scripts/publish-data.sh`). Anyone fetches the latest with:
+`./scripts/publish-data.sh`). The daily job does it every Monday when `ESPERO_PUBLISH_AS` is set
+in the maintainer's `.env`, so the latest release is at most a week behind. Anyone fetches it with:
 
 ```bash
 ./scripts/fetch-data.sh live

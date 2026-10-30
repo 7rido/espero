@@ -7,6 +7,16 @@ be downloaded again later, so the only copy is the one that was recorded at the 
 
 All commands run from the repo root, inside the virtualenv (see the README's Quickstart).
 
+**The short version:**
+
+```bash
+./scripts/fetch-data.sh live              # the live recordings (sections 3–4), ~20 MB
+./scripts/fetch-data.sh archives --no-oi  # the public history (section 2), ~1.6 GB
+./scripts/fetch-data.sh status            # what is on disk
+```
+
+Using an AI agent? [AGENTS.md](../AGENTS.md) tells it which of these a task needs, and why.
+
 ## 1. Already in the repo — nothing to do
 
 | folder | what | used by |
@@ -84,8 +94,17 @@ Hyperliquid's API serves the current state, not history. A snapshot not taken is
 Sections 3 and 4 started on different days on different machines. **For the forward tests'
 verdicts, the maintainer's recording is the one of record.** A teammate's own recording is an
 independent replica: useful for cross-checking gaps, but it starts on the day it was installed.
-To get the maintainer's `data/aggr/forward*`, `data/lows/forward/` and `data/hlcollect/`, ask for a
-snapshot. They are public market data and contain no account information.
+
+The maintainer publishes a snapshot as a GitHub release (`data-YYYY-MM-DD`, made with
+`./scripts/publish-data.sh`). Anyone fetches the latest with:
+
+```bash
+./scripts/fetch-data.sh live
+```
+
+It checks the SHA-256, then extracts into `data/` **without overwriting any file you already have**.
+Everything in it is public market data: Hyperliquid's published positions of its largest accounts,
+order books, klines and liquidation bars. There is no account information and no key.
 
 ## Troubleshooting
 

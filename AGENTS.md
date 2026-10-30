@@ -44,6 +44,28 @@ every command, and `espero <command> --help` its flags.
 
 Ideas that haven't been tested yet go in `research/IDEAS_NOVEL.md`.
 
+## Data — fetch it yourself, and know why
+
+A fresh clone has only what CI needs. **You may fetch the rest without asking:** every source is
+a public endpoint with no key. Fetch only what the task needs, and say what you fetched.
+
+| the task touches | fetch | why it's needed |
+|---|---|---|
+| CI, `espero matrix`, `backtest`, the factor panel | nothing | committed in `data/` |
+| a forward test (#22–#45), `health.json`, the dashboard, liquidations, Hyperliquid positions | `./scripts/fetch-data.sh live` | the maintainer's live recordings. They **can't be downloaded from the source later**: aggr deletes its 5-minute bars after a few days, and Hyperliquid's API serves only the current state. The release is the only copy of the days before you cloned. |
+| a past test's numbers (#18–#41), or a new idea on Binance bars | `./scripts/fetch-data.sh archives --no-oi` (add `oi` only for #25) | the price, funding and liquidation history the published results were computed on. Binance's public archive keeps it, so it can be fetched at any time. About 1.6 GB without `oi`. |
+| one script only | that script, e.g. `python research/settle.py` | each one downloads its own missing files into its own folder (docs/DATA.md, section 2) |
+
+**Rules for data:**
+
+- **Never overwrite, re-download over, or delete the live recordings.** `fetch-data.sh live`
+  extracts with "keep existing files" for that reason.
+- **Never commit data or publish a release.** `scripts/publish-data.sh` is the maintainer's.
+- **A gap stays a gap.** A day missing from a forward folder is recorded as missing and never
+  filled from another source; the forward plans depend on this.
+- **For a forward verdict, the maintainer's recording is the one of record.** A recording you start
+  yourself is a replica for cross-checking, not a substitute.
+
 ## Where things are
 
 - `espero/`: the package. One module per test or account (`liqhold.py` is #45).

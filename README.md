@@ -216,9 +216,10 @@ pip install -e ".[chart,tui,dev]"
 ./scripts/check.sh                     # must pass before an agent changes anything
 ```
 
-**Data.** The clone has only the small frozen datasets that CI needs. The rest (about 2.3 GB) comes
-from public archives with no key. [docs/DATA.md](docs/DATA.md) lists which command fetches which
-folder, in what order, and which live recordings can't be downloaded later.
+**Data.** The clone has only the small frozen datasets that CI needs. `./scripts/fetch-data.sh live`
+gets the maintainer's live recordings (~20 MB, from the latest release). `./scripts/fetch-data.sh
+archives --no-oi` gets the public history (~1.6 GB). AGENTS.md tells an agent which one a task needs
+and why. [docs/DATA.md](docs/DATA.md) has the details.
 
 **What to give the agent.** Use `.venv/bin/espero <command>` (`espero --help` lists them), not the
 interactive `espero ui`, which needs a real terminal. Allow it to run shell commands and edit files

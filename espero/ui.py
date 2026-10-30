@@ -715,8 +715,16 @@ def act_findings(console, state):
     if not what or what.startswith("Back"):
         return
     from rich.markdown import Markdown
-    with console.pager(styles=True):
-        console.print(Markdown((RESEARCH / what.split()[-1]).read_text()))
+    old = os.environ.get("LESS")
+    os.environ["LESS"] = (old or "") + " -R"          # less prints colour codes as text without -R
+    try:
+        with console.pager(styles=True):
+            console.print(Markdown((RESEARCH / what.split()[-1]).read_text()))
+    finally:
+        if old is None:
+            os.environ.pop("LESS", None)
+        else:
+            os.environ["LESS"] = old
 
 
 def act_factors(console, state):

@@ -187,6 +187,55 @@ needed:
 ./scripts/install-hooks.sh       # optional: run the checks on every git push
 ```
 
+## Running it with an AI agent, LLM or harness
+
+espero is a command-line tool with no keys and no server, so any agent that can run a shell can
+drive it. The rules an agent must follow are in [AGENTS.md](AGENTS.md):
+
+- no keys;
+- no real orders;
+- no re-tuning a committed test;
+- no deleting forward data;
+- pre-register before computing.
+
+Most harnesses load that file on their own.
+
+| harness | how it picks up the rules | start it |
+|---|---|---|
+| **Claude Code** (CLI, desktop, IDE) | `CLAUDE.md`, which imports `AGENTS.md` | `cd espero && claude` |
+| **Codex CLI**, **Cursor**, **Aider** and other AGENTS.md-aware agents | `AGENTS.md` | open the repo folder in the tool |
+| **Any LLM with a shell tool** (Agent SDKs, LangChain, your own loop) | paste `AGENTS.md` into the system prompt | give the tool the repo folder as its working directory |
+| **A scheduled agent** (cron, CI) | as above, plus `health.json` as the thing to read | run `espero daily`, then have the agent summarise `health.json` |
+
+**Setup, the same for every harness:**
+
+```bash
+git clone https://github.com/7rido/espero && cd espero
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[chart,tui,dev]"
+./scripts/check.sh                     # must pass before an agent changes anything
+```
+
+**What to give the agent.** Use `.venv/bin/espero <command>` (`espero --help` lists them), not the
+interactive `espero ui`, which needs a real terminal. Allow it to run shell commands and edit files
+inside the repo, and nothing else. It needs no network credentials. Every data source here is a
+public endpoint.
+
+**Prompts that work well:**
+
+- "Run `./scripts/check.sh` and tell me what fails."
+- "Read `health.json` and the `research/FORWARD_*.md` plans. Which forward tests have events so far?
+  Don't judge any of them."
+- "I have an idea: _…_. Write the pre-registration for it as the next test number, following
+  AGENTS.md, and stop before computing anything."
+- "Run the pre-registered test #NN exactly as written and write its RESULTS file."
+- "Paper-trade BCH on Hyperliquid prices for a day:
+  `espero paper --product BCH-USD --source hyperliquid --loop`."
+
+**What an agent can't do here, by design.** It can't place an order on any real venue. It can't
+read a key. It can't move a test's goalposts once committed. Those limits are in the code
+(`hl_exchange.py` refuses anything but testnet) and in the tests, not only in the prompt.
+
 ## One factor, tested honestly
 
 Funding-rate extremes looked like an edge: on Hyperliquid BTC, funding below z = −2 was followed by

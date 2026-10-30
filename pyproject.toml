@@ -7,7 +7,7 @@ name = "espero"
 version = "0.2.0"
 description = "A small, honest crypto research harness: causal indicators, next-bar fills, tests that fail when you cheat."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "7ucky7" }]
 keywords = ["trading", "backtesting", "crypto", "research", "factor-research"]
@@ -37,7 +37,7 @@ packages = ["espero"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py39"
+target-version = "py310"
 extend-exclude = ["research/data", ".venv"]
 
 [tool.ruff.lint]

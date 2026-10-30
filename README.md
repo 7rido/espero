@@ -216,6 +216,10 @@ pip install -e ".[chart,tui,dev]"
 ./scripts/check.sh                     # must pass before an agent changes anything
 ```
 
+**Data.** The clone has only the small frozen datasets that CI needs. The rest (about 2.3 GB) comes
+from public archives with no key. [docs/DATA.md](docs/DATA.md) lists which command fetches which
+folder, in what order, and which live recordings can't be downloaded later.
+
 **What to give the agent.** Use `.venv/bin/espero <command>` (`espero --help` lists them), not the
 interactive `espero ui`, which needs a real terminal. Allow it to run shell commands and edit files
 inside the repo, and nothing else. It needs no network credentials. Every data source here is a
@@ -567,6 +571,8 @@ your actual fee tier.
 - [docs/AUDIT_2026-10.md](docs/AUDIT_2026-10.md) — the second audit: ten findings, five money bugs
   fixed, the deployment gaps closed, and what a factor shop would add.
 - [docs/RUNBOOK.md](docs/RUNBOOK.md) — running it unattended on a Mac.
+- [docs/DATA.md](docs/DATA.md) — getting the data: what's committed, what each script downloads,
+  and what can only be recorded live.
 - [docs/CHEATSHEET.md](docs/CHEATSHEET.md) — the two commands you need, and the drawers you don't.
 
 ## License

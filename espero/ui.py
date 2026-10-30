@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -660,6 +661,64 @@ def act_forward(console, state):
         _run(console, ["liqfwd", "--state-dir", str(state)], state)
 
 
+RESEARCH = Path(__file__).resolve().parent.parent / "research"
+
+
+def findings(folder: Path = RESEARCH) -> List[dict]:
+    """Each research/RESULTS_*.md with its test number and its verdict line, newest test first."""
+    out = []
+    for path in folder.glob("RESULTS_*.md"):
+        lines = path.read_text().splitlines()
+        num = re.findall(r"\(#(\d+)([a-z]?)\)", lines[0] if lines else "")
+        verdict = next((ln[3:] for ln in lines if ln.startswith("## Verdict")), None)
+        if verdict is None:     # the first bold span, which may wrap onto the next line; its first sentence
+            m = re.search(r"^\*\*(.+?)\*\*", "\n".join(lines), re.S | re.M)
+            verdict = re.split(r"(?<=\.) ", " ".join(m.group(1).split()))[0] if m else ""
+        verdict = verdict[len("Verdict: "):] if verdict.startswith("Verdict: ") else verdict
+        test, key = (f"#{num[-1][0]}{num[-1][1]}", (int(num[-1][0]), num[-1][1])) if num else ("", (-1, ""))
+        out.append({"test": test, "key": key, "verdict": verdict.rstrip("."), "path": path})
+    return sorted(out, key=lambda r: (r["key"], r["path"].name), reverse=True)
+
+
+def costs_table() -> "Table":
+    """#39 and #41's measured taker round trips: the cost every result is now priced against."""
+    from . import costs
+    from .costs_table import TABLE
+    tbl = Table(title="measured round trip, taker in and out (#39, #41) · bps", box=None,
+                header_style=MUTED, padding=(0, 2))
+    for col in ("venue", "coins"):
+        tbl.add_column(col)
+    for venue in sorted({k[0] for k in TABLE}):
+        coins = sorted({k[1] for k in TABLE if k[0] == venue and k[2] == "taker"},
+                       key=lambda c: costs.round_trip(venue, c))
+        tbl.add_row(venue, "  ".join(f"{c} {costs.round_trip(venue, c):.1f}" for c in coins))
+    return tbl
+
+
+def act_findings(console, state):
+    """What the research has found: the measured cost, then each test's verdict. Reads files only."""
+    console.print(costs_table())
+    console.print(Text("unmeasured coins are still priced at the old 18 bps", style=MUTED))
+    console.print()
+    rows = findings()
+    tbl = Table(title=f"research results · {len(rows)} files · newest test first", box=None,
+                header_style=MUTED, padding=(0, 2))
+    for col in ("test", "file", "verdict"):
+        tbl.add_column(col)
+    for r in rows:
+        v = r["verdict"]
+        style = "green" if "PASS" in v else ("red" if "FAIL" in v or v.startswith("NO") else None)
+        tbl.add_row(r["test"], r["path"].name[len("RESULTS_"):-3], Text(v, style=style))
+    console.print(tbl)
+    what = questionary.select("Read one", choices=[f"{r['test'] or '  '}  {r['path'].name}" for r in rows]
+                              + ["Back to the menu"], style=STYLE, pointer="❯").ask()
+    if not what or what.startswith("Back"):
+        return
+    from rich.markdown import Markdown
+    with console.pager(styles=True):
+        console.print(Markdown((RESEARCH / what.split()[-1]).read_text()))
+
+
 def act_factors(console, state):
     console.print(Text("builds or reuses data/panel, then evaluates the zoo (a minute or two)", style=MUTED))
     _run(console, ["factors"], state)
@@ -696,7 +755,9 @@ MENU: List[Tuple[str, Callable]] = [
     ("Fast screen: resting orders on the live book (semi-auto, paper)", act_fast),
     ("Paper trading: run a loop, buy or close by hand, see positions", act_paper),
     ("Carry (#12): the forward books, their loops, funding vs the 15% bar", act_carry),
-    ("Forward tests (#22–#24, #27, #29, #31, #32, #34, #38): the paper ledgers, judged after March 2027", act_forward),
+    (f"Forward tests ({', '.join(t.replace(' ', ', ') for t, _, _ in FORWARD)}): the paper ledgers, "
+     "judged after March 2027", act_forward),
+    ("Research results: measured costs and every test's verdict (reads files only)", act_findings),
     ("Factor IC table (research)", act_factors),
     ("Run the tests", act_tests),
     ("Quit", None),

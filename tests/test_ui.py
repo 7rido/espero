@@ -85,10 +85,37 @@ class TestRender(unittest.TestCase):
         buf = io.StringIO()
         Console(file=buf, width=200, force_terminal=False).print(ui.forward_table(self.state))
         out = buf.getvalue()
-        for text in ("#22 #23", "#24", "#27", "#29", "#31", "#32", "#34", "#38", "mark: 3 trading days", "aggr down",
-                     "not run yet"):
+        for text in ("#22 #23", "#24", "#27", "#29", "#31", "#32", "#34", "#38", "#45", "mark: 3 trading days",
+                     "aggr down", "not run yet"):
             self.assertIn(text, out)
-        self.assertIn(ui.act_forward, [fn for _, fn in ui.MENU])
+        label = next(lbl for lbl, fn in ui.MENU if fn is ui.act_forward)
+        for tests, _, _ in ui.FORWARD:                  # the menu names every forward test the table lists
+            for t in tests.split():
+                self.assertIn(t, label)
+
+    def test_findings_reads_number_and_verdict_newest_first(self):
+        folder = self.state / "research"
+        folder.mkdir()
+        (folder / "RESULTS_A.md").write_text("# Result — a (#9)\n\n**Verdict: FAIL.** more\n")
+        (folder / "RESULTS_B.md").write_text("# Result — b (#9b)\n\n**Verdict: PASS.**\n")
+        (folder / "RESULTS_C.md").write_text("# Results — c (#12)\n\nintro\n\n## Verdict: FAIL on criterion 1\n"
+                                             "**What it means.**\n")
+        (folder / "RESULTS_D.md").write_text("# Result — d\n\n**Not evidence.**\n")
+        rows = ui.findings(folder)
+        self.assertEqual([r["test"] for r in rows], ["#12", "#9b", "#9", ""])
+        self.assertEqual([r["verdict"] for r in rows],
+                         ["FAIL on criterion 1", "PASS", "FAIL", "Not evidence"])
+        real = ui.findings()                            # the repo's own files all parse
+        self.assertTrue(real and all(r["verdict"] for r in real))
+        self.assertIn("#44", [r["test"] for r in real])
+
+    def test_costs_table_lists_measured_round_trips(self):
+        buf = io.StringIO()
+        Console(file=buf, width=200, force_terminal=False).print(ui.costs_table())
+        out = buf.getvalue()
+        self.assertIn("hyperliquid", out)
+        self.assertIn("BTC 9.9", out)
+        self.assertIn(ui.act_findings, [fn for _, fn in ui.MENU])
 
     def test_status_action_does_not_write(self):
         # compare contents, not bytes: SQLite folds a WAL file into the main file

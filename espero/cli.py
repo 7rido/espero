@@ -563,6 +563,8 @@ def _cmd_liqfwd(args: argparse.Namespace) -> int:
     print("#31 (FORWARD_BIDS2.md): " + bfw.run(sd)["note"] + f" -> {sd / bfw.LEDGER}")
     from . import settlefwd as sfw
     print("#38 (FORWARD_SHORTSPAY.md): " + sfw.run(sd)["note"] + f" -> {sd / sfw.LEDGER}")
+    from . import liqhold as lhd
+    print("#45 (FORWARD_LIQHOLD.md): " + lhd.run(sd)["note"] + f" -> {sd / lhd.LEDGER}")
     return 0
 
 

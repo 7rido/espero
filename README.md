@@ -40,7 +40,8 @@ loop, four strategies, and a test suite whose job is to make the same mistakes i
 
 `espero` with no arguments opens an interactive screen: the two accounts and the last run's health on
 top, an arrow-key menu below (status, dashboard, a no-write preview of what each rule would decide now,
-history, run the daily job, deposit, pause, log, the single-coin loop, the factor table, tests). Needs
+history, run the daily job, deposit, pause, log, the single-coin loop, the forward tests, the research
+results with #39/#41's measured costs, the factor table, tests). Needs
 the `tui` extra: `pip install -e ".[chart,tui,dev]"`. Everything on the menu is also a plain command.
 
 ## The fast screen

@@ -56,14 +56,20 @@ def mondays(first: str, last: str) -> List[str]:
 
 def run(jobs: Iterable[Tuple], workers: int = WORKERS) -> None:
     """Each job is the args of pit.fetch_file. A 404 is recorded as a miss, never filled."""
+    seen = set()
+    if pit.MANIFEST.exists():
+        m = pd.read_csv(pit.MANIFEST, usecols=["dataset", "symbol", "period"], dtype=str)
+        seen = set(zip(m["dataset"], m["symbol"], m["period"]))
     todo = []
     for j in jobs:
         dataset, sym, period = j[0], j[1], j[2]
         interval = j[3] if len(j) > 3 and j[3] else "1h"
-        if not pit.store_path(pit.STORE, dataset, sym, period, interval).exists():
+        name = f"{dataset}_{interval}" if dataset.endswith("lines") else dataset
+        # a file without its manifest row is not ingested: no hash, no row
+        if (name, sym, period) not in seen or not pit.store_path(pit.STORE, dataset, sym, period, interval).exists():
             todo.append(j)
     print(f"{len(todo)} files to fetch", flush=True)
-    rows, missing = [], []
+    rows, missing, failed = [], [], []
 
     def one(j):
         interval = j[3] if len(j) > 3 and j[3] else "1h"
@@ -73,7 +79,13 @@ def run(jobs: Iterable[Tuple], workers: int = WORKERS) -> None:
     with ThreadPoolExecutor(workers) as ex:
         futures = [ex.submit(one, j) for j in todo]
         for k, fut in enumerate(as_completed(futures), 1):
-            j, row = fut.result()
+            try:
+                j, row = fut.result()
+            except Exception as exc:
+                failed.append(repr(exc)[:200])
+                if len(failed) <= 5:
+                    print(f"  failed: {failed[-1]}", flush=True)
+                continue
             if row is None:
                 missing.append(j[:3])
             else:
@@ -83,6 +95,10 @@ def run(jobs: Iterable[Tuple], workers: int = WORKERS) -> None:
                 rows = []
             if k % 200 == 0:
                 print(f"  {k}/{len(futures)}", flush=True)
+    if rows:
+        pit.write_manifest(rows)
+    if failed:
+        print(f"{len(failed)} files failed; run again to retry them", flush=True)
     if missing:
         path = ROOT / "research" / "pit_missing.csv"
         old = pd.read_csv(path) if path.exists() else pd.DataFrame(columns=["dataset", "symbol", "period"])
@@ -144,7 +160,7 @@ def universe() -> None:
         ms = int(pd.Timestamp(ts, tz="UTC").timestamp() * 1000)
         try:
             df = pit.parse_exchange_info(body, ms)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, UnicodeDecodeError, OSError):
             print(f"  {ts}: not JSON, recorded as unusable")
             rows.append({"capture": ts, "digest": digest, "sha256": pit.sha256(body), "symbols": 0, "usable": False})
             continue
@@ -193,7 +209,7 @@ def holdout() -> None:
     legs = legs[legs["day"] >= HOLDOUT_FIRST]
     # the monthly bars stop at September: the holdout's last weeks read October's daily files
     october = [d.strftime("%Y-%m-%d") for d in pd.date_range("2026-10-01", "2026-10-27")]
-    bars = [("klines", f"{c}USDT", d, "1h") for c in XS_COINS for d in october]
+    bars = [("klines", f"{c}USDT", d, "1d") for c in XS_COINS for d in october]
     run(day_jobs((r.coin, r.day) for r in legs.itertuples()) + bars)
 
 

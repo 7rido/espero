@@ -1,0 +1,35 @@
+{
+ "tests_registered": 46,
+ "tests_judged": 33,
+ "span_days": 3,
+ "tests_per_day": 11.0,
+ "expected_false_passes_at_alpha": 1.6500000000000001,
+ "passes": 6,
+ "bonferroni_alpha_per_test": 0.0015151515151515152,
+ "familywise_error_if_uncorrected": 0.8159740897644242,
+ "expected_true_passes_at_priors": 1.725,
+ "expected_false_passes_at_priors": 1.3275000000000003,
+ "p_values_available": 19,
+ "survive_holm_05": 6,
+ "survive_bh_05": 8,
+ "sr0_annualised": 1.3804589815859942,
+ "dsr_above_95": 0,
+ "spa_gross": {
+  "stat": 9.105147508940984,
+  "p": 0.0,
+  "k": 14,
+  "n": 2492,
+  "best": 2,
+  "kept": 14,
+  "best_name": "#20 new-low bounce, 1 h (the bounce) (gross)"
+ },
+ "spa_net": {
+  "stat": 2.7854700105066974,
+  "p": 0.0446,
+  "k": 14,
+  "n": 2492,
+  "best": 13,
+  "kept": 10,
+  "best_name": "#12 as run"
+ }
+}

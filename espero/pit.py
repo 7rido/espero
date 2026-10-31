@@ -21,11 +21,13 @@ from __future__ import annotations
 import csv
 import dataclasses
 import datetime as dt
+import gzip
 import hashlib
 import io
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -198,7 +200,7 @@ def _get(url: str, tries: int = 8, timeout: int = 300) -> Tuple[Optional[bytes],
 def fetch_file(dataset: str, symbol: str, period: str, store: Path = STORE, interval: str = "1h",
                windows: Optional[Sequence[Tuple[int, int]]] = None) -> Optional[dict]:
     """Download, verify, write Parquet, drop the raw bytes. A manifest row, or None for a 404."""
-    path = archive_path(dataset, symbol, period, interval)
+    path = urllib.parse.quote(archive_path(dataset, symbol, period, interval))    # some symbols are not ASCII
     body, modified = _get(ARCHIVE + path)
     if body is None:
         return None
@@ -243,6 +245,8 @@ def write_manifest(rows: Iterable[dict], path: Path = MANIFEST) -> pd.DataFrame:
 
 def parse_exchange_info(body: bytes, capture_ms: int) -> pd.DataFrame:
     """A Wayback capture of /fapi/v1/exchangeInfo -> one row per symbol, known at the capture."""
+    if body[:2] == b"\x1f\x8b":        # Wayback serves some captures still gzipped
+        body = gzip.decompress(body)
     info = json.loads(body)
     rows = []
     for s in info.get("symbols", []):
@@ -312,14 +316,16 @@ def universe_sql(asof_ms: int, top_n: int = 20, lookback_days: int = 30, view: s
     """
 
 
-def quality_sql(view: str, key: Sequence[str], max_gap_ms: Optional[int]) -> str:
-    """Per symbol: rows, duplicate keys, rows out of time order, and steps wider than `max_gap_ms`."""
+def quality_sql(view: str, key: Sequence[str], max_gap_ms: Optional[int], per_day: bool = False) -> str:
+    """Per symbol: rows, duplicate keys, rows out of time order, and steps wider than `max_gap_ms`.
+    `per_day` measures steps within a UTC day: for tables holding scattered coin-days, not a span."""
     k = ", ".join(key)
+    within = "symbol, valid_time // 86400000" if per_day else "symbol"
     gap = f"SUM(CASE WHEN step > {max_gap_ms} THEN 1 ELSE 0 END)" if max_gap_ms else "NULL"
     return f"""
     WITH t AS (
         SELECT symbol, valid_time, known_time,
-               valid_time - LAG(valid_time) OVER (PARTITION BY symbol ORDER BY valid_time) AS step
+               valid_time - LAG(valid_time) OVER (PARTITION BY {within} ORDER BY valid_time) AS step
         FROM "{view}"
     ), d AS (
         SELECT symbol, SUM(n - 1) AS dups FROM (

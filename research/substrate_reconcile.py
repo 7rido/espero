@@ -98,7 +98,7 @@ def funding_vs_premium() -> None:
 
 def prints_vs_bars() -> None:
     """Each coin-day of prints against the venue's own hourly bars: volume, dollars, trade count, range."""
-    vol, usd, cnt, hi, lo, days = [], [], [], [], [], 0
+    vol, usd, cnt, hi, lo, days, raw_vol = [], [], [], [], [], 0, []
     for path in sorted((pit.STORE / "aggTrades").glob("*/*.parquet")):
         sym, day = path.parent.name, path.stem
         a = pit.day_ms(day)
@@ -106,13 +106,17 @@ def prints_vs_bars() -> None:
         bars = bars[(bars["valid_time"] >= a) & (bars["valid_time"] < a + 86_400_000)].drop_duplicates("valid_time")
         if len(bars) != 24:
             continue
-        p = pd.read_parquet(path, columns=["price", "quantity", "first_trade_id", "last_trade_id"])
+        p = pd.read_parquet(path, columns=["agg_trade_id", "price", "quantity", "first_trade_id", "last_trade_id"])
+        raw_vol.append(p["quantity"].sum() / bars["volume"].sum() - 1)
+        p = p.drop_duplicates("agg_trade_id")
         days += 1
         vol.append(p["quantity"].sum() / bars["volume"].sum() - 1)
         usd.append((p["price"] * p["quantity"]).sum() / bars["quote_volume"].sum() - 1)
         cnt.append((p["last_trade_id"] - p["first_trade_id"] + 1).sum() / bars["count"].sum() - 1)
         hi.append(p["price"].max() / bars["high"].max() - 1)
         lo.append(p["price"].min() / bars["low"].min() - 1)
+    add("aggTrades", "klines_1h (venue's bars)", "raw files, base volume: days outside tolerance", days,
+        float((np.abs(raw_vol) > VOLUME_TOL).sum()), 0, "days", "before de-duplicating on the id")
     for name, x in (("base volume", vol), ("dollar volume", usd), ("trade count", cnt), ("day high", hi), ("day low", lo)):
         x = np.abs(np.array(x))
         add("aggTrades", "klines_1h (venue's bars)", f"{name}: largest day difference", days, float(x.max()) if days else

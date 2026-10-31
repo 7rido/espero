@@ -1,4 +1,5 @@
 """The point-in-time store, the execution simulator, the detector and the trial budget."""
+import gzip
 import hashlib
 import importlib.util
 import io
@@ -67,6 +68,7 @@ class ParseTests(unittest.TestCase):
         price = {"filterType": "PRICE_FILTER", "tickSize": "0.1"}
         body = json.dumps({"symbols": [{"symbol": "BTCUSDT", "status": "TRADING", "contractType": "PERPETUAL",
                                         "onboardDate": 5, "filters": [price]}]}).encode()
+        self.assertEqual(len(pit.parse_exchange_info(gzip.compress(body), 99)), 1)
         df = pit.parse_exchange_info(body, 99)
         self.assertEqual(df["known_time"].iloc[0], 99)
         self.assertEqual(df["tick_size"].iloc[0], 0.1)
@@ -181,6 +183,18 @@ class StoreTests(unittest.TestCase):
                                         "known_time": [0, 0, 4, 100]}))
         self.assertEqual((q["duplicate_keys"], q["gaps"], q["known_before_valid"], q["rows"]), (1, 1, 1, 4))
 
+    def test_per_day_ignores_the_step_between_scattered_days(self):
+        day = 86_400_000
+        p = self.store / "q" / "S" / "x.parquet"
+        p.parent.mkdir(parents=True)
+        pd.DataFrame({"symbol": "S", "k": [1, 2, 3], "valid_time": [0, 5, 3 * day],
+                      "known_time": [0, 5, 3 * day]}).to_parquet(p)
+        con = pit.connect(self.store)
+        got = con.execute(pit.quality_sql("q", ("k",), 10, per_day=True)).df().iloc[0]["gaps"]
+        spans = con.execute(pit.quality_sql("q", ("k",), 10)).df().iloc[0]["gaps"]
+        con.close()
+        self.assertEqual((got, spans), (0, 1))
+
     def test_clean_series_reports_nothing(self):
         q = self._quality(pd.DataFrame({"symbol": "S", "k": [1, 2], "valid_time": [0, 5], "known_time": [0, 5]}))
         self.assertEqual((q["duplicate_keys"], q["gaps"], q["known_before_valid"]), (0, 0, 0))
@@ -198,6 +212,33 @@ class StoreTests(unittest.TestCase):
         m = pd.DataFrame({"dataset": ["a"], "symbol": ["s"], "period": ["p1"]})
         out = pit.missing_periods([("a", "s", "p1"), ("a", "s", "p2")], m)
         self.assertEqual(out["period"].tolist(), ["p2"])
+
+
+@unittest.skipUnless(HAS_STORE, "duckdb and pyarrow live in the `pit` extra")
+class RawQueryTests(unittest.TestCase):
+    def _run(self, gross, bench, costs):
+        import duckdb
+
+        sql = (Path(__file__).resolve().parents[1] / "research" / "substrate_q48.sql").read_text()
+        with tempfile.TemporaryDirectory() as tmp:
+            w, l = Path(tmp) / "w.csv", Path(tmp) / "l.csv.gz"
+            pd.DataFrame({"gross": gross, "bench": bench}).to_csv(w, index=False)
+            pd.DataFrame({"size": 100.0, "cost_bps": costs}).to_csv(l, index=False)
+            sql = sql.replace("{weeks}", str(w)).replace("{legs}", str(l)).replace("{size}", "100")
+            return duckdb.connect().execute(sql).df().iloc[0]
+
+    def test_agrees_with_the_python_number(self):
+        gross, bench = np.full(52, -0.01), np.full(52, 0.002)
+        costs = np.array([10.0, 20.0, np.nan, 30.0])
+        q = self._run(gross, bench, costs)
+        years = 52 / detector.WEEKS_PER_YEAR
+        filled = np.where(np.isnan(costs), 20.0, costs) / 1e4
+        a = detector.attribution(np.random.default_rng(1), gross.sum() / years, bench.sum() / years, filled, years)
+        self.assertAlmostEqual(q["theta"], a.theta, places=10)
+        self.assertEqual((q["legs"], q["unpriced"]), (4, 1))
+
+    def test_beating_the_benchmark_before_costs_is_one(self):
+        self.assertEqual(self._run(np.full(10, 0.01), np.zeros(10), np.array([10.0]))["theta"], 1.0)
 
 
 def tape(mid=100.0, half=0.01, n=2000, step_ms=100, q=1.0):
@@ -253,6 +294,28 @@ class TapeTests(unittest.TestCase):
         self.assertTrue(np.isnan(execsim.proxy_mid(t, p, bm, np.array([100_000]))[0]))
         self.assertAlmostEqual(execsim.proxy_mid(t, p, bm, np.array([10]))[0], 100.0)
 
+    def test_decision_at_the_start_of_a_file(self):
+        t = np.array([1000, 2000, 3000])
+        p = np.array([100.1, 100.2, 99.9])
+        bm = np.array([False, False, True])
+        self.assertAlmostEqual(execsim.decision_mid(t, p, bm, 0), (100.2 + 99.9) / 2)
+        self.assertTrue(np.isnan(execsim.decision_mid(t, p, np.zeros(3, dtype=bool), 0)))
+        f = execsim.tape_fill(t, p, np.ones(3), bm, 0, 1, 10.0)
+        self.assertTrue(np.isfinite(f.cost_bps))
+
+    def test_decision_mid_skips_a_crossed_first_pair(self):
+        t = np.array([10, 20, 30])
+        p = np.array([100.0, 99.0, 99.5])       # seller hit 100, then a buyer paid 99: crossed; 99.5 is not
+        bm = np.array([True, False, False])
+        self.assertTrue(np.isnan(execsim.proxy_mid(t, p, bm, np.array([20]))[0]))
+        self.assertTrue(np.isnan(execsim.decision_mid(t, p, bm, 0)))
+        p2 = np.array([100.0, 99.0, 100.5])
+        self.assertAlmostEqual(execsim.decision_mid(t, p2, bm, 0), 100.25)
+
+    def test_decision_mid_stays_inside_its_window(self):
+        t = np.array([70_000, 70_001])      # fresh against each other, but past the window from the decision
+        self.assertTrue(np.isnan(execsim.decision_mid(t, np.array([100.0, 100.0]), np.array([False, True]), 0)))
+
     def test_crossed_prints_give_no_mid(self):
         t = np.array([0, 1])
         p = np.array([99.0, 100.0])         # the buyer paid less than the seller received
@@ -292,11 +355,13 @@ class QueueTests(unittest.TestCase):
                                0, 1, 1.0, 1000)
         self.assertFalse(f.filled)
 
-    def test_trade_through_fills(self):
+    def test_trade_through_clears_the_queue_but_size_still_needs_flow(self):
         bt, b, bq, a, aq = self._book()
-        f = execsim.queue_fill(bt, b, bq, a, aq, np.array([1]), np.array([98.0]), np.array([0.5]), np.array([True]),
-                               0, 1, 1.0, 1000)
-        self.assertTrue(f.filled)
+        args = (np.array([1]), np.array([98.0]))
+        big = execsim.queue_fill(bt, b, bq, a, aq, *args, np.array([0.5]), np.array([True]), 0, 1, 1.0, 1000)
+        small = execsim.queue_fill(bt, b, bq, a, aq, *args, np.array([1.5]), np.array([True]), 0, 1, 1.0, 1000)
+        self.assertFalse(big.filled)
+        self.assertTrue(small.filled)
 
     def test_sell_side_mirror(self):
         bt, b, bq, a, aq = self._book()
@@ -312,23 +377,33 @@ class QueueTests(unittest.TestCase):
 
 
 class ImpactTests(unittest.TestCase):
-    def test_recovers_planted_coefficients(self):
+    def test_recovers_planted_slope_from_flow(self):
         rng = np.random.default_rng(1)
-        n = 200
-        notional = 10 ** rng.uniform(3, 6, n)
-        adv = np.full(n, 1e8)
-        obs = pd.DataFrame({"symbol": "X", "regime": "low", "notional": notional, "adv": adv,
-                            "cost_bps": 2.0 + 300.0 * np.sqrt(notional / adv) + rng.normal(0, 0.1, n)})
+        n = 400
+        x = rng.normal(0, 0.05, n)
+        obs = pd.DataFrame({"symbol": "X", "regime": "low", "x": x, "ret_bps": 0.3 + 200.0 * x + rng.normal(0, 1, n)})
         fit = execsim.fit_impact(obs)
-        self.assertAlmostEqual(fit["a_bps"].iloc[0], 2.0, delta=0.1)
-        self.assertAlmostEqual(fit["b_bps"].iloc[0], 300.0, delta=5)
-        self.assertAlmostEqual(execsim.predict_impact(fit, "X", "low", 1e6, 1e8), 2.0 + 30.0, delta=1)
+        self.assertAlmostEqual(fit["b_bps"].iloc[0], 200.0, delta=5)
+        self.assertAlmostEqual(execsim.predict_impact(fit, "X", "low", 1e6, 1e8), 20.0, delta=1)
 
     def test_thin_cell_gets_no_fit(self):
-        obs = pd.DataFrame({"symbol": "X", "regime": "low", "notional": [1.0, 2.0], "adv": [10.0, 10.0],
-                            "cost_bps": [1.0, 2.0]})
+        obs = pd.DataFrame({"symbol": "X", "regime": "low", "x": [1.0, 2.0], "ret_bps": [1.0, 2.0]})
         self.assertTrue(execsim.fit_impact(obs).empty)
         self.assertTrue(np.isnan(execsim.predict_impact(execsim.fit_impact(obs), "X", "low", 1.0, 10.0)))
+
+    def test_a_wrong_signed_slope_is_not_a_rebate(self):
+        fit = pd.DataFrame({"symbol": ["X"], "regime": ["low"], "a_bps": [0.0], "b_bps": [-50.0]})
+        self.assertEqual(execsim.predict_impact(fit, "X", "low", 1e6, 1e8), 0.0)
+
+    def test_flow_buckets(self):
+        t = np.array([0, 1000, 300_000, 600_000])
+        p = np.array([100.0, 100.0, 101.0, 102.0])
+        q = np.array([1.0, 3.0, 1.0, 1.0])
+        bm = np.array([False, True, False, False])
+        got = execsim.flow_buckets(t, p, q, bm, adv=100.0)
+        self.assertAlmostEqual(got["ret_bps"].iloc[0], 100.0)
+        self.assertAlmostEqual(got["x"].iloc[0], -np.sqrt(200.0 / 100.0))     # net sold $200
+        self.assertEqual(len(got), 2)
 
     def test_regimes(self):
         edges = execsim.regime_edges(pd.Series(np.arange(1.0, 10.0)))
@@ -360,9 +435,9 @@ class DetectorTests(unittest.TestCase):
 
     def test_planted_alpha_comes_back(self):
         rng = np.random.default_rng(8)
-        row = detector.power_table(rng, [1.0], 150, 150, draws=200)[0]
-        self.assertAlmostEqual(row["mean_estimate"], row["mean_truth"], delta=0.12)
-        self.assertGreater(row["mean_estimate"], 0.4)
+        row = detector.power_table(rng, [3.0], 150, 150, draws=200)[0]
+        self.assertAlmostEqual(row["mean_estimate"], row["mean_truth"], delta=0.15)
+        self.assertGreater(row["mean_estimate"], 2.0)
 
     def test_book_has_one_leg_count_per_week(self):
         b = detector.synthetic_market(np.random.default_rng(1), 60)

@@ -1,0 +1,26 @@
+,t_flat_days
+"#28 the push, with-era trading days (net of 18 bps)",-15.539934039498883
+"#29 basis post-close reversal, 15 min (net of 18 bps)",-10.43971970915118
+"#25 forced leg, 1 h (net of 18 bps)",-2.7480186162979447
+"#20 new-low bounce, 1 h (the bounce) (net of 18 bps)",-2.1541694253484702
+"#28 the push, with-era trading days (gross)",-1.4382258950739266
+"#35 reclaimed sweeps, 1 h (net of 18 bps)",-1.2467880992245293
+"#19 g, settlement excess (net of 18 bps)",-0.5767301769888853
+"#2 holdout, as run",-0.1085176501954807
+#30 filled bids' net (gross),0.9664466654365537
+#30 filled bids' net (net of 18 bps),0.9664466654365537
+"#18 leg (a) forced down-breaks, 1 h (net of 18 bps)",1.2230097513351175
+"#33 shorts pay hard, m30 (net of 18 bps)",1.2305886681453304
+"#21 long leg, raw 24 h (net of 18 bps)",1.5809499453307287
+"#26 leg (a) forced down-breaks, 1 h (net of 18 bps)",1.6760796896736754
+"#21 long leg, raw 24 h (gross)",2.3987396480158685
+"#33 shorts pay hard, m30 (gross)",2.5652167591893473
+#11 as run,2.5967076362605908
+"#19 g, settlement excess (gross)",3.5119739820770532
+"#18 leg (a) forced down-breaks, 1 h (gross)",3.566392815456543
+#12 as run,5.126116165090048
+"#29 basis post-close reversal, 15 min (gross)",5.512316864843104
+"#25 forced leg, 1 h (gross)",5.971935167362103
+"#26 leg (a) forced down-breaks, 1 h (gross)",6.7977107420911285
+"#35 reclaimed sweeps, 1 h (gross)",6.975234904051642
+"#20 new-low bounce, 1 h (the bounce) (gross)",9.739977908007685

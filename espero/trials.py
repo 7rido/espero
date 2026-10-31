@@ -100,7 +100,8 @@ def spa(rng: np.random.Generator, returns: np.ndarray, mean_block: float = 10.0,
     g = means * keep
     z = np.sqrt(n) * (boot - g) / w
     t = np.maximum(z.max(axis=1), 0.0)
-    return {"stat": stat, "p": float((t >= stat).mean()), "k": k, "n": n, "best": int(np.argmax(np.sqrt(n) * means / w)),
+    return {"stat": stat, "p": float((t >= stat).mean()), "k": k, "n": n,
+            "best": int(np.argmax(np.sqrt(n) * means / w)),
             "kept": int(keep.sum())}
 
 

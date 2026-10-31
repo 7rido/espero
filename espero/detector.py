@@ -6,7 +6,7 @@ attribution as the real book. Nothing here reads market data.
 `synthetic_market` plants `alpha_ann` (log, per year) in whichever coin the rule holds, on top of
 fat-tailed, vol-clustered returns with a common factor. With alpha 0 the rule has no edge by
 construction, so any "detection" is a false positive. The truth for a path is alpha times the share
-of its weeks in the market.
+of its weeks in the market in a coin other than the benchmark.
 
 `attribution` is #48's number: the share of a book's realised shortfall against its benchmark
 that execution accounts for.
@@ -30,6 +30,7 @@ class Book:
     gross: np.ndarray           # weekly log return of the book before costs
     bench: np.ndarray           # weekly log return of coin 0
     in_market: np.ndarray       # bool per week
+    holds_bench: np.ndarray     # bool per week: holding coin 0, so alpha paid to both sides of the excess
     switches: np.ndarray        # legs traded per week
 
 
@@ -51,7 +52,7 @@ def synthetic_market(rng: np.random.Generator, weeks: int, alpha_ann: float = 0.
     px[0] = 0.0
     held: Optional[int] = None
     a_day = alpha_ann / 365.25
-    gross, bench, in_mkt, legs = [], [], [], []
+    gross, bench, in_mkt, on_bench, legs = [], [], [], [], []
     week_gross, week_bench = 0.0, 0.0
     for d in range(1, days):
         at_decision = d > LOOKBACK and (d - LOOKBACK - 1) % 7 == 0
@@ -60,6 +61,7 @@ def synthetic_market(rng: np.random.Generator, weeks: int, alpha_ann: float = 0.
                 gross.append(week_gross)
                 bench.append(week_bench)
                 in_mkt.append(held is not None)
+                on_bench.append(held == 0)
             week_gross, week_bench = 0.0, 0.0
             mom = px[d - 1] - px[d - 1 - LOOKBACK]
             target = int(np.argmax(mom)) if mom.max() > 0 else None
@@ -74,7 +76,7 @@ def synthetic_market(rng: np.random.Generator, weeks: int, alpha_ann: float = 0.
         if d > LOOKBACK:
             week_gross += r[held] if held is not None else 0.0
             week_bench += r[0]
-    return Book(np.array(gross), np.array(bench), np.array(in_mkt), np.array(legs[: len(gross)]))
+    return Book(np.array(gross), np.array(bench), np.array(in_mkt), np.array(on_bench), np.array(legs[: len(gross)]))
 
 
 def block_indices(rng: np.random.Generator, n: int, block: int, draws: int) -> np.ndarray:
@@ -107,8 +109,8 @@ def power_table(rng: np.random.Generator, alphas, weeks: int, paths: int, cost_p
         hit_pos, hit_any, covered, est, truth = 0, 0, 0, [], []
         for _ in range(paths):
             b = synthetic_market(rng, weeks, a, **market)
-            # the truth for this path: the alpha it was paid, minus what it paid to trade
-            t = a * b.in_market.mean() - b.switches.mean() * cost_per_leg * WEEKS_PER_YEAR
+            # the truth for this path: alpha on weeks it beat the benchmark's own alpha, minus trading costs
+            t = a * (b.in_market & ~b.holds_bench).mean() - b.switches.mean() * cost_per_leg * WEEKS_PER_YEAR
             m, lo, hi = mean_ci(rng, net_excess(b, cost_per_leg), draws=draws)
             est.append(m)
             truth.append(t)

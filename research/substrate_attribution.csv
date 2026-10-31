@@ -1,0 +1,6 @@
+case,true_theta,signal,execution,cannot_separate,coverage
+all signal,0.037860964726515865,1.0,0.0,0.0,0.954
+mostly signal,0.13608517594059485,1.0,0.0,0.0,0.954
+mixed,0.3209126255914499,0.0,0.0,1.0,0.95
+mostly execution,0.8255639563804058,0.0,1.0,0.0,0.936
+all execution,1.0,0.0,1.0,0.0,1.0

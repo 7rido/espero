@@ -75,8 +75,8 @@ def main() -> None:
     print(power.to_string(index=False, float_format=lambda x: f"{x:.3f}"))
 
     design_legs = pd.read_csv(OUT / "substrate_design_legs.csv.gz")
-    leg_sd = float(design_legs[design_legs["size"] == 1_000_000.0]["tape_bps"].std()) / 1e4
-    print(f"\nleg cost sd at $1M, 2021-23: {leg_sd * 1e4:.1f} bps")
+    leg_sd = float(design_legs[design_legs["size"] == 100_000.0]["cost_bps"].std()) / 1e4
+    print(f"\nleg cost sd at $100,000, 2021-23: {leg_sd * 1e4:.1f} bps")
     cases = [("all signal", 0.60, 0.0005), ("mostly signal", 0.60, 0.0020), ("mixed", 0.20, 0.0020),
              ("mostly execution", 0.05, 0.0050), ("all execution", 0.0, 0.0100)]
     att = pd.DataFrame(detector.attribution_table(rng, cases, paths=PATHS // 2, leg_sd=leg_sd))

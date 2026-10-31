@@ -9,9 +9,12 @@ lost, in bps of the mid at the decision.
 * `depth_cost`: one instant sweep, from `bookDepth`'s cumulative depth at +/-1%, assuming depth
   grows linearly from the touch. That file holds nothing finer, so this is a coarse number (2023 on).
 * `queue_fill`: a resting order at the touch, back of the queue, from `bookTicker` and prints
-  (2023-05-16 to 2024-03-30 only). Fills when aggressive volume at its price has cleared what was
-  ahead of it, or when the market trades through; cancels are never credited as queue ahead leaving.
-* `fit_impact`: cost = a + b * sqrt(notional / daily volume), per symbol and volatility regime.
+  (2023-05-16 to 2024-03-30 only). Fills as aggressive volume at or through its price clears what
+  was ahead of it and then the order itself; cancels are never credited as queue ahead leaving.
+* `flow_buckets` and `fit_impact`: a replay cannot show an order's own impact, because the prints do
+  not react to it. So impact comes from the market's: return = a + b * sign(flow) * sqrt(|flow| / daily
+  volume) over five-minute buckets, per symbol and volatility regime. The market's flow includes the
+  informed part, so this errs toward too much impact, against the view that execution did not matter.
 * `markouts`: the fill against the mid at later horizons, by size.
 """
 from __future__ import annotations
@@ -27,6 +30,7 @@ MID_MAX_AGE_MS = 60_000
 HORIZONS_S = (1, 10, 60, 300, 1800, 3600)
 SIZES = (1_000.0, 10_000.0, 100_000.0, 1_000_000.0)
 REGIMES = ("low", "mid", "high")
+BUCKET_MS = 300_000
 
 
 def proxy_mid(t: np.ndarray, price: np.ndarray, buyer_maker: np.ndarray, at: np.ndarray,
@@ -50,6 +54,19 @@ def proxy_mid(t: np.ndarray, price: np.ndarray, buyer_maker: np.ndarray, at: np.
     return out
 
 
+def decision_mid(t: np.ndarray, price: np.ndarray, buyer_maker: np.ndarray, t0: int) -> float:
+    """The mid at `t0`. A daily file opens at 00:00, so a decision then has no earlier prints: the
+    reference is the first uncrossed moment after both sides have printed, within `MID_MAX_AGE_MS`."""
+    m = float(proxy_mid(t, price, buyer_maker, np.array([t0]))[0])
+    if np.isfinite(m):
+        return m
+    a = int(np.searchsorted(t, t0, side="left"))
+    b = int(np.searchsorted(t, t0 + MID_MAX_AGE_MS, side="right"))
+    mids = proxy_mid(t, price, buyer_maker, t[a:b])
+    good = mids[np.isfinite(mids)]
+    return float(good[0]) if len(good) else float("nan")
+
+
 @dataclass(frozen=True)
 class Fill:
     cost_bps: float             # against the mid at the decision; NaN if no mid
@@ -67,7 +84,7 @@ def tape_fill(t: np.ndarray, price: np.ndarray, qty: np.ndarray, buyer_maker: np
     `side` is +1 to buy (lifting offers: the prints where the buyer was the aggressor) and -1 to sell.
     A leg the day cannot finish reports `filled` < 1 at the price of what was done.
     """
-    mid0 = float(proxy_mid(t, price, buyer_maker, np.array([t0]))[0])
+    mid0 = decision_mid(t, price, buyer_maker, t0)
     start = int(np.searchsorted(t, t0, side="left"))
     same = (~buyer_maker[start:]) if side > 0 else buyer_maker[start:]
     px, q, tt = price[start:][same], qty[start:][same], t[start:][same]
@@ -115,7 +132,8 @@ def queue_fill(book_t: np.ndarray, bid: np.ndarray, bid_qty: np.ndarray, ask: np
     """Post at the touch at `t0` behind everything shown there; None if no quote is live at `t0`.
 
     A buy rests on the bid. Sellers hitting at our price eat the queue, then us. A print below our
-    price means we were swept: filled. If `ttl_ms` passes, cross at the ask then in force.
+    price clears what is ahead, and that print's size then goes to us. If `ttl_ms` passes, cross at the
+    ask then in force.
     """
     i = int(np.searchsorted(book_t, t0, side="right")) - 1
     if i < 0 or t0 - book_t[i] > MID_MAX_AGE_MS:
@@ -134,7 +152,9 @@ def queue_fill(book_t: np.ndarray, bid: np.ndarray, bid_qty: np.ndarray, ask: np
         through = price[k] < rest if side > 0 else price[k] > rest
         at_price = price[k] == rest
         if through:
-            need = 0.0
+            # the level was cleared, but our own size would have stood in the way: only the flow fills it
+            ahead = 0.0
+            need -= qty[k]
         elif at_price:
             take = qty[k]
             used = min(ahead, take)
@@ -160,20 +180,32 @@ def regime_of(vol: float, edges: Tuple[float, float]) -> str:
     return REGIMES[0] if vol <= edges[0] else (REGIMES[1] if vol <= edges[1] else REGIMES[2])
 
 
-def fit_impact(obs: pd.DataFrame, min_obs: int = 20) -> pd.DataFrame:
-    """OLS of cost_bps on sqrt(notional / adv), for each symbol and regime with enough legs.
+def flow_buckets(t: np.ndarray, price: np.ndarray, qty: np.ndarray, buyer_maker: np.ndarray, adv: float,
+                 bucket_ms: int = BUCKET_MS) -> pd.DataFrame:
+    """Per five-minute bucket: return in bps and the signed square root of net aggressive dollars over
+    daily volume. A bucket's return runs from its first print to the next bucket's first print."""
+    if not len(t) or not adv > 0:
+        return pd.DataFrame(columns=["ret_bps", "x"])
+    k = t // bucket_ms
+    edges = np.flatnonzero(np.r_[True, k[1:] != k[:-1]])
+    first = price[edges]
+    signed = np.where(buyer_maker, -1.0, 1.0) * price * qty
+    flow = np.add.reduceat(signed, edges)
+    return pd.DataFrame({"ret_bps": (first[1:] / first[:-1] - 1) * 1e4,
+                         "x": (np.sign(flow) * np.sqrt(np.abs(flow) / adv))[:-1]})
 
-    `obs` needs symbol, regime, notional, adv, cost_bps. Returns a (bps at no size), b (bps per unit
-    of sqrt participation), r2, n. Too few legs gives no row: nothing is imputed.
+
+def fit_impact(obs: pd.DataFrame, min_obs: int = 200) -> pd.DataFrame:
+    """OLS of ret_bps on x, for each symbol and regime with enough buckets.
+
+    `obs` needs symbol, regime, ret_bps, x. Returns a, b (bps per unit of sqrt participation), r2, n.
+    Too few buckets gives no row: nothing is imputed.
     """
     rows = []
-    for (sym, reg), g in obs.dropna(subset=["cost_bps", "adv"]).groupby(["symbol", "regime"]):
-        if len(g) < min_obs:
+    for (sym, reg), g in obs.dropna(subset=["ret_bps", "x"]).groupby(["symbol", "regime"]):
+        if len(g) < min_obs or np.ptp(g["x"].to_numpy()) == 0:
             continue
-        x = np.sqrt(g["notional"].to_numpy() / g["adv"].to_numpy())
-        y = g["cost_bps"].to_numpy()
-        if np.ptp(x) == 0:
-            continue
+        x, y = g["x"].to_numpy(), g["ret_bps"].to_numpy()
         b, a = np.polyfit(x, y, 1)
         res = y - (a + b * x)
         tss = ((y - y.mean()) ** 2).sum()
@@ -183,10 +215,11 @@ def fit_impact(obs: pd.DataFrame, min_obs: int = 20) -> pd.DataFrame:
 
 
 def predict_impact(fit: pd.DataFrame, symbol: str, regime: str, notional: float, adv: float) -> float:
+    """Bps of impact for `notional`, from the frozen slope. The intercept is drift, not cost."""
     row = fit[(fit["symbol"] == symbol) & (fit["regime"] == regime)]
     if row.empty or not adv > 0:
         return float("nan")
-    return float(row["a_bps"].iloc[0] + row["b_bps"].iloc[0] * np.sqrt(notional / adv))
+    return float(max(row["b_bps"].iloc[0], 0.0) * np.sqrt(notional / adv))
 
 
 def markouts(t: np.ndarray, price: np.ndarray, buyer_maker: np.ndarray, end_ms: int, side: int, fill_price: float,

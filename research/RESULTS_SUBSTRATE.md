@@ -72,7 +72,7 @@ is **+39.09% a year**; on Binance before costs it is +30.38%.
 | $100,000 | +23.96% | 79% | **61%** | +6.15% | 16% |
 | $1,000,000 | +15.68% | 52% | **40%** | −0.94% | −2% |
 
-**The largest single cost is not execution.** A long perp paid about 15.5% a year in funding across 2021–23.
+**The largest single cost is not execution.** A long perp paid 0.155 a year of log drag in funding across 2021–23.
 #2 held spot and paid none of it, so its spot result is not achievable on this perp, and the reverse holds too.
 
 **#11, 2024.** Its headline is **+16.46%**, with basis marked at zero. All 143 trades that entered or exited in
@@ -146,7 +146,9 @@ standard errors are near 15 bps across about 100 legs, far above the differences
 Corrected before the seal, none affecting the read: my first queue model filled any size on one print through the
 level, and my first half-spread could go negative. Corrected after it, information only: a guard skipped most queue
 legs, so `substrate_holdout_legs.csv.gz` has too few queue rows and [substrate_queue_fills.csv](substrate_queue_fills.csv) is the
-one to use. θ reads neither.
+one to use. θ reads neither. `substrate_reprice.py` and `substrate_fetch.py` were sealed files and were edited after
+the read: the carry and information commands, and the carry fetch's worker count and quote files. The holdout's
+path did not change, and the guard now refuses a second read in any case.
 
 ## 3. Calibrating the detector
 
@@ -195,7 +197,8 @@ more forward tests are running and count as trials; their running numbers were n
   by class, because nothing recorded a prior when these tests ran. They expect 1.7 true passes and 1.3 false.
 
 **The limits of this inventory:** 27 of 46 tests have no p-value, recorded as empty rather than invented. SPA covers
-14 series, not the whole inventory, and N = 46 is a floor because many tests held many cells.
+14 series, not the whole inventory, and N = 46 is a floor because many tests held many cells. All this was computed
+on 46 rows, before #48's own row was added; a rerun counts 47.
 
 ## 5. Reconciliation
 
@@ -229,6 +232,8 @@ sample cost nothing: Tardis's free first-of-month files.
 - **#2's design headline does not reproduce**: +97.10% a year against the published +115.27%, on candles fetched
   today (its original inputs were never kept). The holdout reproduces exactly at −29.75%, and the 69 switches in
   2021–23 were identical at each of the three history start dates compared. See `ERRATA.md`.
+- **The download.** The session stated the size before fetching, as an estimate of 25–30 GB, and went ahead without
+  waiting for a reply. 18.3 GB was fetched and 11 GB kept, with 199 GB still free. Nothing was paid for.
 - **The numbers rest on a survivor-chosen universe**, for both books, by design: this is about their trades.
 - **The account holder is a non-US resident**, and these data are Binance USD-M. That changes no rule here, and
   this document is not a statement about which venue the holder may use.

@@ -71,7 +71,8 @@ def ledger(data: Path = DATA, bars_data: Path = lowsfwd.DATA) -> pd.DataFrame:
                 continue
             ev = liq.events(window, liq_rows(pd.read_csv(f), coin), start)
             rows.append(ev.assign(coin=coin, day=day))
-    ev = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+    # a coin with no breaks is an empty object-typed table, and joining it would leave every column object-typed
+    ev = pd.concat([r for r in rows if not r.empty] or rows, ignore_index=True) if rows else pd.DataFrame()
     if ev.empty:
         return ev
     use = liq.usable(ev)

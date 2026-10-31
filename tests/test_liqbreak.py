@@ -62,6 +62,36 @@ class TestLedger(unittest.TestCase):
         self.assertGreater(e["s"], 0)
         self.assertLess(e["y60"], 0)                                  # the mirrored fade: a bounce up
 
+    def write_bars(self, root, symbol, b):
+        folder = Path(root) / "bars" / symbol
+        folder.mkdir(parents=True)
+        for k in (-1, 0, 1):
+            start = D0 + k * 86400
+            day = pd.Timestamp(start, unit="s").strftime("%Y-%m-%d")
+            (folder / f"{day}.zip").write_bytes(kline_zip(b[(b.index >= start) & (b.index < start + 86400)]))
+
+    def test_a_coin_with_no_breaks_does_not_stop_the_others(self):
+        t = at(10, day=D0)
+        with tempfile.TemporaryDirectory() as d:
+            self.write_bars(d, "BTCUSDT", flipped(plant_up(quiet(day_start=D0), t)))
+            self.write_bars(d, "ETHUSDT", quiet(day_start=D0))
+            aggr_dir = Path(d) / "aggr"
+            aggr_dir.mkdir()
+            (aggr_dir / "2026-11-02.csv.gz").write_bytes(aggr_day(t - 300, 2000.0))
+            led = lb.ledger(aggr_dir, Path(d) / "bars")
+        self.assertEqual(set(led["coin"]), {"BTC"})
+        self.assertTrue(pd.api.types.is_float_dtype(led["y60"]))
+
+    def test_a_day_with_no_breaks_at_all_keeps_its_columns(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write_bars(d, "ETHUSDT", quiet(day_start=D0))
+            aggr_dir = Path(d) / "aggr"
+            aggr_dir.mkdir()
+            (aggr_dir / "2026-11-02.csv.gz").write_bytes(aggr_day(D0, 2000.0))
+            led = lb.ledger(aggr_dir, Path(d) / "bars")
+        self.assertTrue(led.empty)
+        self.assertIn("y60", led.columns)
+
 
 if __name__ == "__main__":
     unittest.main()

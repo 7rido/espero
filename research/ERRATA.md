@@ -5,6 +5,19 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
+## 2026-10-31: #27's forward ledger crashed on its first day with data
+
+**No rule, cost, criterion or verdict changes.** The daily job's `liqbreak` step failed at 07:31 EDT on 2026-10-31,
+the first run with a recorded day. A coin with no breaks that day returned an empty table with object-typed columns.
+Joining it left every column object-typed, and `liq.usable` crashed on `np.isfinite`. `espero/liqbreak.py` now leaves
+empty tables out of the join; an empty table adds no rows, so the ledger's contents are what the rule always meant.
+
+- **No data was lost.** `record()` runs before the ledger, so 2026-10-30's file was saved, and the ledger is rebuilt
+  from every saved day on each run. The 2026-10-31 run left no #27 ledger; the next run writes it whole.
+- **What was seen while fixing it:** column types, and which coins had a break on 2026-10-30 (12 of 14). The ledger,
+  and the `fundsplit` and `liqhold` steps that read it, were run in a scratch folder to check they finish. Their
+  counts, returns and notes were not printed or read.
+
 ## 2026-10-30: #2's design headline does not reproduce; defects in Binance's archive (found by the substrate, #48)
 
 **No verdict changes.**

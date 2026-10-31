@@ -472,6 +472,12 @@ trade-weighted mean. [research/RESULTS_DAYMEAN_AUDIT.md](research/RESULTS_DAYMEA
 1 day on #27's live ledger, net of measured costs and funding, trade-weighted (in-sample +22 to +60 bps,
 t 3.6–4.4; forward power about 50–90%). [research/FORWARD_LIQHOLD.md](research/FORWARD_LIQHOLD.md).
 
+#48 built the substrate this repo lacked (point-in-time store, execution simulator, detector calibration, trial
+budget, reconciliation) and asked one question: did XS momentum (#2) fail because the signal decayed, or because
+its trades were unexecutable? Execution accounts for 0.111 of its shortfall against BTC (95% CI 0.104–0.118) at
+$100,000 a leg, so not execution; whether the expected edge decayed, this history cannot say.
+[research/RESULTS_SUBSTRATE.md](research/RESULTS_SUBSTRATE.md).
+
 Scoreboard: forty-six tests. Four passes (#4, #8, #12 provisional, #26), two real but not
 tradable (#19, #20), two measurements (#39, #41), two plumbing checks (#40, #42), the rest failed (#37 the latest) or are running
 (#22–#24, #27, #29, #31, #32, #34, #38). Two are risk construction; the third is income (carry at

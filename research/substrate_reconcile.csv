@@ -3,20 +3,20 @@ fundingRate,Binance REST fapi history (cached),largest rate difference,95461,0.0
 fundingRate,Binance REST fapi history (cached),times present in one source only,95461,0.0,0.0,times,True,
 fundingRate,premiumIndexKlines via venue formula,median |published - implied|,35553,0.17378750000000034,0.5,bps of notional,True,hourly approximation
 fundingRate,premiumIndexKlines via venue formula,95th percentile |published - implied|,35553,1.7543025000000003,2.0,bps of notional,True,hourly approximation
-aggTrades,klines_1h (venue's bars),"raw files, base volume: days outside tolerance",423,3.0,0.0,days,False,before de-duplicating on the id
-aggTrades,klines_1h (venue's bars),base volume: largest day difference,423,4.778388685844348e-06,0.001,share,True,
-aggTrades,klines_1h (venue's bars),base volume: days outside tolerance,423,0.0,0.0,days,True,
-aggTrades,klines_1h (venue's bars),dollar volume: largest day difference,423,4.32782161552403e-06,0.001,share,True,
-aggTrades,klines_1h (venue's bars),dollar volume: days outside tolerance,423,0.0,0.0,days,True,
-aggTrades,klines_1h (venue's bars),trade count: largest day difference,423,0.002957665364079265,0.001,share,False,
-aggTrades,klines_1h (venue's bars),trade count: days outside tolerance,423,6.0,0.0,days,False,
-aggTrades,klines_1h (venue's bars),day high: largest day difference,423,0.0,0.001,share,True,
-aggTrades,klines_1h (venue's bars),day high: days outside tolerance,423,0.0,0.0,days,True,
-aggTrades,klines_1h (venue's bars),day low: largest day difference,423,0.0,0.001,share,True,
-aggTrades,klines_1h (venue's bars),day low: days outside tolerance,423,0.0,0.0,days,True,
+aggTrades,klines_1h (venue's bars),"raw files, base volume: days outside tolerance",773,6.0,0.0,days,False,before de-duplicating on the id
+aggTrades,klines_1h (venue's bars),base volume: largest day difference,773,0.05956829997253066,0.001,share,False,
+aggTrades,klines_1h (venue's bars),base volume: days outside tolerance,773,3.0,0.0,days,False,
+aggTrades,klines_1h (venue's bars),dollar volume: largest day difference,773,0.062260030527890864,0.001,share,False,
+aggTrades,klines_1h (venue's bars),dollar volume: days outside tolerance,773,3.0,0.0,days,False,
+aggTrades,klines_1h (venue's bars),trade count: largest day difference,773,0.057796042755105415,0.001,share,False,
+aggTrades,klines_1h (venue's bars),trade count: days outside tolerance,773,8.0,0.0,days,False,
+aggTrades,klines_1h (venue's bars),day high: largest day difference,773,0.0,0.001,share,True,
+aggTrades,klines_1h (venue's bars),day high: days outside tolerance,773,0.0,0.0,days,True,
+aggTrades,klines_1h (venue's bars),day low: largest day difference,773,0.0,0.001,share,True,
+aggTrades,klines_1h (venue's bars),day low: days outside tolerance,773,0.0,0.0,days,True,
 index,Tardis derivative_ticker,"index print, median",4867,0.026836259138514826,5.0,bps,True,
 mark,Tardis derivative_ticker,"mark print, median",4821,0.0,5.0,bps,True,
-open interest,Tardis derivative_ticker,"open interest, median",288,0.0034297235818259164,0.005,share,True,
+open interest,Tardis derivative_ticker,"open interest, median",576,0.0017108367277898218,0.005,share,True,
 fundingRate,Tardis derivative_ticker,"last rate before settlement, median |diff|",544,0.0,0.5,bps of notional,True,vendor's rate is a running estimate
 bookTicker,Tardis book_ticker,"best bid, 99th percentile on 1 s samples",100778,0.0,1.0,bps,True,"14 coin-days, 2023 only"
 bookTicker,Tardis book_ticker,"best ask, 99th percentile on 1 s samples",100778,0.0,1.0,bps,True,"14 coin-days, 2023 only"

@@ -58,6 +58,13 @@ places where Binance's exchange is not.
 Scripts that **download nothing** and read the caches above: `research/levpush.py`, `fillcost.py`,
 `sweeps.py`, `horizons.py` (it fetches missing bars), `daymean_audit.py`.
 
+## 2b. The point-in-time store (#48)
+
+`data/pit/`, about 11 GB, needs `pip install -e ".[pit]"` (duckdb, pyarrow) and `research/substrate_fetch.py`. It
+holds Binance's prints only for the days #2 and #11 traded, not the whole archive (about 440 GB for those coins);
+[research/RESULTS_SUBSTRATE.md](../research/RESULTS_SUBSTRATE.md) says what is and isn't covered. Its hashes are in
+`research/pit_manifest.csv.gz`.
+
 ## 3. Forward data — recorded by the daily job
 
 The forward tests (#22–#45, judged after 2027-03-31) add one complete UTC day at a time:

@@ -241,6 +241,35 @@ class RawQueryTests(unittest.TestCase):
         self.assertEqual(self._run(np.full(10, 0.01), np.zeros(10), np.array([10.0]))["theta"], 1.0)
 
 
+class SealTests(unittest.TestCase):
+    def _sealed(self, logged, dirty, read_exists):
+        from research import substrate_reprice as r
+
+        def fake(cmd, **_):
+            return mock.Mock(stdout=logged if cmd[1] == "log" else dirty)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            if read_exists:
+                (Path(tmp) / "substrate_q48.json").write_text("{}")
+            with mock.patch.object(r, "OUT", Path(tmp)), mock.patch.object(r.subprocess, "run", fake):
+                r.sealed()
+
+    def test_opens_only_when_committed_clean_and_unread(self):
+        self._sealed("abc reg", "", False)
+
+    def test_refuses_without_the_registration(self):
+        with self.assertRaises(SystemExit):
+            self._sealed("", "", False)
+
+    def test_refuses_a_changed_sealed_file(self):
+        with self.assertRaises(SystemExit):
+            self._sealed("abc reg", " M espero/execsim.py", False)
+
+    def test_refuses_a_second_read(self):
+        with self.assertRaises(SystemExit):
+            self._sealed("abc reg", "", True)
+
+
 def tape(mid=100.0, half=0.01, n=2000, step_ms=100, q=1.0):
     """Alternating aggressors around a fixed mid."""
     t = np.arange(n) * step_ms

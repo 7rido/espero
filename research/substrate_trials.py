@@ -123,7 +123,8 @@ def main() -> None:
     tstat = x.mean() / x.std() * np.sqrt(len(x))
     tstat.sort_values().to_csv(OUT / "trials_spa_series.csv", header=["t_flat_days"])
 
-    sp = trials.spend(d)
+    # rehearsals and cost measurements claim no edge: they count as trials in N above, not as passes here
+    sp = trials.spend(d[d["prior_class"] != "measurement"])
     with_prior = judged[judged["prior"].notna()]
     expected = {"expected_true_passes_at_priors": float((with_prior["prior"] * ASSUMED_POWER).sum()),
                 "expected_false_passes_at_priors": float(((1 - with_prior["prior"]) * 0.05).sum()),

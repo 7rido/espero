@@ -5,6 +5,7 @@
     python research/substrate_reprice.py rehearse DIR  # the holdout's path on design legs; writes to DIR
     python research/substrate_reprice.py holdout   # #48: refuses until sealed, then runs exactly once
     python research/substrate_reprice.py carry     # #11's 2024 legs (after #48's read)
+    python research/substrate_reprice.py info      # information only: decline, venue, queue, survival
 
 Binance USD-M is a proxy venue for both books: #2 ran on Coinbase spot, #11 on Hyperliquid perps and
 Coinbase spot. Every number here is what these trades would have cost on Binance, never what they
@@ -45,6 +46,7 @@ REG = "research/PREREGISTRATION_EXEC_ANSWER.md"
 DESIGN_WINDOW = ("2021-01-04", "2024-01-01")     # Mondays, first to the one after the last week
 HOLDOUT_WINDOW = ("2024-01-01", "2026-10-26")
 QUEUE_TTL_MS = 300_000
+CARRY_SIDE = 0.0002 + 0.0005 + 0.00045 + 0.0005     # what #11 charged per side: spot fee + slip + perp fee + slip
 
 
 # ---------------------------------------------------------------- the books' legs
@@ -446,43 +448,174 @@ def cmd_holdout() -> None:
 def carry_legs(t: pd.DataFrame) -> pd.DataFrame:
     """A row per side per coin in 2024. Notional as a share of equity is backed out of the fees
     #11 charged: fee = notional * (spot fee + slip + perp fee + slip) on each of entry and exit."""
-    per_side = 0.0002 + 0.0005 + 0.00045 + 0.0005
     rows = []
     for r in t.itertuples():
-        share = r.fees / (2 * per_side)
+        share = r.fees / (2 * CARRY_SIDE)
         for leg, stamp in (("entry", r.entry), ("exit", r.exit)):
             if str(stamp)[:4] == "2024":
                 rows.append({"coin": r.coin, "leg": leg, "t": str(stamp), "share": share, "day": str(stamp)[:10]})
     return pd.DataFrame(rows)
 
 
+def carry_fits(legs: pd.DataFrame) -> tuple:
+    """Impact slopes and half-spreads for the carry book, per coin, perp and spot apart, from its own 2024 coin-days.
+
+    #48's fit covers only #2's coins, and no spot. These are in-sample and carry no sealed status: information.
+    Spot's volume is its median day here, as no spot bars are in the store."""
+    frames, costs = [], []
+    days = legs[["coin", "day"]].drop_duplicates()
+    for venue, dataset in (("perp", "aggTrades"), ("spot", "spotAggTrades")):
+        for coin, g in days.groupby("coin"):
+            tapes = {d: prints(dataset, f"{coin}USDT", d) for d in g["day"]}
+            tapes = {d: x for d, x in tapes.items() if x is not None}
+            if not tapes:
+                continue
+            adv = float(np.median([(x["p"] * x["q"]).sum() for x in tapes.values()]))
+            for d, x in tapes.items():
+                frames.append(execsim.flow_buckets(x["t"], x["p"], x["q"], x["bm"], adv).assign(
+                    symbol=f"{coin}/{venue}", regime="all"))
+                for side in (1, -1):
+                    f = execsim.tape_fill(x["t"], x["p"], x["q"], x["bm"], pit.day_ms(d) + 43_200_000, side,
+                                          min(execsim.SIZES))
+                    costs.append({"key": f"{coin}/{venue}", "bps": f.cost_bps, "adv": adv})
+    fit = execsim.fit_impact(pd.concat(frames, ignore_index=True))
+    c = pd.DataFrame(costs).groupby("key").agg(bps=("bps", "median"), adv=("adv", "first"))
+    c["bps"] = c["bps"].clip(lower=0.0)
+    return fit, c
+
+
 def cmd_carry() -> None:
+    """#11's 2024 trades on Binance: both legs, fee + half-spread + impact, at each size per position."""
     if not (OUT / "substrate_q48.json").exists():
         raise SystemExit("run after #48's read: 2024 prints overlap the XS holdout")
     t = pd.read_csv(OUT / "substrate_carry_trades.csv")
     legs = carry_legs(t)
+    fit, half = carry_fits(legs)
+    fit.to_csv(OUT / "substrate_carry_impact_fit.csv", index=False)
+    half.to_csv(OUT / "substrate_carry_half_spread.csv")
     rows = []
     for r in legs.itertuples():
         t0 = int(pd.Timestamp(r.t).timestamp() * 1000)
         perp = prints("aggTrades", f"{r.coin}USDT", r.day)
         spot = prints("spotAggTrades", f"{r.coin}USDT", r.day)
-        side_perp = -1 if r.leg == "entry" else 1      # entry shorts the perp and buys spot
+        pm = execsim.decision_mid(perp["t"], perp["p"], perp["bm"], t0) if perp is not None else float("nan")
+        sm = execsim.decision_mid(spot["t"], spot["p"], spot["bm"], t0) if spot is not None else float("nan")
         for size in execsim.SIZES:
-            row = {"coin": r.coin, "leg": r.leg, "t": r.t, "share": r.share, "size": size, "perp_bps": np.nan,
-                   "spot_bps": np.nan, "perp_mid": np.nan, "spot_mid": np.nan, "perp_filled": np.nan,
-                   "spot_filled": np.nan}
-            if perp is not None:
-                f = execsim.tape_fill(perp["t"], perp["p"], perp["q"], perp["bm"], t0, side_perp, size)
-                row.update(perp_bps=f.cost_bps, perp_mid=f.mid0, perp_filled=f.filled)
-            if spot is not None:
-                f = execsim.tape_fill(spot["t"], spot["p"], spot["q"], spot["bm"], t0, -side_perp, size)
-                row.update(spot_bps=f.cost_bps, spot_mid=f.mid0, spot_filled=f.filled)
-            rows.append(row)
-    out = pd.DataFrame(rows)
-    out.to_csv(OUT / "substrate_carry_legs.csv.gz", index=False)
-    print(out.groupby("size")[["perp_bps", "spot_bps", "perp_filled", "spot_filled"]].mean().to_string())
+            out = {"coin": r.coin, "leg": r.leg, "t": r.t, "share": r.share, "size": size, "perp_mid": pm, "spot_mid": sm}
+            for venue, fee in (("perp", FEE_PERP), ("spot", FEE_SPOT)):
+                key = f"{r.coin}/{venue}"
+                if key in half.index:
+                    imp = execsim.predict_impact(fit, key, "all", size, float(half.at[key, "adv"]))
+                    out[f"{venue}_bps"] = fee + float(half.at[key, "bps"]) + imp
+                else:
+                    out[f"{venue}_bps"] = float("nan")
+            rows.append(out)
+    p = pd.DataFrame(rows)
+    p.to_csv(OUT / "substrate_carry_legs.csv.gz", index=False)
+
+    import carry as run
+
+    from espero import carry
+
+    eq = carry.evaluate(run.load(extended=True), initial=1.0)["result"].equity.dropna()
+    y = eq[eq.index.year == 2024]
+    e0, e1 = float(y.iloc[0]), float(y.iloc[-1])
+    published = e1 / e0 - 1
+    fee_pub = float((legs["share"] * CARRY_SIDE).sum())
+    # the basis #11 marked at zero in 2024: perp over spot at entry against exit, short perp and long spot
+    entries = p[(p["size"] == min(execsim.SIZES)) & (p["leg"] == "entry")]
+    exits = p[(p["size"] == min(execsim.SIZES)) & (p["leg"] == "exit")]
+    ratio = lambda d: d["perp_mid"] / d["spot_mid"]  # noqa: E731
+    both = t[(t["entry"].str[:4] == "2024") & (t["exit"].str[:4] == "2024")]
+    basis = 0.0
+    n_basis = 0
+    for tr in both.itertuples():
+        a = entries[(entries["coin"] == tr.coin) & (entries["t"] == tr.entry)]
+        b = exits[(exits["coin"] == tr.coin) & (exits["t"] == tr.exit)]
+        if len(a) and len(b) and np.isfinite(ratio(a).iloc[0]) and np.isfinite(ratio(b).iloc[0]):
+            basis += a["share"].iloc[0] * (ratio(a).iloc[0] - ratio(b).iloc[0])
+            n_basis += 1
+    table = []
+    for size in execsim.SIZES:
+        g = p[p["size"] == size]
+        unpriced = int(g[["perp_bps", "spot_bps"]].isna().any(axis=1).sum())
+        fee_new = float((g["share"] * (g["perp_bps"].fillna(g["perp_bps"].mean())
+                                       + g["spot_bps"].fillna(g["spot_bps"].mean())) / 1e4).sum())
+        exec_only = published + (fee_pub - fee_new) / e0
+        with_basis = exec_only + basis / e0
+        table.append({"size": size, "published": published, "fee_published": fee_pub / e0, "cost_new": fee_new / e0,
+                      "after_execution": exec_only, "survives_execution": exec_only / published, "basis": basis / e0,
+                      "after_basis": with_basis, "survives_with_basis": with_basis / published,
+                      "mean_perp_bps": g["perp_bps"].mean(), "mean_spot_bps": g["spot_bps"].mean(),
+                      "legs": len(g), "unpriced": unpriced, "round_trips_basis_measured": n_basis})
+    table = pd.DataFrame(table)
+    table.to_csv(OUT / "substrate_carry_waterfall.csv", index=False)
+    print(fit.to_string(float_format=lambda x: f"{x:.1f}"))
+    print(table.T.to_string(float_format=lambda x: f"{x:.4f}"))
+
+
+def cmd_info() -> None:
+    """Information only, after the read: nothing here changes #48's number or verdict."""
+    rng = np.random.default_rng(SEED + 1)
+    d = pd.read_csv(OUT / "substrate_design_weeks.csv")
+    h = pd.read_csv(OUT / "substrate_holdout_weeks.csv")
+    info: dict = {}
+    for label, f in (("gross", lambda x: x["gross"].to_numpy()), ("excess_over_btc", lambda x: (x["gross"] - x["bench"]).to_numpy())):
+        a, b = f(d), f(h)
+        ia = detector.block_indices(rng, len(a), detector.BLOCK_WEEKS, 10_000)
+        ib = detector.block_indices(rng, len(b), detector.BLOCK_WEEKS, 10_000)
+        diff = (a[ia].mean(axis=1) - b[ib].mean(axis=1)) * detector.WEEKS_PER_YEAR
+        info[f"decline_{label}"] = {"design_ann": float(a.mean() * detector.WEEKS_PER_YEAR),
+                                    "holdout_ann": float(b.mean() * detector.WEEKS_PER_YEAR),
+                                    "decline": float((a.mean() - b.mean()) * detector.WEEKS_PER_YEAR),
+                                    "lo": float(np.quantile(diff, 0.025)), "hi": float(np.quantile(diff, 0.975))}
+    import momentum as m
+
+    idx, op, cl = m.build(m.load())
+    saved = m.COST_PER_LEG
+    m.COST_PER_LEG = 0.0
+    eq, _ = m.simulate(idx, op, cl, *m.HOLDOUT)
+    btc = cl["BTC"][(cl.index >= pd.Timestamp(m.HOLDOUT[0], tz="UTC")) & (cl.index <= pd.Timestamp(m.HOLDOUT[1], tz="UTC"))]
+    m.COST_PER_LEG = saved
+    years = len(eq) / 365.25
+    info["coinbase_holdout_no_cost"] = {"gross_ann": float(np.log(eq.iloc[-1] / eq.iloc[0]) / years),
+                                        "bench_ann": float(np.log(btc.iloc[-1] / btc.iloc[0]) / years)}
+    # queue fills, the guard in price_leg having skipped legs whose quotes begin just after 00:00
+    rows = []
+    legs = pd.read_csv(OUT / "substrate_xs_legs.csv")
+    legs = legs[(legs["day"] >= "2023-05-16") & (legs["day"] <= "2024-03-30")]
+    for r in legs.itertuples():
+        side = 1 if r.side == "buy" else -1
+        book, tape = quotes(f"{r.coin}USDT", r.day), prints("aggTrades", f"{r.coin}USDT", r.day)
+        if book is None or tape is None or book.empty:
+            continue
+        t0 = int(book["valid_time"].iloc[0])
+        px = float(book["best_bid_price"].iloc[0])
+        for size in execsim.SIZES:
+            q = execsim.queue_fill(book["valid_time"].to_numpy(), book["best_bid_price"].to_numpy(float),
+                                   book["best_bid_qty"].to_numpy(float), book["best_ask_price"].to_numpy(float),
+                                   book["best_ask_qty"].to_numpy(float), tape["t"], tape["p"], tape["q"], tape["bm"],
+                                   t0, side, size / px, QUEUE_TTL_MS)
+            spread = (book["best_ask_price"].iloc[0] - px) / px * 1e4
+            if q is not None:
+                rows.append({"day": r.day, "coin": r.coin, "side": side, "size": size, "filled": q.filled,
+                             "secs": q.ms_to_fill / 1000, "cost_bps": q.cost_bps, "spread_bps": spread})
+    q = pd.DataFrame(rows)
+    q.to_csv(OUT / "substrate_queue_fills.csv", index=False)
+    info["queue"] = q.groupby("size").agg(legs=("filled", "size"), fill_rate=("filled", "mean"), secs=("secs", "median"),
+                                          cost_bps=("cost_bps", "mean"), spread_bps=("spread_bps", "mean")).reset_index().to_dict("records")
+    h1 = headline_2021_23()
+    w = pd.read_csv(OUT / "substrate_design_waterfall.csv")
+    w["survives_on_binance"] = w["cagr_net"] / h1["cagr"]
+    w["survives_with_funding"] = w["cagr_net_funding"] / h1["cagr"]
+    w["survives_execution_only"] = w["cagr_net"] / w["cagr_gross"]
+    info["headline_2021_23"] = h1
+    info["survival"] = w[["size", "cagr_gross", "cagr_net", "cagr_net_funding", "survives_execution_only",
+                          "survives_on_binance", "survives_with_funding"]].to_dict("records")
+    (OUT / "substrate_info.json").write_text(json.dumps(info, indent=1, default=float))
+    print(json.dumps(info, indent=1, default=float))
 
 
 if __name__ == "__main__":
     {"legs": cmd_legs, "design": cmd_design, "rehearse": cmd_rehearse, "holdout": cmd_holdout,
-     "carry": cmd_carry}[sys.argv[1]]()
+     "carry": cmd_carry, "info": cmd_info}[sys.argv[1]]()

@@ -5,6 +5,18 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
+## 2026-10-30: #2's design headline does not reproduce; defects in Binance's archive (found by the substrate, #48)
+
+**No verdict changes.**
+
+- **#2's design period** re-runs at +97.10% a year and Sharpe 1.19 against the published +115.27% and 1.28, on
+  Coinbase candles fetched 2026-10-30. Its original inputs were never kept, so the cause is not established;
+  dropping the earliest history moves the figure between +27% and +101%, so the panel's start date matters a lot.
+  Its holdout reproduces exactly (−29.75%, Sharpe −0.06). BTC's holdout row comes out +23.81% against +23.30%.
+- **`aggTrades` for 2022-09-12** holds every print twice in the archive, on ETH, SOL and XRP at least. No published
+  result used that day. Anything summing those files must de-duplicate on the id.
+- **Monthly hourly bars lack days**: 2022-02-26 → 28 and 2022-04-01 → 02 on SOL, LTC, NEAR, ZEC and XRP.
+
 ## 2026-10-29: 打板 (`espero degen`) takes its coin list and bars from Hyperliquid
 
 `degen scan`, `backtest` and `paper` now rank Hyperliquid perps by 24h dollar volume and read their

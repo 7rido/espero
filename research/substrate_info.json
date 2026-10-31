@@ -1,0 +1,97 @@
+{
+ "decline_gross": {
+  "design_ann": 0.2652883815455138,
+  "holdout_ann": -0.29996922230073175,
+  "decline": 0.5652576038462456,
+  "lo": -1.1008458235096792,
+  "hi": 1.9080729882325151
+ },
+ "decline_excess_over_btc": {
+  "design_ann": 0.18267982564026872,
+  "holdout_ann": -0.5265507160856004,
+  "decline": 0.7092305417258692,
+  "lo": -0.5466198851393189,
+  "hi": 1.8012125382326971
+ },
+ "coinbase_holdout_no_cost": {
+  "gross_ann": -0.3303193710922709,
+  "bench_ann": 0.21354409864609175
+ },
+ "queue": [
+  {
+   "size": 1000.0,
+   "legs": 34,
+   "fill_rate": 0.9411764705882353,
+   "secs": 4.996,
+   "cost_bps": 1.1903667878621966,
+   "spread_bps": 0.5449325846817508
+  },
+  {
+   "size": 10000.0,
+   "legs": 34,
+   "fill_rate": 0.9411764705882353,
+   "secs": 5.0715,
+   "cost_bps": 1.1903667878621966,
+   "spread_bps": 0.5449325846817508
+  },
+  {
+   "size": 100000.0,
+   "legs": 34,
+   "fill_rate": 0.8529411764705882,
+   "secs": 18.055,
+   "cost_bps": 4.599928914999776,
+   "spread_bps": 0.5449325846817508
+  },
+  {
+   "size": 1000000.0,
+   "legs": 34,
+   "fill_rate": 0.5294117647058824,
+   "secs": 63.382000000000005,
+   "cost_bps": 6.937101738541237,
+   "spread_bps": 0.5449325846817508
+  }
+ ],
+ "headline_2021_23": {
+  "cagr": 0.3908504027903448,
+  "log_ann": 0.32991536063752314,
+  "years": 2.9979466119096507
+ },
+ "survival": [
+  {
+   "size": 1000.0,
+   "cagr_gross": 0.30380691542205684,
+   "cagr_net": 0.2756873853501123,
+   "cagr_net_funding": 0.0924460138769434,
+   "survives_execution_only": 0.9074427583951467,
+   "survives_on_binance": 0.7053526960236834,
+   "survives_with_funding": 0.23652531305316876
+  },
+  {
+   "size": 10000.0,
+   "cagr_gross": 0.30380691542205684,
+   "cagr_net": 0.266923948294999,
+   "cagr_net_funding": 0.08494136815522335,
+   "survives_execution_only": 0.8785973417497128,
+   "survives_on_binance": 0.6829312350438567,
+   "survives_with_funding": 0.21732449947297755
+  },
+  {
+   "size": 100000.0,
+   "cagr_gross": 0.30380691542205684,
+   "cagr_net": 0.23958922115399894,
+   "cagr_net_funding": 0.06153303626409645,
+   "survives_execution_only": 0.7886233294629093,
+   "survives_on_binance": 0.6129946891279436,
+   "survives_with_funding": 0.15743372867164027
+  },
+  {
+   "size": 1000000.0,
+   "cagr_gross": 0.30380691542205684,
+   "cagr_net": 0.15681570673406586,
+   "cagr_net_funding": -0.009350784428246994,
+   "survives_execution_only": 0.5161689835671226,
+   "survives_on_binance": 0.40121669471115534,
+   "survives_with_funding": -0.023924203126030365
+  }
+ ]
+}

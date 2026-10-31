@@ -90,7 +90,7 @@ def run(jobs: Iterable[Tuple], workers: int = WORKERS) -> None:
                 missing.append(j[:3])
             else:
                 rows.append(row)
-            if len(rows) >= 200 or k == len(futures):
+            if len(rows) >= 50 or k == len(futures):
                 pit.write_manifest(rows)
                 rows = []
             if k % 200 == 0:
@@ -224,12 +224,8 @@ def carry() -> None:
     for coin, day in sorted(set(rows)):
         sym = f"{coin}USDT"
         jobs += [("aggTrades", sym, day), ("bookDepth", sym, day), ("spotAggTrades", sym, day)]
-        if BOOK_FIRST <= day <= BOOK_LAST:
-            hours = sorted({pd.Timestamp(s) for r in t.itertuples() if r.coin == coin
-                            for s in (r.entry, r.exit) if s[:10] == day})
-            windows = [(int(h.timestamp() * 1000), int(h.timestamp() * 1000) + BOOK_WINDOW_MS) for h in hours]
-            jobs.append(("bookTicker", sym, day, None, windows))
-    run(jobs)
+    # no bookTicker here: the carry reprice has no use for its quotes, and these days run to 5.8 GB of zips
+    run(jobs, workers=3)
 
 
 def vendor_file(kind: str, day: str, sym: str) -> Optional[Path]:

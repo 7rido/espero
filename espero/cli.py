@@ -600,6 +600,27 @@ def _cmd_hlcollect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_hlbook(args: argparse.Namespace) -> int:
+    """Hyperliquid's order book every 5 minutes, saved under data/hlbook/. Status shows counts, never values."""
+    from . import hlbook as hb
+
+    data = Path(args.data) if args.data else hb.DATA
+    if args.status:
+        s = hb.status(data)
+        print(f"{s['files']} files  {s['bytes'] / 1e6:.1f} MB  latest {s['latest'] or '-'}")
+        for day, d in s["days"].items():
+            print(f"{day}  {d['slots']} of {d['expected']} slots")
+        return 0
+    r = hb.Recorder(data)
+    if args.loop:
+        print(f"recording into {data} (top 20 levels a side, {hb.COINS} coins, every 5 minutes); ctrl-c stops",
+              flush=True)
+        r.loop()
+        return 0
+    print(r.step())
+    return 0
+
+
 def _cmd_carry_screen(args: argparse.Namespace) -> int:
     """#12's forward test on one screen. Read-only: the books are read from copies."""
     from . import carry_view as cv
@@ -1427,6 +1448,12 @@ def build_parser() -> argparse.ArgumentParser:
     hc.add_argument("--top", type=int, default=2000, help="accounts by account value, snapshotted hourly")
     hc.add_argument("--data", default=None, help="folder (default data/hlcollect in the repo)")
     hc.set_defaults(func=_cmd_hlcollect)
+
+    hk = sub.add_parser("hlbook", help="record Hyperliquid's order book every 5 minutes (public data)")
+    hk.add_argument("--loop", action="store_true", help="run forever (what launchd runs)")
+    hk.add_argument("--status", action="store_true", help="files and slot counts, then exit")
+    hk.add_argument("--data", default=None, help="folder (default data/hlbook in the repo)")
+    hk.set_defaults(func=_cmd_hlbook)
 
     lf = sub.add_parser("liqfwd", help="#22 forward paper test: record aggr's bars, show the ledger")
     lf.add_argument("--state-dir", default=None)

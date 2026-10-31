@@ -103,6 +103,21 @@ stored decision, not a recomputation.
 
 The databases and logs are left in place.
 
+## The order-book recorder
+
+`espero hlbook --loop` records Hyperliquid's top 20 levels a side on 10 coins every 5 minutes, into
+`data/hlbook/` (not committed), a few MB a day. Public data only; it never signs or trades. The coins are the
+top 10 by 24-hour dollar volume at its first run, frozen in `data/hlbook/coins.json`.
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlbook-launchd.sh
+```
+
+- Check it with `espero hlbook --status`: slot counts against what a full day holds, never a value.
+- Stop and remove it: `./scripts/install-hlbook-launchd.sh --uninstall`. The data stays.
+- Slots missed while the Mac slept are lost. A gap stays a gap.
+- Don't study these files casually: every look uses up a future holdout. Pre-register first.
+
 ## The Hyperliquid collector
 
 `espero hlcollect --loop` records what Hyperliquid shows only in the present, for ideas 3, 4, 10 and

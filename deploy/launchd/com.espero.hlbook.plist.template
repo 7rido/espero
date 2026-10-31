@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.espero.hlbook</string>
+
+    <!-- the order-book recorder (espero/hlbook.py): public data only, nothing signs or trades;
+         scripts/install-hlbook-launchd.sh renders this -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>-m</string>
+        <string>espero</string>
+        <string>hlbook</string>
+        <string>--loop</string>
+        <string>--data</string>
+        <string>__DATA__</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+
+    <!-- start at login and restart whenever the loop dies, at most once a minute. A restart
+         fetches only the slots not on disk; slots missed while the Mac slept are lost, since
+         Hyperliquid keeps no history of its book. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>StandardOutPath</key>
+    <string>__LOG_DIR__/hlbook.log</string>
+    <key>StandardErrorPath</key>
+    <string>__LOG_DIR__/hlbook.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+    </dict>
+
+    <!-- Standard, not Background: its slots are five minutes apart and must not be deferred -->
+    <key>ProcessType</key>
+    <string>Standard</string>
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>

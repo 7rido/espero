@@ -56,8 +56,18 @@ mkdir -p "$LOG_DIR" "$DATA" "$HOME/Library/LaunchAgents"
 render > "$PLIST"
 plutil -lint "$PLIST" >/dev/null
 launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+# bootout returns before the old job has gone; loading now can fail, or the late stop can remove the new job
+for _ in $(seq 1 30); do
+    launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1 || break
+    sleep 1
+done
 launchctl bootstrap "$DOMAIN" "$PLIST"
 launchctl enable "$DOMAIN/$LABEL"
+sleep 2
+if ! launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1; then
+    echo "$LABEL did not stay loaded; run this script once more" >&2
+    exit 1
+fi
 echo "installed $LABEL  ->  $DATA, log $LOG_DIR/hlbook.log"
 echo "status:  ./scripts/install-hlbook-launchd.sh --status"
 echo "follow:  tail -f $LOG_DIR/hlbook.log"

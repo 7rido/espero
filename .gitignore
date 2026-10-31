@@ -86,3 +86,7 @@ data/funding/
 # #37 Polymarket downloads (research/polyhour.py)
 data/polymarket/
 docker-state/
+
+# point-in-time store and its environment (research/substrate_fetch.py)
+data/pit/
+.venv-pit/

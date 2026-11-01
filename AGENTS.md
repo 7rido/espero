@@ -43,8 +43,8 @@ every command, and `espero <command> --help` its flags.
 4. **Fills come after the signal.** At the next bar's open, never the signal bar's close.
 5. **Mutation-check new tests.** Break the code a test guards and confirm the test fails.
 6. **Tests number upward.** Check `README.md` and `research/` for the last `#NN` before taking one.
-7. **FDR is the statistical bar from #61 on.** Benjamini-Hochberg at q < 0.05 over every judged test, in the registered
-   direction, with t ≥ 3 reported beside it. It replaces the t hurdle only, and #1 to #60 keep their committed criteria.
+7. **From #61 on, the statistical bar is FDR and t ≥ 3, both.** Benjamini-Hochberg at q < 0.05 over every judged test, and
+   |t| ≥ 3 on the same t, in the registered direction. Missing either is a fail. #1 to #60 keep their committed criteria.
    See `research/FDR_STANDARD.md`.
 
 Ideas that haven't been tested yet go in `research/IDEAS_NOVEL.md`.

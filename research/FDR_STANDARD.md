@@ -1,8 +1,7 @@
-# FDR as the statistical bar for new tests
+# FDR and t ≥ 3 as the statistical bar for new tests
 
-**Written 2026-11-01. From #61 on, a new test's statistical bar is Benjamini-Hochberg at q < 0.05, in place of the
-Harvey-Liu-Zhu t ≥ 3.** Tests #1 to #60 keep their committed criteria, including every forward test. This document spends no
-trial and judges nothing.
+**Written 2026-11-01. From #61 on, a new test must clear both Benjamini-Hochberg at q < 0.05 and the Harvey-Liu-Zhu t ≥ 3.**
+Tests #1 to #60 keep their committed criteria, including every forward test. This document spends no trial and judges nothing.
 
 ## The rule
 
@@ -12,11 +11,11 @@ A pre-registration from #61 on uses this as its significance criterion, unless i
    judged, plus the new test. A row with no p-value counts as p = 1, because leaving it out would flatter the result.
 2. **The p-value:** two-sided, from the test's registered t. Overlapping or clustered data needs a day-clustered or Newey-West
    t. Under 100 independent observations, use Student's t or a registered bootstrap instead of the normal approximation.
-3. **The bar:** q < 0.05 from `trials.benjamini_hochberg`, and the registered sign, which the caller checks. A strong result
-   the wrong way is not a discovery.
-4. **Reported beside it, deciding nothing:** t ≥ 3, for continuity with the wider literature; Benjamini-Yekutieli; and q at 0.10.
-5. **Every other bar stays.** FDR replaces the t hurdle only. Costs, both halves, not-one-coin and any other registered bar
-   still apply.
+3. **The bar:** q < 0.05 from `trials.benjamini_hochberg`, and |t| ≥ 3 on the same t, both in the registered sign, which the
+   caller checks. Missing either is a fail. A strong result the wrong way is not a discovery.
+4. **Reported beside it, deciding nothing:** Benjamini-Yekutieli, and q at 0.10.
+5. **Every other bar stays.** These two are the statistical bar only. Costs, both halves, not-one-coin and any other registered
+   bar still apply.
 6. **The verdict freezes when judged.** A later test can't reopen it, although later tests will change the q it would get.
 
 ## Limits
@@ -25,7 +24,8 @@ A pre-registration from #61 on uses this as its significance criterion, unless i
   verdict is the practical choice, and a true online method would be stricter.
 - **The tests share data,** so they aren't independent. Benjamini-Hochberg holds under positive dependence, which has not been
   verified here. That's why Benjamini-Yekutieli is reported beside it.
-- **The bar moves with the list.** It has no fixed t equivalent. Each discovery loosens it, and each test that misses tightens it.
+- **FDR's line moves with the list.** It has no fixed t equivalent. Each discovery loosens it, and each test that misses tightens
+  it. t ≥ 3 stays fixed, so whichever is stricter decides.
 - **A wrong-way result still counts as a rejection.** The sign check refuses #17 as a discovery, yet its two-sided p helps other
   tests through: without it, #61's bar would be |t| ≥ 2.57 instead of 2.52.
 - **FDR says a result probably isn't noise.** It doesn't say the result pays: #9b, #20 and #35 clear it and fail on other bars.
@@ -61,13 +61,14 @@ of all 33 judged tests, Benjamini-Yekutieli, and #44's trade-weighted t where it
 **Reading it:**
 
 - **FDR and t ≥ 3 agree on every test here.** Scored side by side under this rule, on the rerun's Newey-West and Student's t,
-  they reach the same answer on all 15 tests with a t ≥ 3 bar, and on the 4 with other bars.
+  they reach the same answer on all 15 tests with a t ≥ 3 bar, and on the 4 with other bars. Requiring both changes no outcome.
 - **No test gains or loses a pass.** #25's label is the only change, and it still doesn't pay: +12.3 bps against the 18 bps bar.
 - **Under this rule's own family of 33, #25 doesn't move either,** and nothing changes.
 - **Which tests count decides who gets through.** On 19 tests the weakest discovery is at t = 2.36, wrong-sign #17 aside. On 33
   it's at t = 3.52. That's the weakest result already through, not the bar a new test faces.
-- **The next test's bar is looser than t ≥ 3.** On this ledger #61 clears q < 0.05 at |t| ≥ 2.52 (p ≤ 0.0117), because it
-  would rank eighth of 34. `fdr_rescore.py` prints this figure, and it moves as tests are added.
+- **FDR alone would be looser than t ≥ 3 for the next test, which is why both are required.** On this ledger #61 clears q < 0.05
+  at |t| ≥ 2.52 (p ≤ 0.0117), because it would rank eighth of 34, so t ≥ 3 decides for now. If FDR's line rises above 3 as tests
+  are added, FDR decides. `fdr_rescore.py` prints both.
 - **At q < 0.10 no verdict changes beyond #25:** #18 would meet the statistical bar on the 19 but still fails both halves.
 - **The normal approximation isn't what decides these.** Student's t moves #25's p from 0.01827 to 0.01841, #18's from
   0.0349 to 0.0379, and #26's from 0.00005 to 0.00008.

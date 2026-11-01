@@ -62,7 +62,8 @@ def main() -> None:
 
     ps = everyone.fillna(1.0).to_numpy()
     bar = next(t for t in np.arange(1.0, 6.0, 0.001) if trials.benjamini_hochberg(np.r_[ps, two_sided(t)])[0][-1])
-    print(f"\nthe next test clears q < 0.05 on all {m} judged at |t| >= {bar:.2f}, p <= {two_sided(bar):.5f}")
+    print(f"\nthe next test clears q < 0.05 on all {m} judged at |t| >= {bar:.2f}, p <= {two_sided(bar):.5f}; "
+          f"with t >= 3 as well, |t| >= {max(bar, 3.0):.2f}")
 
 
 if __name__ == "__main__":

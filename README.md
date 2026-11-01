@@ -36,6 +36,19 @@ loop, four strategies, and a test suite whose job is to make the same mistakes i
   signal/order/fill/equity mark to SQLite, and resumes the open position after a restart. A risk
   gate sits under the strategy: max 25% of equity per position, 1% risk per trade, daily loss cap.
 
+## Recent changes
+
+- **2026-11-01.** Three forward tests registered before their window opens on 2026-11-05: #58 and #59 (HLP's
+  absorbed inventory) and #60 (Hyperliquid's liquidation ladder). Paper books for #58 and #59 and an always-on
+  paper trader run under launchd, and home-screen paper books moved from `/tmp`, which macOS clears on restart, to
+  `paper-books/`. `espero readout` shows what #51–#57 measured, as context and not as signals.
+- **2026-10-31.** `espero rate` (#50), Hyperliquid's market-order costs (#51) and microstructure measurements
+  (#52–#57). [FORWARD_FAMILY.md](research/FORWARD_FAMILY.md) (#46) fixes what a forward pass leads to.
+- **2026-10-30.** The repo moved to this GitHub account. Added [AGENTS.md](AGENTS.md), fetchable live data
+  ([docs/DATA.md](docs/DATA.md)), an optional weekly data release, and Docker. Python 3.10 is now the minimum. A
+  generic plan for venues outside the US is in [research/VENUE_NONUS.md](research/VENUE_NONUS.md); the account holder
+  checks eligibility and places any order.
+
 ## The home screen
 
 `espero` with no arguments opens an interactive screen: the two accounts and the last run's health on
@@ -43,6 +56,7 @@ top, an arrow-key menu below (status, dashboard, a no-write preview of what each
 history, run the daily job, deposit, pause, log, the single-coin loop, the forward tests, the research
 results with #39/#41's measured costs, the factor table, tests). Needs
 the `tui` extra: `pip install -e ".[chart,tui,dev]"`. Everything on the menu is also a plain command.
+Paper books started from it are kept in `paper-books/`.
 
 ## A 1-10 rating for one symbol
 
@@ -94,6 +108,20 @@ pid lock prevents overlapping runs, the exit code is non-zero on any failure, an
 refuses to rebalance when fewer than 30 of its 42 coins have a fresh close, because a shrunken
 universe would silently change the top-10. The whole operating procedure is in
 [docs/RUNBOOK.md](docs/RUNBOOK.md).
+
+Other launchd jobs install separately, each with its own script in `scripts/`:
+
+| script | what it runs |
+|---|---|
+| `install-hlcollect-launchd.sh` | records Hyperliquid's positions, HLP, contexts and 1-minute candles |
+| `install-hlbook-launchd.sh` | records the order book |
+| `install-carry-launchd.sh` | #12's two carry books |
+| `install-hlp-launchd.sh`, `install-hlp2-launchd.sh` | #58's and #59's paper books |
+| `install-paper-launchd.sh` | a paper BTC perp on Hyperliquid, which counts toward no verdict |
+
+launchd catches up scheduled jobs after a sleep, but a recorder records nothing while the Mac is asleep, and a gap
+stays a gap. `docker compose up` is the alternative on any machine, and on a Mac it has the same gaps. Never point it
+and launchd at the same `data/` folder. Setting `ESPERO_PUBLISH_AS` also publishes the live recordings every Monday.
 
 ## Live trading — EXPERIMENTAL, off by default, and paranoid when on
 
@@ -488,11 +516,40 @@ its trades were unexecutable? Execution accounts for 0.111 of its shortfall agai
 $100,000 a leg, so not execution; whether the expected edge decayed, this history cannot say.
 [research/RESULTS_SUBSTRATE.md](research/RESULTS_SUBSTRATE.md).
 
-Scoreboard: forty-six tests. Four passes (#4, #8, #12 provisional, #26), two real but not
-tradable (#19, #20), two measurements (#39, #41), two plumbing checks (#40, #42), the rest failed (#37 the latest) or are running
-(#22–#24, #27, #29, #31, #32, #34, #38). Two are risk construction; the third is income (carry at
-maker fees) with a forward test still attached. No predictive edge has been found at any horizon,
-and across #4, #8 and #15 the one effect that survives is volatility sizing.
+#49 is registered and has not run: whether a day of book imbalance predicts the next day, on sealed entries.
+[research/PREREGISTRATION_DEPTHDAY.md](research/PREREGISTRATION_DEPTHDAY.md).
+
+#51 measured what a market order costs on Hyperliquid on 24 first-of-month days. An 18 bps round trip covers $1,000 on all
+14 coins. It covers $10,000 on 9 and can't be judged on 5, and covers $100,000 only on BTC, ETH and XRP.
+[research/RESULTS_BOOKWALK.md](research/RESULTS_BOOKWALK.md).
+
+#52–#56 measured five patterns on the same days. Binance moved before Hyperliquid by about a second on 142 of 144
+coin-days. Premium, book imbalance and large bursts show small effects, below a $1,000 round trip of about 9–12 bps, and
+one-sided trading shows nothing clear. [research/RESULTS_PATTERNS.md](research/RESULTS_PATTERNS.md).
+
+#57 asked what's left of Hyperliquid's catch-up to Binance after a delay. Nothing: a $1,000 market order 1 second later,
+held 30 seconds, lost 8.02 bps per event after costs (95% CI −8.78 to −7.20), and no delay down to 100 ms came out
+positive. [research/RESULTS_CATCHUP.md](research/RESULTS_CATCHUP.md). #51–#57 are summarised for reading the market in
+[research/OPERATOR_READOUT.md](research/OPERATOR_READOUT.md).
+
+A study of who absorbs forced liquidations on Hyperliquid stopped before reading any market data, because the order-level
+history needs AWS. It has no number, spends no trial and says nothing for or against the mechanism:
+[research/RESULTS_HLABSORB.md](research/RESULTS_HLABSORB.md).
+
+#58, #59 and #60 are forward paper tests on what `espero hlcollect` records, registered before their window (2026-11-05
+to 2027-03-31). #58 goes long for 4 hours after HLP's net position jumps during a sharp fall, and #59 is the same rule with a
+guard that voids only recorded failed reads: [FORWARD_HLP.md](research/FORWARD_HLP.md),
+[FORWARD_HLP2.md](research/FORWARD_HLP2.md). #60 goes long for 4 hours after the price falls through a dense band of long
+liquidation prices: [FORWARD_LADDER.md](research/FORWARD_LADDER.md).
+
+Scoreboard, from [research/trials.csv](research/trials.csv): 59 tests, #1–#45, 9b and #48–#60. #46 is a rule document,
+and #47 is held for a first real-order test. Four signals passed (#4, #8, #12 provisional, #26), two plumbing checks passed
+(#40, #42), and #43 passed its confirmation but isn't tradable. Twenty-five failed, including #19 and #20, whose effects are
+real but not tradable. Twelve are measurements (#39, #41, #44, #48, #50–#57) and #7 is exploratory. Thirteen forward tests
+are running or about to start (#22–#24, #27, #29, #31, #32, #34, #38, #45, #58–#60), and #49 hasn't run. Of the passes, #4
+and #8 are risk construction, #12 is income (carry at maker fees) with a forward test still attached, and #26 awaits its
+forward tests. No predictive edge has been confirmed forward at any horizon, and across #4, #8 and #15 the one effect that
+survives is volatility sizing.
 
 ## The numbers
 
@@ -548,10 +605,18 @@ espero/
     portfolio.py    # vol targeting, caps, turnover buffer
     tca.py          # transaction cost analysis
     report.py       # the matrix table and the equity chart
-    cli.py          # fetch | backtest | matrix | chart | paper | live | tsmom | xs | factors | daily | dashboard
-  tests/            # 141 tests
-  deploy/launchd/   # the LaunchAgent templates; scripts/install-launchd.sh (daily) and
-                    # scripts/install-carry-launchd.sh (#12's two carry loops) render them
+    ui.py           # the home screen
+    rate.py         # `espero rate`, the 1-10 rating (#50)
+    hlcollect.py    # records Hyperliquid's positions, HLP, contexts and candles
+    hlbook.py       # records Hyperliquid's order book
+    hlpbook.py      # #58 and #59's rule and paper books
+    ladder.py       # #60's ledger, which refuses to read the recordings before the window closes
+    trials.py       # the trial budget behind research/trials.csv
+    cli.py          # every command; `espero --help` lists them
+    ...             # one module per test or account (liqhold.py is #45)
+  tests/            # over 1,000 tests
+  deploy/launchd/   # the LaunchAgent templates; the scripts/install-*-launchd.sh scripts render them
+  Dockerfile, docker-compose.yml  # the collector and the daily job as two services
   research/         # one pre-registration and one results file per hypothesis
   data/             # committed BTC/ETH daily candles so the numbers reproduce offline
   docs/AUDIT.md     # the audit that started this
@@ -572,7 +637,7 @@ espero/
 - [ ] Exchange-side stop orders (so the stop survives a crash)
 - [ ] Kill switch: daily loss cap, max open risk, max orders/minute
 - [x] TCA report per paper account (`tca.py`, on the dashboard)
-- [x] Scheduled run with health file, lock and notifications (launchd; Docker not needed for a Mac)
+- [x] Scheduled run with health file, lock and notifications (launchd on a Mac, Docker anywhere)
 - [x] Retrying HTTP with a cached fallback; degraded-universe guard
 - [ ] Dated listing/delisting file, so survivorship can be measured instead of disclosed
 - [x] Forward paper account for hypothesis #8 (`espero mf`, 2026-11-02 → 2027-05-03)
@@ -591,6 +656,8 @@ your actual fee tier.
 - [docs/DATA.md](docs/DATA.md) — getting the data: what's committed, what each script downloads,
   and what can only be recorded live.
 - [docs/CHEATSHEET.md](docs/CHEATSHEET.md) — the two commands you need, and the drawers you don't.
+- [research/FORWARD_FAMILY.md](research/FORWARD_FAMILY.md) — what a forward test's pass leads to.
+- [research/VENUE_NONUS.md](research/VENUE_NONUS.md) — venues for an account holder outside the US.
 
 ## License
 

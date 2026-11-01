@@ -1,0 +1,37 @@
+#57 net bps per event, $1,000, 30 s hold, by delay
+ delay_ms  events  filled   mean    low   high  first  second  days
+      100   11136   10877  -1.92  -2.62  -1.20  -1.78   -2.06    24
+      250   11136   10781  -2.84  -3.62  -2.05  -2.52   -3.16    24
+      500   11136   10712  -4.75  -5.63  -3.82  -3.82   -5.68    24
+     1000   11136   10860  -8.02  -8.78  -7.20  -6.91   -9.13    24
+     2000   11136   11011  -9.77 -10.25  -9.27  -9.26  -10.27    24
+     5000   11136   11054 -10.46 -10.88 -10.06 -10.17  -10.75    24
+longest delay with a positive mean: none
+
+VERDICT at 1,000 ms, $1,000, 30 s: NOT CAPTURED
+mean -8.02 bps (95% CI -8.78 to -7.20); halves -6.91, -9.13; 0 of 6 coins positive; unfillable 0.024
+
+Parts, mean bps: {'gross': 3.39, 'walk': 2.41, 'fees': 9.0, 'net': -8.02}
+
+Per coin
+       gross  walk   net
+coin                   
+BTC    2.94  1.14 -7.21
+ETH    3.72  1.38 -6.66
+SOL    3.26  1.87 -7.61
+XRP    2.87  2.27 -8.40
+DOGE   3.90  2.82 -7.91
+LINK   3.28  3.61 -9.32
+
+Status shares
+ status
+ok             0.9752
+unfillable     0.0239
+no_snapshot    0.0009
+
+Mid already at the event's full size by entry: 0.111
+
+Other cases at 1,000 ms
+$10,000, 30 s: mean -9.23 (-9.99 to -8.43); unfillable 0.215
+$1,000, 5 s: mean -8.00 (-8.68 to -7.26); unfillable 0.022
+$1,000, 60 s: mean -8.29 (-9.02 to -7.49); unfillable 0.023

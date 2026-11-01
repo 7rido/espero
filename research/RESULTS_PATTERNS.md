@@ -80,8 +80,8 @@ days hold 35% of the events.
   it, so the fastest participants have probably taken what's visible here.
 - These are events selected on a large move on first-of-month days.
 
-Testing it would take a new pre-registration, with fills at the book and a stated reaction time. Nothing here supports
-trading it.
+#57 then tested this with fills at the book and a stated reaction time: **NOT CAPTURED**, −8.02 bps per event at 1,000 ms
+([RESULTS_CATCHUP.md](RESULTS_CATCHUP.md)). Nothing here supports trading it.
 
 ## #53 — mark price against index
 

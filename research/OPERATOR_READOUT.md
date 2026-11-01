@@ -1,12 +1,12 @@
-# Operator readout — what the free Hyperliquid data shows (#51–#56)
+# Operator readout — what the free Hyperliquid data shows (#51–#57)
 
-Plain summary of [RESULTS_BOOKWALK.md](RESULTS_BOOKWALK.md) and [RESULTS_PATTERNS.md](RESULTS_PATTERNS.md). **Context for
+Plain summary of [RESULTS_BOOKWALK.md](RESULTS_BOOKWALK.md), [RESULTS_PATTERNS.md](RESULTS_PATTERNS.md) and [RESULTS_CATCHUP.md](RESULTS_CATCHUP.md). **Context for
 reading the market, not rules or signals.** It comes from 24 calm first-of-month days from 2024-11 to 2026-10, on Hyperliquid,
 with no known crash day among them. Nothing here is a forecast or investment advice. The tools don't use any of it.
 
 | what you can see | what usually followed | how much to trust it |
 |---|---|---|
-| **A sharp move on Binance** (10 bps or more in a second) | Hyperliquid caught up by about 13 bps within 5 s and stayed there for at least 30 s | **Strong as a description.** Binance moved first on 142 of 144 coin-days, by about a second. About half the catch-up is gone 1 s later, so it's far faster than a person can act on |
+| **A sharp move on Binance** (10 bps or more in a second) | Hyperliquid caught up by about 13 bps within 5 s and stayed there for at least 30 s | **Strong as a description.** Binance moved first on 142 of 144 coin-days, by about a second. **Not something to chase:** #57 lost about 8 bps per event buying 1 s later, after fees (95% CI −8.8 to −7.2), and no delay down to 100 ms came out positive |
 | **A sharp move on Hyperliquid alone** | Binance didn't follow (about 0 bps) | Strong as a description. The cause isn't established: it may be Hyperliquid catching up or a stale print |
 | **Book leaning to bids or asks** on the top 5 levels | Price leaned the same way by 0.4–1.1 bps over 10 s to 5 min | Consistent on nearly all coins, but tiny: about a tenth of a round trip |
 | **A large one-second burst of market orders** | Price moved about 1.3 bps with the burst over the next minute, with no reversal in that minute | Solid, but small |
@@ -33,8 +33,8 @@ with no known crash day among them. Nothing here is a forecast or investment adv
 ## What this can't tell you
 
 - **Crash behaviour.** Every number here is from calm days. Costs, catch-up and refill may all look different in a cascade.
-- **Whether anything is tradable.** No figure includes your reaction time or a real fill. The Binance catch-up in particular
-  isn't shown to be something you can capture.
+- **Whether anything is tradable.** Only #57 includes a reaction time and a fill at the book, and it found the Binance catch-up
+  isn't capturable by a market order at this account's speed. It didn't test resting orders or much faster paths.
 - **The future.** These are averages over past days, and the next instance can do anything.
 
 Whether any strategy pays still comes from the forward tests, judged after 2027-03-31.

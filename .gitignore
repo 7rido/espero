@@ -93,3 +93,6 @@ docker-state/
 # point-in-time store and its environment (research/substrate_fetch.py)
 data/pit/
 .venv-pit/
+
+# Tardis free Hyperliquid book days (#51, research/bookwalk.py)
+data/bookwalk/

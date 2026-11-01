@@ -66,7 +66,7 @@ that are new (2024–26 instruments) or where the data exists but nobody has sha
 - **Prediction.** A jump in HLP's net position predicts the next hours' drift as it unwinds. Or, if
   HLP absorbed the bottom, it predicts the bounce. Pre-register the sign from the mechanism (HLP's
   forced buys at the bottom revert) before collecting.
-- **Next.** Forward only; the same collector as #3. Registered as #58, [FORWARD_HLP.md](FORWARD_HLP.md); window opens 2026-11-05.
+- **Next.** Forward only; the same collector as #3. Registered as #58, [FORWARD_HLP.md](FORWARD_HLP.md), and #59, [FORWARD_HLP2.md](FORWARD_HLP2.md), which changes only the guard; windows open 2026-11-05.
 
 ## 5. Ethena's hedge as a funding forecast (for #12) (#36 failed)
 

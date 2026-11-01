@@ -179,13 +179,13 @@ bootstrap. 1,000 paths a cell.
 
 ## 4. The trial budget
 
-`espero/trials.py`, [trials.csv](trials.csv) and [trials_scored.csv](trials_scored.csv): 57 rows, #1–#45 plus 9b and #48–#58.
+`espero/trials.py`, [trials.csv](trials.csv) and [trials_scored.csv](trials_scored.csv): 58 rows, #1–#45 plus 9b and #48–#59.
 
 **Spend rate: 30 judged edge tests in 3 calendar days, 10 a day.** At 5% each, that expects 1.5 false passes
 and a 79% chance of at least one. Bonferroni's bar per test is 0.17%. Four passed, plus #12 provisionally. 10
 more forward tests are running and count as trials; their running numbers were not read.
 
-- **Deflated Sharpe.** Against the best of 57 null trials, the bar is an annualised Sharpe of 1.43. **None of the 9
+- **Deflated Sharpe.** Against the best of 58 null trials, the bar is an annualised Sharpe of 1.43. **None of the 9
   Sharpes on file clears 95%**: #12 reaches 0.60, #8 0.22 and #4 0.20 ([trials_dsr.csv](trials_dsr.csv)).
   Returns are assumed normal because no skew is on file, and fat tails would lower these.
 - **SPA across the 14 series on disk**, 2,492 days. Gross, p < 0.001: effects are real before costs, and #20's
@@ -196,10 +196,10 @@ more forward tests are running and count as trials; their running numbers were n
 - **Priors are after the fact**: 0.20 for a literature effect, 0.10 for a variant, 0.05 for a novel idea, assigned
   by class, because nothing recorded a prior when these tests ran. They expect 1.7 true passes and 1.3 false.
 
-**The limits of this inventory:** 38 of 57 tests have no p-value, recorded as empty rather than invented. SPA covers
-14 series, not the whole inventory, and N = 57 is a floor because many tests held many cells.
+**The limits of this inventory:** 39 of 58 tests have no p-value, recorded as empty rather than invented. SPA covers
+14 series, not the whole inventory, and N = 58 is a floor because many tests held many cells.
 
-**Refreshed 2026-11-01** with the rows for #48 to #58, none of which has a p-value. On the first 46 rows the
+**Refreshed 2026-11-01** with the rows for #48 to #59, none of which has a p-value. On the first 46 rows the
 bar was 1.38 and #12 reached 0.62, with 40 tests registered rather than 41. Nothing else in this section moved:
 the spend rate, Holm's 6, both SPA results and 0 of 9 above 95% are unchanged.
 

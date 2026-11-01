@@ -182,7 +182,7 @@ bootstrap. 1,000 paths a cell.
 `espero/trials.py`, [trials.csv](trials.csv) and [trials_scored.csv](trials_scored.csv): 59 rows, #1–#45 plus 9b and #48–#60.
 
 **Spend rate: 30 judged edge tests in 3 calendar days, 10 a day.** At 5% each, that expects 1.5 false passes
-and a 79% chance of at least one. Bonferroni's bar per test is 0.17%. Four passed, plus #12 provisionally. 10
+and a 79% chance of at least one. Bonferroni's bar per test is 0.17%. Four passed, plus #12 provisionally. 14
 more forward tests are running and count as trials; their running numbers were not read.
 
 - **Deflated Sharpe.** Against the best of 59 null trials, the bar is an annualised Sharpe of 1.44. **None of the 9

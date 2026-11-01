@@ -3,6 +3,10 @@
 Committed **before any day of the forward window exists**: the window opens 2026-11-05, and this was
 written on 2026-11-01. A paper test: nothing trades. The sixtieth test in this repo.
 
+> **Note 2026-11-01, before the window opens. No rule changes.** The ledger was written after this document and tested
+> on made-up files only: 29 of 30 deliberate breaks were caught, and the 30th can't change a result, because a value
+> above a percentile of non-negative values is already above zero. It has never been run on the recordings.
+
 ## Why
 
 This is idea 3 in [IDEAS_NOVEL.md](IDEAS_NOVEL.md), Hyperliquid's exact liquidation ladder. Other venues
@@ -126,8 +130,8 @@ and a 1% fall is common.
 
 No stopping early on the running numbers, and no re-tuning of the band, the percentile, the hold or the coins.
 
-The ledger's code doesn't exist yet. It's written and mutation-checked on made-up files before the verdict, and
-the verdict is rebuilt from the recordings. There's no paper book, and this document starts no new process.
+The ledger's code is `espero/ladder.py`, run once with `python -m espero.ladder` after the window has closed. It
+refuses to read the recordings before then. There's no paper book, and this document starts no new process.
 
 ## Known confounds
 

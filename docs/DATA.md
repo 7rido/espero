@@ -93,7 +93,7 @@ stay in Binance's archive and can be fetched again.
 
 | folder | what | how to record |
 |---|---|---|
-| `data/hlcollect/` | Hyperliquid snapshots: top accounts' positions, HLP, asset contexts, 1-minute candles | `espero hlcollect --loop`, `./scripts/install-hlcollect-launchd.sh` (macOS), or `docker compose up -d` (any OS) |
+| `data/hlcollect/` | Hyperliquid snapshots: top accounts' positions, HLP and which of its accounts failed to read (#59), asset contexts, 1-minute candles | `espero hlcollect --loop`, `./scripts/install-hlcollect-launchd.sh` (macOS), or `docker compose up -d` (any OS) |
 | `data/hlbook/` | Hyperliquid's order book, top 20 levels a side, 10 frozen coins, every 5 minutes | `espero hlbook --loop`, `./scripts/install-hlbook-launchd.sh` (macOS) |
 | `data/book/` | order-book recordings from the fast screen and the testnet rehearsal (#42) | `espero fast`, `research/rehearsal.py` |
 

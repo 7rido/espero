@@ -8,6 +8,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import pandas as pd
 
@@ -148,6 +149,40 @@ class TestCollector(unittest.TestCase):
         c.run("positions", NOW + 3600)
         self.assertEqual(len(got), 1)
         self.assertTrue(c.addresses_path(NOW).exists())
+
+    def reads(self, c=None):
+        return json.loads((c or self.c).hlp_reads_path(NOW).read_text())
+
+    def test_each_hlp_slot_records_the_accounts_asked_and_none_failed(self):
+        self.c.attempt("hlp", NOW)
+        self.assertEqual(self.c.hlp_reads_path(NOW).relative_to(self.data).as_posix(),
+                         "hlp_reads/2026-10-30/1400.json")
+        self.assertEqual(self.reads(), {"ts": NOW, "accounts": [hc.HLP, KID], "failed": []})
+
+    def test_a_failed_read_is_named_and_the_slot_still_saved(self):
+        c = hc.Collector(self.data, fetch=Fake(fail={KID}), get=lb_get, top=3, sleep=lambda s: None)
+        c.attempt("hlp", NOW)
+        self.assertEqual(self.reads(c)["failed"], [KID])
+        self.assertTrue(c.hlp_path(NOW).exists())
+
+    def test_the_record_lands_before_the_positions(self):
+        with mock.patch.object(hc, "write", side_effect=RuntimeError("disk")):
+            self.assertIn("FAILED", self.c.attempt("hlp", NOW))
+        self.assertTrue(self.c.hlp_reads_path(NOW).exists())
+        self.assertFalse(self.c.hlp_path(NOW).exists())
+
+    def test_a_record_that_cannot_be_written_never_costs_the_positions(self):
+        with mock.patch.object(hc, "write_reads", side_effect=OSError("disk")):
+            self.assertNotIn("FAILED", self.c.attempt("hlp", NOW))
+        self.assertTrue(self.c.hlp_path(NOW).exists())
+
+    def test_the_hourly_positions_write_no_record(self):
+        self.c.attempt("positions", NOW)
+        self.assertFalse((self.data / "hlp_reads").exists())
+
+    def test_a_record_is_not_taken_for_a_data_file(self):
+        self.c.attempt("hlp", NOW)
+        self.assertEqual(hc.status(self.data, NOW)["hlp"]["files"], 1)
 
     def test_a_snapshot_mostly_failed_is_not_saved(self):
         c = hc.Collector(self.data, fetch=Fake(fail={"0xa2", "0xa1"}), get=lb_get, top=3, sleep=lambda s: None)

@@ -103,17 +103,19 @@ def position_rows(address: str, state: dict, ts: int) -> List[dict]:
 
 
 def positions(addresses: List[str], fetch: Fetch, ts: int, sleep=time.sleep, pace: float = PACE_S) -> Dict:
-    """Every account's open positions; an account that fails is counted and skipped."""
-    rows, failed = [], 0
+    """Every account's open positions; an account that fails is counted, named and skipped."""
+    rows, failed, failed_accounts = [], 0, []
     for k, a in enumerate(addresses):
         try:
             rows.extend(position_rows(a, fetch({"type": "clearinghouseState", "user": a}) or {}, ts))
         except Exception as exc:  # noqa: BLE001 - one account must not stop the snapshot
             failed += 1
+            failed_accounts.append(a)
             log.warning("positions %s: %s", a, exc)
         if pace and k < len(addresses) - 1:
             sleep(pace)
-    return {"frame": pd.DataFrame(rows, columns=POSITION_COLS), "accounts": len(addresses), "failed": failed}
+    return {"frame": pd.DataFrame(rows, columns=POSITION_COLS), "accounts": len(addresses), "failed": failed,
+            "failed_accounts": failed_accounts}
 
 
 def contexts(fetch: Fetch, ts: int) -> pd.DataFrame:
@@ -164,6 +166,15 @@ def write(df: pd.DataFrame, path: Path) -> Path:
     return path
 
 
+def write_reads(path: Path, ts: int, accounts: List[str], failed: List[str]) -> Path:
+    """#59's record of one HLP slot: the accounts asked and those that failed. Written whole, then renamed."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps({"ts": ts, "accounts": accounts, "failed": failed}))
+    tmp.replace(path)
+    return path
+
+
 def stamp(ts: int, fmt: str) -> str:
     return dt.datetime.fromtimestamp(ts, dt.timezone.utc).strftime(fmt)
 
@@ -187,6 +198,10 @@ class Collector:
     def hlp_path(self, ts: int) -> Path:
         slot = ts - ts % HLP_EVERY_S
         return self.data / "hlp" / stamp(slot, "%Y-%m-%d") / f"{stamp(slot, '%H%M')}.csv.gz"
+
+    def hlp_reads_path(self, ts: int) -> Path:
+        slot = ts - ts % HLP_EVERY_S
+        return self.data / "hlp_reads" / stamp(slot, "%Y-%m-%d") / f"{stamp(slot, '%H%M')}.json"
 
     def positions_path(self, ts: int) -> Path:
         slot = ts - ts % POSITIONS_EVERY_S
@@ -237,6 +252,10 @@ class Collector:
         if job == "hlp":
             accts = hlp_accounts(self.fetch)
             out = positions(accts, self.fetch, now, self.sleep, self.pace)
+            try:
+                write_reads(self.hlp_reads_path(now), now, accts, out["failed_accounts"])
+            except OSError as exc:      # the positions are worth more than their record: #59 voids a slot without one
+                log.error("hlp reads: %s", exc)
             write(out["frame"], self.hlp_path(now))
             return f"hlp: {len(out['frame'])} positions in {out['accounts']} accounts ({out['failed']} failed)"
         if job == "positions":

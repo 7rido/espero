@@ -82,6 +82,8 @@ data/bids/
 # the Hyperliquid collector, public data, re-collectable only going forward (espero/hlcollect.py)
 data/hlcollect/
 data/hlbook/
+# espero rate: its record of ratings and a cached liquidation fetch
+data/rate/
 # #32's Binance funding cache (espero/fundsplit.py)
 data/funding/
 # #37 Polymarket downloads (research/polyhour.py)

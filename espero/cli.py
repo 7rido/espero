@@ -1183,6 +1183,33 @@ def _cmd_board(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_rate(args: argparse.Namespace) -> int:
+    """A 1-10 directional rating from a symbol's history (research/RATING.md). Read-only: no orders."""
+    from . import rate as rt
+
+    if args.scorecard:
+        print(rt.format_scorecard(rt.scorecard()))
+        return 0
+    if not args.symbols:
+        print("espero rate: name at least one symbol, for example: espero rate BTC SPY", file=sys.stderr)
+        return 2
+    kind = "crypto" if args.crypto else "etf" if args.stock else None
+    requests, errors = [], {}
+    for s in args.symbols:
+        try:
+            requests.append(rt.resolve(s, kind))
+        except rt.RatingError as exc:
+            errors[s] = str(exc)
+    results, failed = rt.rate(dict.fromkeys(requests), h=args.horizon) if requests else ([], {})
+    errors.update(failed)
+    for r in results:
+        print(rt.format_report(r, rt.context(r["symbol"], r["kind"])), end="\n\n")
+        rt.log_rating(r)
+    for reason in errors.values():
+        print(reason, file=sys.stderr)
+    return 1 if errors else 0
+
+
 def _cmd_mf(args: argparse.Namespace) -> int:
     from . import mf as mfm
     res = mfm.run(args.state, args.cash)
@@ -1449,6 +1476,14 @@ def build_parser() -> argparse.ArgumentParser:
     hc.add_argument("--data", default=None, help="folder (default data/hlcollect in the repo)")
     hc.set_defaults(func=_cmd_hlcollect)
 
+    rt = sub.add_parser("rate", help="a 1-10 directional rating from a symbol's history, with its evidence (read-only)")
+    rt.add_argument("symbols", nargs="*", metavar="SYMBOL", help="for example BTC, ETH-USD, SPY")
+    rt.add_argument("--horizon", type=int, choices=(1, 7, 30), default=7, help="days ahead (default 7)")
+    rtk = rt.add_mutually_exclusive_group()
+    rtk.add_argument("--crypto", action="store_true", help="treat the symbols as coins")
+    rtk.add_argument("--stock", action="store_true", help="treat the symbols as stocks or ETFs")
+    rt.add_argument("--scorecard", action="store_true", help="how past ratings turned out")
+    rt.set_defaults(func=_cmd_rate)
     hk = sub.add_parser("hlbook", help="record Hyperliquid's order book every 5 minutes (public data)")
     hk.add_argument("--loop", action="store_true", help="run forever (what launchd runs)")
     hk.add_argument("--status", action="store_true", help="files and slot counts, then exit")

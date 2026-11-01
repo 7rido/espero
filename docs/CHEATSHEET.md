@@ -137,6 +137,20 @@ testnet URL constant and refuses any mainnet URL. `--execute-testnet` shadows th
 leg with real resting (ALO) orders so the fill rate #12 assumed can be measured. Mainnet signing is
 not implemented.
 
+## The 1-10 rating (#50, research/RATING.md)
+
+```bash
+.venv/bin/python -m espero rate BTC SPY                                 # 1 = strongly down, 10 = strongly up, 7 days ahead
+.venv/bin/python -m espero rate ETH --horizon 1                         # also --horizon 30
+.venv/bin/python -m espero rate AAPL --stock                            # a name the repo doesn't know needs --stock or --crypto
+.venv/bin/python -m espero rate --scorecard                             # how past ratings turned out
+```
+
+**Read the warning line.** On 2026-10-31 no horizon beat the symbol's usual rate on past data, and three of six did worse,
+so every rating says UNPROVEN: it describes the chart and is not a forecast. Compare it with the usual rate it prints: stocks
+rise more often than they fall, so a 7 can be below usual. Funding, liquidations and the book are current readings and never
+move the number. Not advice, and it places nothing.
+
 ## Drawer 8: the signal board, multi-asset trend (hypothesis #15, scanner)
 
 ```bash

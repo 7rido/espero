@@ -44,6 +44,15 @@ history, run the daily job, deposit, pause, log, the single-coin loop, the forwa
 results with #39/#41's measured costs, the factor table, tests). Needs
 the `tui` extra: `pip install -e ".[chart,tui,dev]"`. Everything on the menu is also a plain command.
 
+## A 1-10 rating for one symbol
+
+`espero rate BTC SPY` shows how a coin or stock has been moving and rates which way its history leans: 1 strongly down, 10
+strongly up, 7 days ahead by default. Each rating shows the chance of a higher close, the symbol's usual rate, and what
+happened on past days like today. **On 2026-10-31 no horizon beat the usual rate on past data and three of six did worse, so
+every rating says UNPROVEN.** It describes the chart and is not a forecast or advice. Funding, liquidations and the book
+appear as current readings and never move the number. `espero rate --scorecard` checks past ratings against what happened.
+See [research/RATING.md](research/RATING.md).
+
 ## The fast screen
 
 Hypothesis #9b measured hourly reversal in crypto at t = 14 and 4 bps per three hours: a real effect

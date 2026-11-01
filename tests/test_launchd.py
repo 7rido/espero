@@ -55,5 +55,36 @@ class TestCollectorAgent(unittest.TestCase):
         self.assertTrue(p["StandardOutPath"].endswith("hlcollect.log"))
 
 
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
+class TestHlpAgent(unittest.TestCase):
+    def test_kept_alive_with_its_own_journal_and_no_testnet(self):
+        out = subprocess.run(["bash", str(ROOT / "scripts" / "install-hlp-launchd.sh"), "--print"],
+                             capture_output=True, text=True, check=True,
+                             env={"PATH": "/usr/bin:/bin", "HOME": "/tmp", "PYTHON": "/x/python"}).stdout
+        p = plistlib.loads(out.encode())
+        self.assertEqual(p["Label"], "com.espero.hlp")
+        self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "hlp", "--loop", "--state",
+                                                 str(ROOT / "hlp-book.db")])
+        self.assertEqual(p["WorkingDirectory"], str(ROOT))
+        self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
+        self.assertTrue(p["StandardOutPath"].endswith("hlp.log"))
+
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
+class TestPaperAgent(unittest.TestCase):
+    def test_kept_alive_on_hyperliquid_with_its_journal_in_the_repo(self):
+        out = subprocess.run(["bash", str(ROOT / "scripts" / "install-paper-launchd.sh"), "--print"],
+                             capture_output=True, text=True, check=True,
+                             env={"PATH": "/usr/bin:/bin", "HOME": "/tmp", "PYTHON": "/x/python"}).stdout
+        p = plistlib.loads(out.encode())
+        self.assertEqual(p["Label"], "com.espero.paper")
+        self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "paper", "--product", "BTC-USD",
+                                                 "--source", "hyperliquid", "--state",
+                                                 str(ROOT / "paper-btc-usd-hl.db"), "--loop"])
+        self.assertEqual(p["WorkingDirectory"], str(ROOT))
+        self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
+        self.assertTrue(p["StandardOutPath"].endswith("paper.log"))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

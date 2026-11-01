@@ -103,6 +103,35 @@ stored decision, not a recomputation.
 
 The databases and logs are left in place.
 
+## The always-on paper trader
+
+`espero paper --loop` runs its rule on Hyperliquid's BTC perp, hourly bars with $500 of paper cash, into
+`paper-btc-usd-hl.db`. Fills are simulated; it holds no key and never signs. It reads live candles and funding
+from Hyperliquid, not the files the recorders write. It isn't a pre-registered test, and its results count
+toward no verdict.
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-paper-launchd.sh
+```
+
+- Check it: `./scripts/install-paper-launchd.sh --status`, or Paper trading on the home screen.
+- Stop and remove it: `./scripts/install-paper-launchd.sh --uninstall`. The journal stays.
+- It catches up missed bars after a sleep or restart, with their stops, fills and funding.
+
+## #58's paper book
+
+`espero hlp --loop` applies [#58's rule](../research/FORWARD_HLP.md) to each new HLP slot in `data/hlcollect/`,
+into `hlp-book.db`. Fills are simulated; it holds no key and never signs. It reads no recorded value before the window
+opens on 2026-11-05. The verdict comes from the recordings after 2027-03-31, not from this book.
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlp-launchd.sh
+```
+
+- Check it: `./scripts/install-hlp-launchd.sh --status`, and `espero hlp --status --state hlp-book.db`.
+- Stop and remove it: `./scripts/install-hlp-launchd.sh --uninstall`. The journal stays.
+- It needs the collector running. Slots missed while the Mac slept are lost, and a gap stays a gap.
+
 ## The order-book recorder
 
 `espero hlbook --loop` records Hyperliquid's top 20 levels a side on 10 coins every 5 minutes, into

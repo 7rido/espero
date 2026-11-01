@@ -499,6 +499,12 @@ def paper_books(folder: Path = PAPER_DIR) -> List[dict]:
     return out
 
 
+def all_paper_books(state) -> List[dict]:
+    """The books from home-screen loops in /tmp, plus any in the state folder, like the launchd agent's."""
+    folders = dict.fromkeys(Path(f).resolve() for f in (PAPER_DIR, state))
+    return [b for f in folders for b in paper_books(f)]
+
+
 def paper_table(books: List[dict]):
     tbl = Table(box=None, header_style=MUTED, padding=(0, 2))
     for col in ("book", "loop", "position", "entry", "last", "P&L", "cash"):
@@ -527,8 +533,8 @@ def act_paper(console, state):
     if not what or what == "Back":
         return
     if what.startswith("Show"):
-        books = paper_books()
-        console.print(paper_table(books) if books else Text("no paper books in /tmp yet", style=MUTED))
+        books = all_paper_books(state)
+        console.print(paper_table(books) if books else Text("no paper books yet", style=MUTED))
         return
     if what.startswith("Run"):
         product = (questionary.text("Product:", default="BTC-USD", style=STYLE).ask() or "BTC-USD").upper()
@@ -551,28 +557,28 @@ def act_paper(console, state):
                        "--source", "hyperliquid" if hl_src else "coinbase",
                        "--state", str(db), "--loop", "--interval", "30" if five else "60"], state)
         return
-    books = paper_books()
+    books = all_paper_books(state)
     if what.startswith("Buy"):
         books = [b for b in books if b["running"] and not b["position"]]
         if not books:
             console.print(Text("no running loop without a position: run one first (in another window)", style=MUTED))
             return
-        pick = questionary.select("Which book?", choices=[b["path"].name for b in books], style=STYLE,
+        pick = questionary.select("Which book?", choices=[str(b["path"]) for b in books], style=STYLE,
                                   pointer="❯").ask()
         if not pick:
             return
         usd = questionary.text("Dollars to buy:", default="100", style=STYLE).ask() or "100"
-        _run(console, ["paper-open", "--state", str(PAPER_DIR / pick), "--usd", usd], state)
+        _run(console, ["paper-open", "--state", pick, "--usd", usd], state)
         return
     books = [b for b in books if b["position"]]
     if not books:
         console.print(Text("no open paper position", style=MUTED))
         return
     console.print(paper_table(books))
-    pick = questionary.select("Close which?", choices=[b["path"].name for b in books], style=STYLE,
+    pick = questionary.select("Close which?", choices=[str(b["path"]) for b in books], style=STYLE,
                               pointer="❯").ask()
     if pick:
-        _run(console, ["paper-close", "--state", str(PAPER_DIR / pick)], state)
+        _run(console, ["paper-close", "--state", pick], state)
 
 
 def act_board(console, state):

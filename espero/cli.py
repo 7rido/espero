@@ -600,6 +600,43 @@ def _cmd_hlcollect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_hlp(args: argparse.Namespace) -> int:
+    """#58's paper book on HLP's recorded positions. Fills are simulated; nothing signs."""
+    from collections import Counter
+
+    from . import hlpbook as hp
+    from .lock import JournalBusy, JournalLock
+
+    data = Path(args.data) if args.data else hp.DATA
+    if args.status:
+        print("\n".join(hp.status(args.state, data)))
+        return 0
+    if args.verdict:
+        if time.time() < hp.WINDOW_END:
+            print("#58 is judged once, after 2027-03-31. Not before.")
+            return 2
+        out = hp.ledger(data)
+        print(out["result"], dict(out["counts"]), Counter(r["status"] for r in out["rows"]))
+        return 0
+    try:
+        with JournalLock(args.state):
+            book = hp.Book(args.state, data)
+            try:
+                if not args.loop:
+                    print(f"{book.step()} trades written")
+                    return 0
+                print(f"#58 paper book -> {args.state}; ctrl-c stops", flush=True)
+                run_loop(book.step, args.interval, label="hlp")
+            except KeyboardInterrupt:
+                print("stopped")
+            finally:
+                book.close()
+    except JournalBusy as exc:
+        print(exc)
+        return 2
+    return 0
+
+
 def _cmd_hlbook(args: argparse.Namespace) -> int:
     """Hyperliquid's order book every 5 minutes, saved under data/hlbook/. Status shows counts, never values."""
     from . import hlbook as hb
@@ -1473,6 +1510,15 @@ def build_parser() -> argparse.ArgumentParser:
     dy.add_argument("--dry-run", action="store_true", help="preflight: no network, no account changes")
     dy.add_argument("--no-notify", action="store_true")
     dy.set_defaults(func=_cmd_daily)
+
+    hp = sub.add_parser("hlp", help="#58: paper book on HLP's recorded positions (simulated; signs nothing)")
+    hp.add_argument("--loop", action="store_true")
+    hp.add_argument("--interval", type=float, default=60.0)
+    hp.add_argument("--state", default="hlp-book.db")
+    hp.add_argument("--data", default=None, help="folder (default data/hlcollect in the repo)")
+    hp.add_argument("--status", action="store_true", help="what the book holds; running numbers are not a result")
+    hp.add_argument("--verdict", action="store_true", help="the registered verdict, once, after 2027-03-31")
+    hp.set_defaults(func=_cmd_hlp)
 
     hc = sub.add_parser("hlcollect", help="record Hyperliquid's positions, HLP, contexts and 1m candles (public data)")
     hc.add_argument("--loop", action="store_true", help="run forever (what launchd runs)")

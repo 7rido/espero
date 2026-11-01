@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.espero.paper</string>
+
+    <!-- the rule-based paper trader on Hyperliquid's BTC perp: simulated fills only, it holds no key
+         and never signs; scripts/install-paper-launchd.sh renders this -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>-m</string>
+        <string>espero</string>
+        <string>paper</string>
+        <string>--product</string>
+        <string>BTC-USD</string>
+        <string>--source</string>
+        <string>hyperliquid</string>
+        <string>--state</string>
+        <string>__STATE__</string>
+        <string>--loop</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+
+    <!-- start at login and restart whenever the loop dies, at most once a minute. A restart catches
+         up the bars it missed, with their stops, fills and funding -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>StandardOutPath</key>
+    <string>__LOG_DIR__/paper.log</string>
+    <key>StandardErrorPath</key>
+    <string>__LOG_DIR__/paper.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Standard</string>
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>

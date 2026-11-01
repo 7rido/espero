@@ -5,11 +5,14 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import espero.paper as paper_mod
 from espero import cli
+from espero.journal import Journal
 from espero.lock import JournalLock
 from tests.test_paper import GRAN, PaperTestCase, ScriptedSignal, bar
 
@@ -169,3 +172,12 @@ class TestPaperBooks(PaperTestCase):
         self.assertIsNotNone(b["position"])
         self.assertEqual(b["queued"], "SELL")
         self.assertFalse(ui.paper_books(Path(self.tmp.name))[0]["running"])
+
+    def test_home_screen_sees_books_in_tmp_and_in_the_state_folder_once_each(self):
+        from espero import ui
+        with tempfile.TemporaryDirectory() as t, tempfile.TemporaryDirectory() as s:
+            Journal(Path(t) / "paper-a.db").close()
+            Journal(Path(s) / "paper-b.db").close()
+            with mock.patch.object(ui, "PAPER_DIR", Path(t)):
+                self.assertEqual(sorted(b["path"].name for b in ui.all_paper_books(s)), ["paper-a.db", "paper-b.db"])
+                self.assertEqual([b["path"].name for b in ui.all_paper_books(t)], ["paper-a.db"])

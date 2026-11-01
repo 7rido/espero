@@ -4,6 +4,13 @@ Committed **before any day of the forward window exists**: the window opens 2026
 written on 2026-11-01. A paper test: nothing trades. No recorded position has been read to write it
 (see Transparency). The fifty-eighth test in this repo.
 
+> **Note 2026-11-01, before the window opens. No rule changes.** Building the book meant parsing the recorded files
+> once. Only counts were printed: 258 slots, 255 valid pairs, 2 invalid, no price, jump or position. Most slots hold 2 accounts
+> with rows, and 5 consecutive slots hold 3. **So rule 5's guard has a weakness:** it can't tell a failed read from a
+> sub-account that truly opened or closed its only positions. If that third account is one that holds positions only
+> after absorbing a liquidation, the guard would void the pairs this test most wants. Which account it is wasn't checked.
+> The rule stands as committed, so a FAIL here doesn't rule out those events.
+
 ## Why
 
 The account holder asked for a paper book that uses the data the repo is gathering. No rule does yet, and

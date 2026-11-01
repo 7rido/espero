@@ -1,8 +1,9 @@
 """Hyperliquid's order book, recorded: the top 20 levels a side, every 5 minutes, on 10 coins.
 
 `espero hlcollect` keeps impact prices, a proxy for depth. Nothing else here keeps the book itself
-over days, and Hyperliquid has no history of it, so a slot not saved is gone. It only reads public
-data; nothing here signs or trades.
+over days. Hyperliquid's API serves only the current book, and its S3 archive is paid, uploaded about
+monthly and may have gaps (research/HL_ARCHIVE.md), so this keeps our own same-day copy. It only reads
+public data; nothing here signs or trades.
 
 The coins are chosen once, the top 10 perps by 24-hour dollar volume at the first run, and kept in
 `coins.json`: a study needs the same coins throughout, and a list chosen later would know the future.

@@ -73,10 +73,10 @@ notes go to `fast.db` with the "why" as it stood at decision time.
 ## Drawer 4: the single-coin bar strategy (original bot, loses after fees)
 
 ```bash
-.venv/bin/python -m espero paper --state /tmp/p.db --loop --interval 60              # BTC-USD, $500, hourly
-.venv/bin/python -m espero paper --product ETH-USD --state /tmp/p-eth.db --loop      # another coin, own state
-.venv/bin/python -m espero paper --venue perp --granularity 300 --state /tmp/p-perp.db --loop  # perp fees + 8h funding
-.venv/bin/python -m espero paper-compare /tmp/paper-5m-fees.db --granularity 300     # same bars, every venue's bill
+.venv/bin/python -m espero paper --state paper-books/p.db --loop --interval 60              # BTC-USD, $500, hourly
+.venv/bin/python -m espero paper --product ETH-USD --state paper-books/p-eth.db --loop      # another coin, own state
+.venv/bin/python -m espero paper --venue perp --granularity 300 --state paper-books/p-perp.db --loop  # perp fees + 8h funding
+.venv/bin/python -m espero paper-compare paper-books/paper-5m-fees.db --granularity 300     # same bars, every venue's bill
 ```
 
 Kept because its journal loop is the template for the live path. Not scheduled, not a basket.

@@ -26,6 +26,7 @@ class JournalLock:
         self._fh = None
 
     def __enter__(self) -> "JournalLock":
+        self.path.parent.mkdir(parents=True, exist_ok=True)     # the journal makes it too, but after this
         fh = open(self.path, "a+")
         try:
             fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)

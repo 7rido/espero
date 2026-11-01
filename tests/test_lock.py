@@ -54,6 +54,12 @@ class TestJournalLock(unittest.TestCase):
         with JournalLock(self.db):                                 # ...but not the lock
             pass
 
+    def test_a_journal_in_a_folder_that_does_not_exist_yet(self):
+        with tempfile.TemporaryDirectory() as t:
+            db = Path(t) / "paper-books" / "p.db"
+            with JournalLock(db):
+                self.assertTrue(db.parent.is_dir())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

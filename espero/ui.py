@@ -456,7 +456,8 @@ def act_deposit(console, state):
         _run(console, [which, "--state", str(state / f"{which}.db"), "--deposit", f"{amt}"], state)
 
 
-PAPER_DIR = Path("/tmp")
+# not /tmp: macOS clears it on restart, which cost a book with an open trade on 2026-10-31
+PAPER_DIR = Path(__file__).resolve().parent.parent / "paper-books"
 
 
 def paper_books(folder: Path = PAPER_DIR) -> List[dict]:
@@ -500,7 +501,7 @@ def paper_books(folder: Path = PAPER_DIR) -> List[dict]:
 
 
 def all_paper_books(state) -> List[dict]:
-    """The books from home-screen loops in /tmp, plus any in the state folder, like the launchd agent's."""
+    """The books from home-screen loops in PAPER_DIR, plus any in the state folder, like the launchd agent's."""
     folders = dict.fromkeys(Path(f).resolve() for f in (PAPER_DIR, state))
     return [b for f in folders for b in paper_books(f)]
 
@@ -550,6 +551,7 @@ def act_paper(console, state):
             venue = questionary.select("Charge whose fees?", choices=["binanceus", "coinbase", "kraken", "hyperliquid"],
                                        default="binanceus", style=STYLE, pointer="❯").ask() or "binanceus"
         # one journal per price source: Coinbase and Hyperliquid bars must never mix in one book
+        PAPER_DIR.mkdir(parents=True, exist_ok=True)
         db = PAPER_DIR / f"paper-{product.lower()}{'-hl' if hl_src else ''}{'-5m' if five else ''}.db"
         console.print(Text(f"ctrl-c returns to the menu; the book is {db}. Buy and close by hand from a second "
                            "espero ui window (Paper trading)", style=MUTED))

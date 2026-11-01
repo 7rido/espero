@@ -1,0 +1,24 @@
+#54 aggressive flow: mid's move, one-sided buying minus one-sided selling, bps
+horizon  mean    low  high  first_half  second_half  days  coins_same  coins  up_after_high  up_after_low            label
+    10s 0.023 -0.049 0.085       0.019        0.028    24           9     14          0.432         0.424 NO CLEAR PATTERN
+     1m 0.106 -0.051 0.260       0.097        0.114    24           9     14          0.476         0.477 NO CLEAR PATTERN
+     5m 0.011 -0.310 0.295      -0.020        0.041    24           6     14          0.488         0.489 NO CLEAR PATTERN
+    15m 0.031 -0.647 0.706       0.398       -0.335    24           8     14          0.489         0.492 NO CLEAR PATTERN
+
+Per coin, mean high minus low, bps:
+horizon   10s    1m    5m   15m
+coin                           
+BTC      0.06  0.32  0.23  0.22
+ETH      0.06  0.33 -0.35 -0.33
+SOL     -0.11  0.20 -0.30 -0.34
+XRP      0.05  0.17 -0.05  0.28
+DOGE    -0.04 -0.06 -0.29 -0.48
+LINK     0.14  0.28  0.27  0.36
+ADA      0.14  0.28 -0.29 -0.12
+AVAX     0.06  0.25  0.54  1.25
+BNB      0.07  0.29  0.24  0.63
+TRX      0.03  0.04  0.07  0.14
+LTC     -0.01 -0.16 -0.42 -1.57
+XLM     -0.17 -0.20 -0.28  0.11
+HBAR     0.09 -0.11  0.79  1.12
+kSHIB   -0.06 -0.17 -0.04 -0.77

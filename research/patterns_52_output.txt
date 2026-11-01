@@ -1,0 +1,43 @@
+#52 who moves first: 24 days, 144 coin-days. Positive lag: Binance first.
+
+local_timestamp: mean of daily median lag 1060 ms (95% CI 985 to 1133); halves 1167, 954; 6 of 6 coins share the sign; CLEAR LEADER
+coin-days Binance first 142, Hyperliquid first 0, same bin 2
+      median_lag_ms  peak_corr
+coin                          
+BTC          1050.0      0.113
+ETH          1050.0      0.097
+SOL          1000.0      0.062
+XRP          1100.0      0.046
+DOGE         1050.0      0.046
+LINK         1050.0      0.031
+
+timestamp: mean of daily median lag 792 ms (95% CI 721 to 860); halves 942, 642; 6 of 6 coins share the sign; CLEAR LEADER
+coin-days Binance first 143, Hyperliquid first 1, same bin 0
+      median_lag_ms  peak_corr
+coin                          
+BTC           850.0      0.139
+ETH           850.0      0.122
+SOL           850.0      0.079
+XRP           800.0      0.065
+DOGE          900.0      0.060
+LINK          750.0      0.040
+
+As a stand-in, per coin (mean of days): price gap in bps and 5-minute return correlation
+      gap_median  gap_p99  corr_5m
+coin                              
+BTC        2.755    6.408    0.990
+ETH        2.759    7.409    0.991
+SOL        3.020    8.507    0.989
+XRP        2.844   10.618    0.978
+DOGE       3.119   12.247    0.975
+LINK       3.394   16.636    0.952
+
+After a 10 bps move in 1 s on one venue: the other venue's mean move in that direction, bps
+                               n  mean_bps
+event             seconds                 
+binance_moves     1         4766      7.11
+                  5         4766     12.62
+                  30        4765     13.11
+hyperliquid_moves 1        15870      0.10
+                  5        15870      0.14
+                  30       15867     -0.01

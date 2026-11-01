@@ -1,0 +1,24 @@
+#55 book imbalance: mid's move, bid-heavy minus ask-heavy, bps
+horizon  mean    low  high  first_half  second_half  days  coins_same  coins  up_after_high  up_after_low            label
+    10s 0.399  0.309 0.491       0.427        0.372    24          14     14          0.459         0.397    CLEAR PATTERN
+     1m 0.695  0.522 0.922       0.603        0.786    24          14     14          0.504         0.457    CLEAR PATTERN
+     5m 1.128  0.664 1.623       1.006        1.251    24          13     14          0.507         0.476    CLEAR PATTERN
+    15m 1.394 -0.105 3.048       0.754        2.034    24          12     14          0.503         0.487 NO CLEAR PATTERN
+
+Per coin, mean high minus low, bps:
+horizon   10s    1m    5m   15m
+coin                           
+BTC      0.77  1.37  1.78  2.08
+ETH      0.81  1.29  1.39  1.17
+SOL      0.75  1.23  1.58  2.50
+XRP      0.47  0.79  0.92  1.77
+DOGE     0.61  0.98  1.55  1.61
+LINK     0.35  0.38  0.92  2.50
+ADA      0.21  0.59  1.71  1.30
+AVAX     0.49  0.55  0.54  0.69
+BNB      0.32  0.52  0.65 -0.02
+TRX      0.16  0.34  0.64  0.61
+LTC      0.21  0.42  0.85  1.75
+XLM      0.06  0.77  2.41  3.78
+HBAR     0.11  0.09  1.01  0.55
+kSHIB    0.26  0.41 -0.18 -0.93

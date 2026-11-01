@@ -10,7 +10,7 @@ with no known crash day among them. Nothing here is a forecast or investment adv
 | **A sharp move on Hyperliquid alone** | Binance didn't follow (about 0 bps) | Strong as a description. The cause isn't established: it may be Hyperliquid catching up or a stale print |
 | **Book leaning to bids or asks** on the top 5 levels | Price leaned the same way by 0.4–1.1 bps over 10 s to 5 min | Consistent on nearly all coins, but tiny: about a tenth of a round trip |
 | **A large one-second burst of market orders** | Price moved about 1.3 bps with the burst over the next minute, with no reversal in that minute | Solid, but small |
-| **Book after a burst** | Top-5 depth usually back within about a second, and within 30 s in about 96% of cases | The file can't see anything faster. Less reliable on TRX, and for orders large against the book |
+| **Book after a burst** | Top-5 depth usually back within about a second, and within 30 s in about 96% of cases | The file can't see anything faster. Slower on TRX. Orders large against the book weren't measured separately and may differ |
 | **Mark high against index,** compared with the last 2 hours | Mark did 0.6–5.9 bps worse than when the premium was low, over 1 to 60 min | Weak as a direction: up shares differ by only 3–4 points. LINK goes the other way, and the 60-minute figure swings a lot from day to day |
 | **One-sided trading over 60 s** | Nothing clear in either direction | Don't read anything into it from this data |
 

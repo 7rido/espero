@@ -1,6 +1,6 @@
 # Regime research — a follow-on to `espero rate` (plan)
 
-**Status, 2026-10-31: steps 1 to 3 are done ([REGIME_INVENTORY.md](REGIME_INVENTORY.md), [REGIME_DEFINITIONS.md](REGIME_DEFINITIONS.md), [REGIME_CANDIDATES.md](REGIME_CANDIDATES.md)); step 4's gate has run and its power bar is fixed ([REGIME_POWER.md](REGIME_POWER.md)), with no state counted yet; steps 5 and 6 have not started, and no return has been computed.** Agreed in a side session and forwarded from it. It registers no
+**Status, 2026-10-31: steps 1 to 3 are done ([REGIME_INVENTORY.md](REGIME_INVENTORY.md), [REGIME_DEFINITIONS.md](REGIME_DEFINITIONS.md), [REGIME_CANDIDATES.md](REGIME_CANDIDATES.md)); both candidates closed at step 4's power bar ([REGIME_POWER.md](REGIME_POWER.md)), so steps 5 and 6 will not run on this history. No return was computed and no trial was spent.** Agreed in a side session and forwarded from it. It registers no
 test, takes no number and spends no trial. Each test it leads to gets its own `PREREGISTRATION_*.md`, numbered from #51.
 
 **Goal:** find regimes where the rating's signals worked better, then confirm them on new data or close them. "Proven" means

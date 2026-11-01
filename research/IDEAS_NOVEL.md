@@ -197,6 +197,8 @@ Hyperliquid alone, with Binance as the signal. It needs second-by-second recordi
 - **Order-book imbalance and queue games**: firms with servers next to the exchange win that race.
 - **Indicator scalps**: every indicator vote failed here.
 - **Copying whales**: survivorship, and the whales are often the ones being hunted (#3).
+- **Cutting `espero rate`'s skill by market regime, on today's history**: untested, because both candidates closed at a fixed
+  power bar ([REGIME_POWER.md](REGIME_POWER.md)). It needs more dates, in a new document that discloses this one.
 
 ## The lesson from today's run
 

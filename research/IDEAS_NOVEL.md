@@ -57,6 +57,7 @@ that are new (2024–26 instruments) or where the data exists but nobody has sha
 - **Next.** Forward only, because there is no history. A collector that snapshots positions hourly
   (rate limits allow the top few thousand accounts), then a pre-registered test after a few months.
   Reading public data is allowed; trading Hyperliquid is not, for US persons, so it stays paper.
+  Registered as #60, [FORWARD_LADDER.md](FORWARD_LADDER.md); window opens 2026-11-05.
 
 ## 4. HLP's inventory
 

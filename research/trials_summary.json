@@ -1,5 +1,5 @@
 {
- "tests_registered": 44,
+ "tests_registered": 45,
  "tests_judged": 30,
  "span_days": 3,
  "tests_per_day": 10.0,
@@ -12,7 +12,7 @@
  "p_values_available": 19,
  "survive_holm_05": 6,
  "survive_bh_05": 8,
- "sr0_annualised": 1.4348697284541956,
+ "sr0_annualised": 1.4388171824492484,
  "dsr_above_95": 0,
  "spa_gross": {
   "stat": 9.105147508940984,

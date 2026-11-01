@@ -174,7 +174,8 @@ espero paper                       # one step of paper trading on live candles
 espero paper --loop --interval 60  # keep it running (ctrl-c to stop)
 # without --venue (or --fee-bps) the paper book charges no fees at all; pass --venue binanceus etc.
 espero tsmom --cash 100            # cross-asset trend paper account
-espero dashboard --open            # one self-contained HTML page with the accounts
+espero dashboard --open            # one self-contained HTML page with the accounts and the market readout
+espero readout                     # what usually follows on Hyperliquid, and what orders cost; not signals
 
 espero fetch ETH-USD --days 1460   # fresh data, no API key needed
 espero matrix data/ETHUSD_86400s.csv

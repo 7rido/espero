@@ -677,13 +677,17 @@ def findings(folder: Path = RESEARCH) -> List[dict]:
     out = []
     for path in folder.glob("RESULTS_*.md"):
         lines = path.read_text().splitlines()
-        num = re.findall(r"\(#(\d+)([a-z]?)\)", lines[0] if lines else "")
+        num = re.findall(r"\(#(\d+)([a-z]?)(?:–#(\d+))?\)", lines[0] if lines else "")
         verdict = next((ln[3:] for ln in lines if ln.startswith("## Verdict")), None)
         if verdict is None:     # the first bold span, which may wrap onto the next line; its first sentence
             m = re.search(r"^\*\*(.+?)\*\*", "\n".join(lines), re.S | re.M)
             verdict = re.split(r"(?<=\.) ", " ".join(m.group(1).split()))[0] if m else ""
         verdict = verdict[len("Verdict: "):] if verdict.startswith("Verdict: ") else verdict
-        test, key = (f"#{num[-1][0]}{num[-1][1]}", (int(num[-1][0]), num[-1][1])) if num else ("", (-1, ""))
+        test, key = "", (-1, "")
+        if num:
+            first, letter, last = num[-1]
+            test = f"#{first}{letter}" + (f"–#{last}" if last else "")
+            key = (int(last or first), letter)
         out.append({"test": test, "key": key, "verdict": verdict.rstrip("."), "path": path})
     return sorted(out, key=lambda r: (r["key"], r["path"].name), reverse=True)
 
@@ -722,17 +726,27 @@ def act_findings(console, state):
                               + ["Back to the menu"], style=STYLE, pointer="❯").ask()
     if not what or what.startswith("Back"):
         return
+    _page(console, RESEARCH / what.split()[-1])
+
+
+def _page(console, path: Path) -> None:
+    """A markdown file in the pager."""
     from rich.markdown import Markdown
     old = os.environ.get("LESS")
     os.environ["LESS"] = (old or "") + " -R"          # less prints colour codes as text without -R
     try:
         with console.pager(styles=True):
-            console.print(Markdown((RESEARCH / what.split()[-1]).read_text()))
+            console.print(Markdown(path.read_text()))
     finally:
         if old is None:
             os.environ.pop("LESS", None)
         else:
             os.environ["LESS"] = old
+
+
+def act_readout(console, state):
+    """What the free Hyperliquid data shows, for reading the market. Context, not signals. Reads a file only."""
+    _page(console, RESEARCH / "OPERATOR_READOUT.md")
 
 
 def act_factors(console, state):
@@ -773,6 +787,7 @@ MENU: List[Tuple[str, Callable]] = [
     ("Carry (#12): the forward books, their loops, funding vs the 15% bar", act_carry),
     (f"Forward tests ({', '.join(t.replace(' ', ', ') for t, _, _ in FORWARD)}): the paper ledgers, "
      "judged after March 2027", act_forward),
+    ("Reading the market: what usually follows, and what orders cost (#51-#57, context, not signals)", act_readout),
     ("Research results: measured costs and every test's verdict (reads files only)", act_findings),
     ("Factor IC table (research)", act_factors),
     ("Run the tests", act_tests),

@@ -166,6 +166,9 @@ differently. The tail matters: on TRX, 11% weren't back within 30 s. The move do
 
 - All five rules were committed before any new file was downloaded, and the fetch log was read before anything ran. The code
   was unchanged from the registration at the read, confirmed by `git diff`.
+- **Shown, at the account holder's request.** The registration says no result becomes an input to the UI. On 2026-11-01 the
+  holder asked for the dashboard and home screen to show these results, so both display `research/OPERATOR_READOUT.md` as
+  labelled text. No live reading, rule, rating or order uses them.
 - **Not independent.** All five use the same days, and #52, #53 and #55 may share causes. They were the author's own five
   choices, on data other tests had already read, so they count as trials: five rows in `research/trials.csv`.
 - **Calm days.** First-of-month days have no known cascade, so none of this says what happens in a crash.

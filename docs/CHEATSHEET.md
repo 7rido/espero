@@ -137,6 +137,14 @@ testnet URL constant and refuses any mainnet URL. `--execute-testnet` shadows th
 leg with real resting (ALO) orders so the fill rate #12 assumed can be measured. Mainnet signing is
 not implemented.
 
+## Reading the market (#51-#57, research/OPERATOR_READOUT.md)
+
+```bash
+.venv/bin/python -m espero readout                                     # what usually follows, and what orders cost; not signals
+```
+
+Also on the dashboard, and in the home screen's menu.
+
 ## The 1-10 rating (#50, research/RATING.md)
 
 ```bash

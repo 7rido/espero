@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import pandas as pd
 
@@ -105,9 +106,21 @@ class TestRender(unittest.TestCase):
         self.assertEqual([r["test"] for r in rows], ["#12", "#9b", "#9", ""])
         self.assertEqual([r["verdict"] for r in rows],
                          ["FAIL on criterion 1", "PASS", "FAIL", "Not evidence"])
+        (folder / "RESULTS_E.md").write_text("# Results — e (#20–#30)\n\n**Five things.** more\n")
+        (folder / "RESULTS_F.md").write_text("# Results — f (#25)\n\n**One thing.** more\n")
+        ranged = ui.findings(folder)                    # a range sorts by its last number
+        self.assertEqual([r["test"] for r in ranged], ["#20–#30", "#25", "#12", "#9b", "#9", ""])
         real = ui.findings()                            # the repo's own files all parse
         self.assertTrue(real and all(r["verdict"] for r in real))
         self.assertIn("#44", [r["test"] for r in real])
+        self.assertEqual([r["test"] for r in real][:3], ["#57", "#52–#56", "#51"])
+
+    def test_readout_is_on_the_menu_and_opens_the_real_file(self):
+        self.assertIn(ui.act_readout, [fn for _, fn in ui.MENU])
+        with mock.patch.object(ui, "_page") as page:
+            ui.act_readout(Console(file=io.StringIO(), width=120), self.state)
+        self.assertEqual(page.call_args[0][1].name, "OPERATOR_READOUT.md")
+        self.assertTrue(page.call_args[0][1].exists())
 
     def test_costs_table_lists_measured_round_trips(self):
         buf = io.StringIO()

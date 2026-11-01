@@ -286,7 +286,7 @@ def run_daily(state_dir: Path = Path("."), cash_tsmom: float = 100.0, cash_xs: f
             _step("publish", lambda: publish_data(now or datetime.now(timezone.utc)), result, notify)
 
         def render():
-            out = dash.write(state_dir / "dashboard.html", tsmom_db=tsmom_db, paper_db=paper_db,
+            out = dash.write(state_dir / "dashboard.html", readout=True, tsmom_db=tsmom_db, paper_db=paper_db,
                              live_db=live_db, xs_db=xs_db, mf_db=mf_db, mf_hl_db=state_dir / "mf-hl.db",
                              board=True, offline=dry_run)
             return {"note": f"wrote {out}"}

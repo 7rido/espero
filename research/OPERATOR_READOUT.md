@@ -2,7 +2,8 @@
 
 Plain summary of [RESULTS_BOOKWALK.md](RESULTS_BOOKWALK.md), [RESULTS_PATTERNS.md](RESULTS_PATTERNS.md) and [RESULTS_CATCHUP.md](RESULTS_CATCHUP.md). **Context for
 reading the market, not rules or signals.** It comes from 24 calm first-of-month days from 2024-11 to 2026-10, on Hyperliquid,
-with no known crash day among them. Nothing here is a forecast or investment advice. The tools don't use any of it.
+with no known crash day among them. Nothing here is a forecast or investment advice. The dashboard and home screen show this page, and
+nothing else uses it: no rule, rating or order takes it as an input.
 
 | what you can see | what usually followed | how much to trust it |
 |---|---|---|

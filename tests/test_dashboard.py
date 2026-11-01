@@ -81,6 +81,42 @@ class TestForwardAndBoardCards(unittest.TestCase):
     def render(self, **kw):
         return dashboard.render(self.dir / "t.db", self.dir / "p.db", self.dir / "l.db", self.dir / "x.db", **kw)
 
+    def test_readout_card_only_when_asked(self):
+        paths = (self.dir / "a.db", self.dir / "b.db", self.dir / "c.db", self.dir / "d.db")
+        self.assertNotIn("Reading the market", dashboard.render(*paths))
+        html = dashboard.render(*paths, readout=True)
+        self.assertIn("Reading the market", html)
+        self.assertIn("not signals", html)
+        self.assertIn("Market order costs", html)
+        self.assertIn("No accounts yet", html)     # the card doesn't hide the empty state
+
+    def test_readout_parts_reads_the_first_table_and_the_costs(self):
+        text = ("# t\n\n| a | b |\n|---|---|\n| **x** | y |\n| z | w |\n\nmore\n\n| other | table |\n"
+                "|---|---|\n| q | r |\n\n## Before\n\n- not this\n\n## Costs, from #51\n\n- **c1** one\n- c2\n\n"
+                "## After\n\n- nor this\n")
+        rows, costs = dashboard.readout_parts(text)
+        self.assertEqual(rows, [["**x**", "y"], ["z", "w"]])
+        self.assertEqual(costs, ["**c1** one", "c2"])
+
+    def test_readout_card_escapes_and_bolds(self):
+        path = self.dir / "r.md"
+        path.write_text("| a | b |\n|---|---|\n| **x** <i> | y & z |\n", encoding="utf-8")
+        card = dashboard._readout_card(path)
+        self.assertIn("<strong>x</strong> &lt;i&gt;", card)
+        self.assertIn("y &amp; z", card)
+
+    def test_readout_card_missing_or_empty_is_left_out(self):
+        self.assertEqual(dashboard._readout_card(self.dir / "none.md"), "")
+        empty = self.dir / "e.md"
+        empty.write_text("no table\n", encoding="utf-8")
+        self.assertEqual(dashboard._readout_card(empty), "")
+
+    def test_the_real_readout_parses(self):
+        rows, costs = dashboard.readout_parts(dashboard.READOUT.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(len(rows), 7)
+        self.assertTrue(all(len(r) == 3 for r in rows))
+        self.assertGreaterEqual(len(costs), 3)
+
     def test_mf_card_only_when_asked(self):
         from espero import mf
         acc = mf.MFAccount(self.dir / "mf.db", cash=100.0)

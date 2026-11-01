@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -79,10 +80,11 @@ def esc(v) -> str:
 
 def render(tsmom_db: Path = Path("tsmom.db"), paper_db: Path = Path("paper.db"),
            live_db: Path = Path("live.db"), xs_db: Path = Path("xs.db"), offline: bool = False,
-           mf_db: Optional[Path] = None, board: bool = False, mf_hl_db: Optional[Path] = None) -> str:
+           mf_db: Optional[Path] = None, board: bool = False, mf_hl_db: Optional[Path] = None,
+           readout: bool = False) -> str:
     """`offline=True` (the daily job's dry run) skips the live-signal preview and the
-    signal board, the only network calls here. `mf_db` and `board` are opt-in, so a
-    render pointed at test databases never picks up the real ones."""
+    signal board, the only network calls here. `mf_db`, `board` and `readout` are opt-in,
+    so a render pointed at test databases never picks up the real ones."""
     rows = _read_account(tsmom_db)
     cards = []
     total = 0.0
@@ -302,6 +304,9 @@ def render(tsmom_db: Path = Path("tsmom.db"), paper_db: Path = Path("paper.db"),
         cards.append('<section class="card"><h2>No accounts yet</h2>'
                      '<div class="sub">run <code>espero tsmom --cash 100</code> first</div></section>')
 
+    if readout:
+        cards.append(_readout_card())
+
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     return f"""<!doctype html>
 <html><head><meta charset="utf-8"><title>espero dashboard</title>
@@ -322,7 +327,7 @@ def render(tsmom_db: Path = Path("tsmom.db"), paper_db: Path = Path("paper.db"),
   table {{ width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }}
   th {{ text-align:left; font-weight:500; color:#8b8f94; font-size:11px; text-transform:uppercase;
         letter-spacing:.04em; border-bottom:1px solid #262a2e; padding:6px 0; }}
-  td {{ padding:6px 0; border-bottom:1px solid #1e2225; }}
+  td {{ padding:6px 8px 6px 0; border-bottom:1px solid #1e2225; vertical-align:top; }}
   .num {{ text-align:right; font-variant-numeric:tabular-nums; }}
   .pos {{ color:#3aa76d; }} .neg {{ color:#d64545; }}
   svg {{ display:block; margin:14px 0 4px; }}
@@ -420,6 +425,55 @@ def _board_card() -> str:
             <th class="num">up</th><th>change</th><th>nearest flip</th></tr></thead>
             <tbody>{body}</tbody>
           </table>
+        </section>"""
+
+
+READOUT = Path(__file__).resolve().parent.parent / "research" / "OPERATOR_READOUT.md"
+
+
+def _bold(text: str) -> str:
+    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", esc(text))
+
+
+def readout_parts(text: str) -> tuple[list[list[str]], list[str]]:
+    """The first table's rows, without its header, and the bullets under "## Costs"."""
+    lines = text.splitlines()
+    start = next((i for i, ln in enumerate(lines) if ln.startswith("|")), len(lines))
+    rows = []
+    for ln in lines[start + 2:]:
+        if not ln.startswith("|"):
+            break
+        rows.append([cell.strip() for cell in ln.strip().strip("|").split(" | ")])
+    costs, inside = [], False
+    for ln in lines:
+        if ln.startswith("## "):
+            inside = ln.startswith("## Costs")
+        elif inside and ln.startswith("- "):
+            costs.append(ln[2:])
+    return rows, costs
+
+
+def _readout_card(path: Optional[Path] = None) -> str:
+    """research/OPERATOR_READOUT.md as a card, so the page and the document can't disagree. Context, not signals."""
+    try:
+        rows, costs = readout_parts((path or READOUT).read_text(encoding="utf-8"))
+    except OSError:
+        return ""
+    if not rows:
+        return ""
+    body = "".join("<tr>" + "".join(f"<td>{_bold(c)}</td>" for c in row) + "</tr>" for row in rows)
+    cost_lines = "".join(f"<div class='sub'>{_bold(c)}</div>" for c in costs)
+    return f"""
+        <section class="card">
+          <h2>Reading the market <span class="pill">context · not signals · #51–#57</span></h2>
+          <div class="sub">What usually followed on 24 calm first-of-month days, with no known crash. Not a
+            forecast, and nothing here sets a rule, a rating or an order (research/OPERATOR_READOUT.md).</div>
+          <table>
+            <thead><tr><th>what you can see</th><th>what usually followed</th><th>how much to trust it</th></tr></thead>
+            <tbody>{body}</tbody>
+          </table>
+          <h2 style="margin-top:16px">Market order costs</h2>
+          {cost_lines}
         </section>"""
 
 

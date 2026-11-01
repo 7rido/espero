@@ -1107,11 +1107,16 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
                      paper_db=pathlib.Path(args.paper_db),
                      live_db=pathlib.Path(args.live_db),
                      xs_db=pathlib.Path(args.xs_db), mf_db=pathlib.Path(args.mf_db),
-                     mf_hl_db=pathlib.Path(args.mf_db).with_name("mf-hl.db"), board=True)
+                     mf_hl_db=pathlib.Path(args.mf_db).with_name("mf-hl.db"), board=True, readout=True)
     print(f"wrote {out}")
     if args.open:
         import subprocess
         subprocess.run(["open", str(out)], check=False)
+    return 0
+
+
+def _cmd_readout(args: argparse.Namespace) -> int:
+    print(dash.READOUT.read_text(encoding="utf-8"))
     return 0
 
 
@@ -1509,6 +1514,9 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--mf-db", default="mf.db")
     d.add_argument("--open", action="store_true")
     d.set_defaults(func=_cmd_dashboard)
+
+    rd = sub.add_parser("readout", help="what the free Hyperliquid data shows, for reading the market; not signals")
+    rd.set_defaults(func=_cmd_readout)
 
     c = sub.add_parser("chart", help="write the equity curve PNG")
     c.add_argument("data", nargs="?", default="data/BTCUSD_86400s.csv")

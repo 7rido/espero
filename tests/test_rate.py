@@ -37,7 +37,8 @@ def regimes(rng, days):
 
 def frame(px: pd.Series) -> pd.DataFrame:
     p = px.to_numpy()
-    return pd.DataFrame({"dt": px.index, "ts": px.index.astype("int64") // 10**9, "open": p, "high": p, "low": p, "close": p,
+    return pd.DataFrame({"dt": px.index, "ts": px.index.astype("int64") // 10**9, "open": p, "high": p, "low": p,
+                         "close": p,
                          "adj_close": p, "volume": 1.0})
 
 
@@ -127,7 +128,8 @@ class TestPool(unittest.TestCase):
         cm = rt.build_model(prices, "crypto", 7, NOW)
         r = rt.rate_symbol("P0-USD", "crypto", prices["P0-USD"], cm, 7, NOW)
         ctx = {"funding": "a", "liquidations": "b", "book": "c"}
-        self.assertIn("fitted on 4 of 42 symbols, only coins still listed", rt.format_report({**r, "fitted": 4, "pool": 42}, ctx))
+        self.assertIn("fitted on 4 of 42 symbols, only coins still listed",
+                      rt.format_report({**r, "fitted": 4, "pool": 42}, ctx))
 
 
 class TestDetects(unittest.TestCase):
@@ -177,7 +179,8 @@ class TestRating(unittest.TestCase):
         ctx = {"funding": "a", "liquidations": "b", "book": "c"}
         self.assertIn("so below usual", rt.format_report({**r, "p_up": 0.56, "rating": 7, "usual": 0.61}, ctx))
         self.assertIn("so above usual", rt.format_report({**r, "p_up": 0.56, "rating": 7, "usual": 0.51}, ctx))
-        self.assertNotIn("usual)", rt.format_report({**r, "p_up": 0.56, "rating": 7, "usual": 0.56}, ctx).split("UNPROVEN")[0].replace("56%)", ""))
+        same = rt.format_report({**r, "p_up": 0.56, "rating": 7, "usual": 0.56}, ctx)
+        self.assertNotIn("usual)", same.split("UNPROVEN")[0].replace("56%)", ""))
 
     def test_a_model_worse_than_the_usual_rate_says_so(self):
         r = rt.rate_symbol("P0-USD", "crypto", self.prices["P0-USD"], self.cm, 7, NOW)
@@ -216,7 +219,8 @@ class TestReadings(unittest.TestCase):
         return [{"time": 1_793_000_000_000, "fundingRate": "0.00001"}]
 
     def aggr(self, *_):
-        return pd.DataFrame({"time": [1_793_000_000], "market": ["BINANCE_FUTURES:btcusdt"], "open": [1.0], "close": [1.0],
+        return pd.DataFrame({"time": [1_793_000_000], "market": ["BINANCE_FUTURES:btcusdt"], "open": [1.0],
+                             "close": [1.0],
                              "vbuy": [1.0], "vsell": [1.0], "lbuy": [5.0], "lsell": [7.0]})
 
     def read(self, d, **kw):
@@ -251,7 +255,8 @@ class TestReadings(unittest.TestCase):
 
     def test_a_coin_aggr_does_not_cover_is_named(self):
         with tempfile.TemporaryDirectory() as d:
-            got = rt.context("HYPE-USD", "crypto", now=1_793_000_400.0, folder=Path(d), post=self.post, fetch_aggr=self.aggr)
+            got = rt.context("HYPE-USD", "crypto", now=1_793_000_400.0, folder=Path(d), post=self.post,
+                             fetch_aggr=self.aggr)
         self.assertEqual(got["liquidations"], "not covered")
 
     def test_stocks_have_no_readings(self):

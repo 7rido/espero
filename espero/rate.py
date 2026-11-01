@@ -412,7 +412,8 @@ def rate(requests: Iterable[Tuple[str, str]], h: int = DEFAULT_HORIZON, get: Opt
                 errors[s] = f"{s}: no price history ({failed.get(s, 'empty')})"
                 continue
             try:
-                results.append({**rate_symbol(s, kind, prices[s], cm, h, now), "fitted": cm.symbols, "pool": len(universe)})
+                results.append({**rate_symbol(s, kind, prices[s], cm, h, now), "fitted": cm.symbols,
+                                "pool": len(universe)})
             except RatingError as exc:
                 errors[s] = str(exc)
     return results, errors
@@ -485,7 +486,8 @@ def _pool_note(r: dict) -> List[str]:
     if "fitted" not in r:
         return []
     note = f"Model fitted on {r['fitted']} of {r['pool']} symbols"
-    return [note + (", only coins still listed on Hyperliquid, which flatters crypto's history." if r["kind"] == "crypto" else ".")]
+    flatter = ", only coins still listed on Hyperliquid, which flatters crypto's history."
+    return [note + (flatter if r["kind"] == "crypto" else ".")]
 
 
 def _against_usual(p_up: float, usual: float) -> str:
@@ -508,15 +510,18 @@ def format_report(r: dict, ctx: Dict[str, str]) -> str:
         result = "did worse than" if s["hi"] < 0 else "did not reliably beat"
         lines += [f"⚠ UNPROVEN: on past data it was not fitted to, this model {result} the usual rate ({span}).",
                   "  Treat this rating as a description of the chart, not a forecast."]
-    lines += [f"A typical {r['horizon']}-day move is ±{r['move']:.1%}; a round trip costs about {cost / 100:.2f}% ({source}).",
+    lines += [f"A typical {r['horizon']}-day move is ±{r['move']:.1%}; "
+              f"a round trip costs about {cost / 100:.2f}% ({source}).",
               *_pool_note(r),
-              "", f"{'In the rating: this symbol on past days like today':<52}{'now':>9}{'days':>8}  chance up (95% CI)"]
+              "", f"{'In the rating: this symbol on past days like today':<52}{'now':>9}{'days':>8}"
+                  "  chance up (95% CI)"]
     for e in r["evidence"]:
         chance = "too few" if e["up"] is None else f"{e['up']:.0%} ({e['lo']:.0%}-{e['hi']:.0%})"
         lines.append(f"  {e['label']:<50}{e['now']:>9}{e['days']:>8,}  {chance}")
     lines += ["", "Not in the rating: no history here to test them"]
     lines += [f"  {k:<14}{ctx[k]}" for k in ("funding", "liquidations", "book")]
-    lines += ["", "A statistical read of public data, not advice. It knows nothing of your position and places nothing."]
+    lines += ["", "A statistical read of public data, not advice. "
+                  "It knows nothing of your position and places nothing."]
     return "\n".join(lines)
 
 
@@ -535,5 +540,6 @@ def format_scorecard(card: dict) -> str:
     lines.append(f"Brier skill against each symbol's usual rate: {card['skill']:+.2%}")
     if card.get("scored", 0) < FEW_SCORED:
         lines.append(f"Under {FEW_SCORED} scored ratings: too few to read anything into.")
-    lines.append("Ratings taken close together on related symbols are not independent, so these counts overstate the evidence.")
+    lines.append("Ratings taken close together on related symbols are not independent, "
+                 "so these counts overstate the evidence.")
     return "\n".join(lines)

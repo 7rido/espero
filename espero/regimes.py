@@ -66,7 +66,10 @@ def volatility_states(px: pd.Series, kind: str) -> pd.Series:
 
 
 def funding_states(settlements: pd.Series) -> pd.Series:
-    """Per day, from the last 21 slots through 16:00 on that day. Under 18 present: no label, since a gap stays a gap."""
+    """Per day, from the last 21 slots through 16:00 on that day.
+
+    Under 18 present: no label, since a gap stays a gap.
+    """
     s = settlements.copy()
     s.index = s.index.floor("min")
     s = s[(s.index.hour % 8 == 0) & (s.index.minute == 0)]
@@ -83,7 +86,10 @@ def funding_states(settlements: pd.Series) -> pd.Series:
 
 # ---------------------------------------------------------------------- the count, research/REGIME_POWER.md
 def count_states(dates: pd.DatetimeIndex, labels: pd.Series, h: int = HORIZON) -> Dict[str, object]:
-    """Dates per state on the rating's folds, from the date index alone. A fold under the training floor gives that state nothing."""
+    """Dates per state on the rating's folds, from the date index alone.
+
+    A fold under the training floor gives that state nothing.
+    """
     dates = pd.DatetimeIndex(sorted(set(dates)))
     labels = labels.reindex(dates)
     folds = purged_walk_forward(dates, n_splits=rt.SPLITS, horizon=h, embargo=rt.EMBARGO, min_train=rt.MIN_TRAIN)
@@ -107,7 +113,10 @@ def count_states(dates: pd.DatetimeIndex, labels: pd.Series, h: int = HORIZON) -
 
 
 def verdict(counts: Dict[str, object], state: str, comparator: Sequence[str], skill: float, half_width: float) -> dict:
-    """MDE against D from the committed bar. Open only if the history can detect D and each half has the floor's dates."""
+    """MDE against D from the committed bar.
+
+    Open only if the history can detect D and each half has the floor's dates.
+    """
     row = counts["states"].get(state, {"test": 0, "first_half": 0, "second_half": 0})
     total = counts["test_dates"]
     w = row["test"] / total

@@ -1,6 +1,6 @@
 # Regime research — a follow-on to `espero rate` (plan)
 
-**Status, 2026-10-31: steps 1 and 2 are done ([REGIME_INVENTORY.md](REGIME_INVENTORY.md), [REGIME_DEFINITIONS.md](REGIME_DEFINITIONS.md)); steps 3 to 6 have not started, and no return has been computed.** Agreed in a side session and forwarded from it. It registers no
+**Status, 2026-10-31: steps 1 to 3 are done ([REGIME_INVENTORY.md](REGIME_INVENTORY.md), [REGIME_DEFINITIONS.md](REGIME_DEFINITIONS.md), [REGIME_CANDIDATES.md](REGIME_CANDIDATES.md)); steps 4 to 6 have not started, and no return has been computed.** Agreed in a side session and forwarded from it. It registers no
 test, takes no number and spends no trial. Each test it leads to gets its own `PREREGISTRATION_*.md`, numbered from #51.
 
 **Goal:** find regimes where the rating's signals worked better, then confirm them on new data or close them. "Proven" means
@@ -17,7 +17,8 @@ is a valid result.
    - **Market stress:** a large fall from the high.
 3. **Name who pays.** Each candidate says who pays and why. No mechanism, no test. About three candidates at most.
 4. **Power first.** Drop a candidate untested if the history can't detect an effect that matters after costs. The 7-day
-   horizon gives about 52 independent samples a year per market.
+   horizon gives about 52 independent samples a year per market. Added 2026-10-31 during step 3, before anything was counted:
+   the lean gate in [REGIME_CANDIDATES.md](REGIME_CANDIDATES.md) runs first and can close a candidate untested.
 5. **Test survivors once.** Registration committed before computing, purged walk-forward, one sealed holdout read, costs and
    funding included. It must pass in both halves and not depend on one coin. Every test goes in `trials.csv`, with deflated
    Sharpe and SPA reported.

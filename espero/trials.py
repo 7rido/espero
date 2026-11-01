@@ -66,6 +66,14 @@ def bh(p: Sequence[float]) -> np.ndarray:
     return q
 
 
+def benjamini_hochberg(p: Sequence[float], q: float = 0.05) -> tuple:
+    """The decision at FDR `q`: who is rejected, the p cutoff (None if nobody) and how many.
+    A NaN counts as a test and is never rejected. The sign is the caller's: see research/FDR_STANDARD.md."""
+    p = np.asarray(p, dtype=float)
+    rejected = (bh(p) <= q) & ~np.isnan(p)
+    return rejected, (float(p[rejected].max()) if rejected.any() else None), int(rejected.sum())
+
+
 def stationary_indices(rng: np.random.Generator, n: int, mean_block: float, draws: int) -> np.ndarray:
     """Politis-Romano stationary bootstrap indices, draws x n."""
     restart = rng.random((draws, n)) < 1 / mean_block

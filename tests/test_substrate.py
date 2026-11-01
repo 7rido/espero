@@ -515,6 +515,29 @@ class TrialTests(unittest.TestCase):
         self.assertTrue(np.allclose(trials.holm(p), [0.03, 0.06, 0.06]))
         self.assertTrue(np.allclose(trials.bh(p), [0.03, 0.04, 0.04]))
 
+    def test_benjamini_hochberg_decides(self):
+        rejected, cutoff, k = trials.benjamini_hochberg([0.3628, 0.00005, 0.12, 0.03, 0.008, 0.45, 0.001, 0.25])
+        self.assertEqual(rejected.tolist(), [False, True, False, False, True, False, True, False])
+        self.assertEqual((cutoff, k), (0.008, 3))
+
+    def test_benjamini_hochberg_steps_up_to_the_last_p_under_its_line(self):
+        rejected, cutoff, k = trials.benjamini_hochberg([0.01, 0.04, 0.03], q=0.05)
+        self.assertEqual(rejected.tolist(), [True, True, True])
+        self.assertEqual((cutoff, k), (0.04, 3))
+        self.assertEqual(trials.benjamini_hochberg([0.5], q=0.5)[2], 1)     # on the line counts
+
+    def test_benjamini_hochberg_with_no_discovery(self):
+        rejected, cutoff, k = trials.benjamini_hochberg([0.5, 0.9])
+        self.assertEqual(rejected.tolist(), [False, False])
+        self.assertEqual((cutoff, k), (None, 0))
+        self.assertEqual(trials.benjamini_hochberg([])[1:], (None, 0))
+
+    def test_benjamini_hochberg_counts_a_missing_p_and_never_rejects_it(self):
+        rejected, cutoff, k = trials.benjamini_hochberg([0.001, float("nan"), 0.04])    # 0.04 passes if m were 2
+        self.assertEqual(rejected.tolist(), [True, False, False])
+        self.assertEqual((cutoff, k), (0.001, 1))
+        self.assertEqual(trials.benjamini_hochberg([0.001, float("nan")], q=1.0)[0].tolist(), [True, False])
+
     def test_spa_false_positive_rate_is_controlled(self):
         rng = np.random.default_rng(11)
         hits = sum(trials.spa(rng, rng.normal(0, 1, (250, 10)), draws=300)["p"] < 0.05 for _ in range(100))

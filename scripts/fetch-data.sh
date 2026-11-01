@@ -32,7 +32,11 @@ live() {
     # a local file that was kept may differ from the release's; that is reported, not an error
     present=()
     for p in "${LIVE[@]}"; do [ -f "$p/MANIFEST.sha256" ] && present+=("$p"); done
-    if [ ${#present[@]} -gt 0 ] && [ -x "$PYTHON" ]; then
+    if [ ${#present[@]} -eq 0 ]; then
+        echo "manifest check skipped: the release carries no MANIFEST.sha256"
+    elif [ ! -x "$PYTHON" ]; then
+        echo "manifest check skipped: no virtualenv at $PYTHON (see the README's Quickstart)"
+    else
         "$PYTHON" -m espero.manifest check "${present[@]}" || echo "a file in the release is missing here" >&2
     fi
     status

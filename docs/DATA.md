@@ -123,11 +123,16 @@ order books, klines and liquidation bars. There is no account information and no
 
 Each recorded folder carries a `MANIFEST.sha256`, one line per file, written by the publish script
 and checked after the extraction. A file you already had that differs from the release's is
-reported, not replaced; a file the release has that you don't is an error. To check at any time:
+reported, not replaced; a file the release has that you don't is an error. To check a fetched copy
+again later:
 
 ```bash
 .venv/bin/python -m espero.manifest check data/hlcollect data/hlbook data/aggr/forward data/aggr/forward5m
 ```
+
+On a machine that records, the recorders add files after the manifest was written, so the check
+lists them as `extra`. That is expected there; the manifest describes the last release, not the
+folder today.
 
 ## Troubleshooting
 

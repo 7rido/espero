@@ -64,8 +64,9 @@ data/bookwalk/
 
 # ---- data, class 4: recordings that cannot be fetched again. Hyperliquid serves no history and
 # aggr deletes its bars after days. They live in the weekly release (scripts/publish-data.sh), each
-# with a MANIFEST.sha256 (python -m espero.manifest). Ignored so that `git clean` and `git add -A`
-# never touch them. Never delete them. data/lows/forward/ is the same class but is under data/lows/.
+# with a MANIFEST.sha256 (python -m espero.manifest). Ignored so that `git clean -fd` and `git add -A`
+# never touch them; `git clean -x` still would, so never run it. Never delete them. data/lows/forward/
+# is the same class but is under data/lows/.
 data/hlcollect/
 data/hlbook/
 data/book/

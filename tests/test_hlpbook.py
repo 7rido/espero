@@ -116,6 +116,78 @@ class ThresholdTests(unittest.TestCase):
         self.assertEqual(self.fires(*ev, end=hb.WINDOW_END), 0)
 
 
+class GuardTests(unittest.TestCase):
+    """#59 voids failed reads, not real changes in which accounts hold positions; #58 voids both."""
+
+    def walked(self, guard, change):
+        j, r = ramp()
+        slots, prices = scene(j + [1000.0], r + [-0.01])
+        slots = [s._replace(clean=True) for s in slots]
+        return hb.walk(change(slots), prices, final=True, guard=guard)
+
+    @staticmethod
+    def third_account(slots):
+        slots[-1] = slots[-1]._replace(addresses=frozenset({"a", "liq"}))
+        return slots
+
+    def test_an_account_appearing_voids_58_but_not_59(self):
+        self.assertEqual(len(self.walked("accounts", self.third_account)["signals"]), 0)
+        self.assertEqual(len(self.walked("reads", self.third_account)["signals"]), 1)
+
+    def test_a_failed_read_voids_59_in_either_slot_of_the_pair(self):
+        for k in (-1, -2):
+            def fail(slots, k=k):
+                slots[k] = slots[k]._replace(clean=False)
+                return slots
+            out = self.walked("reads", fail)
+            self.assertEqual(out["signals"], [])
+            self.assertGreaterEqual(out["counts"]["invalid_pairs"], 1)
+
+    def test_a_failed_read_does_not_void_58(self):
+        def fail(slots):
+            slots[-1] = slots[-1]._replace(clean=False)
+            return slots
+        self.assertEqual(len(self.walked("accounts", fail)["signals"]), 1)
+
+    def test_a_missing_record_voids_59_from_the_first_record_on(self):
+        def lost(slots):
+            slots[-1] = slots[-1]._replace(clean=None)
+            return slots
+        self.assertEqual(self.walked("reads", lost)["signals"], [])
+
+    def test_slots_before_the_first_record_are_unguarded_history(self):
+        def late_start(slots):
+            return [s._replace(clean=None) if k < len(slots) - 2 else s for k, s in enumerate(slots)]
+        out = self.walked("reads", late_start)
+        self.assertEqual(len(out["signals"]), 1)
+        self.assertEqual(out["counts"]["invalid_pairs"], 0)
+
+    def test_a_voided_pair_leaves_59s_history(self):
+        j, r = ramp()
+        slots, prices = scene(j + [1e6, 1000.0], r + [-0.5, -0.01])
+        slots = [s._replace(clean=True) for s in slots]
+        slots[-2] = slots[-2]._replace(clean=False)
+        self.assertEqual(hb.walk(slots, prices, final=True, guard="reads")["counts"]["invalid_pairs"], 2)
+
+    def test_a_record_is_read_beside_its_slot(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "hlp" / "2026-11-05" / "0015.csv.gz"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(gzip.compress(b"ts,address,coin,szi\n1,a,BTC,2\n"))
+            self.assertIsNone(hb.read_slot(path).clean)
+            rec = Path(d) / "hlp_reads" / "2026-11-05" / "0015.json"
+            rec.parent.mkdir(parents=True)
+            rec.write_text('{"ts": 1, "accounts": ["a"], "failed": []}')
+            self.assertIs(hb.read_slot(path).clean, True)
+            rec.write_text('{"ts": 1, "accounts": ["a"], "failed": ["a"]}')
+            self.assertIs(hb.read_slot(path).clean, False)
+            rec.write_text("not json")
+            self.assertIsNone(hb.read_slot(path).clean)
+
+    def test_the_tests_guards(self):
+        self.assertEqual(hb.GUARDS, {58: "accounts", 59: "reads"})
+
+
 class PricesTests(unittest.TestCase):
     def test_close_at_uses_only_a_candle_that_has_ended(self):
         p = prices_from("BTC", 0, [10.0, 20.0, 30.0])
@@ -437,6 +509,20 @@ class BookTests(unittest.TestCase):
         book.fetch = lambda body: calls.append(body) or []
         self.assertEqual(book.step(now=T0 + hb.HOLD_S + 3660), 0)
         self.assertEqual(calls, [])
+
+    def test_each_test_uses_its_own_guard(self):
+        self.fill()
+        rec = self.data / "hlp_reads" / "2026-11-05" / "0000.json"
+        rec.parent.mkdir(parents=True)
+        rec.write_text('{"ts": 1, "accounts": ["a"], "failed": ["a"]}')
+        now = T0 + hb.HOLD_S + 3600
+        self.assertGreater(self.book().step(now=now), 0)
+        two = hb.Book(Path(self.tmp.name) / "two.db", self.data, fetch=self.no_network, pace=0, log=lambda _: None,
+                      test=59)
+        self.addCleanup(two.close)
+        self.assertEqual(two.step(now=now), 0)
+        self.assertEqual(hb.ledger(self.data, self.no_network, guard="reads")["rows"], [])
+        self.assertEqual(len(hb.ledger(self.data, self.no_network)["rows"]), 1)
 
     def test_the_ledger_agrees_with_the_book(self):
         self.fill()

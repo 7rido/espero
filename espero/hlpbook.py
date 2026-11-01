@@ -1,4 +1,5 @@
-"""#58: HLP's absorbed inventory, as a rule, a ledger and a paper book (research/FORWARD_HLP.md).
+"""#58 and #59: HLP's absorbed inventory, as a rule, a ledger and a paper book (research/FORWARD_HLP.md,
+FORWARD_HLP2.md). The two differ only in the guard against a failed read.
 
 The rule reads `data/hlcollect/`: HLP's positions every 15 minutes and Hyperliquid's 1-minute candles.
 The book applies it to each new slot and records simulated fills in its own journal. It holds no key
@@ -10,6 +11,7 @@ from the book's running numbers.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import math
 import sqlite3
 import time
@@ -48,6 +50,7 @@ MIN_COIN_TRADES = 10
 PASS_T = 3.0
 BOOK_USD = 1000.0
 PENDING, MISSING = "pending", "missing"
+GUARDS = {58: "accounts", 59: "reads"}
 
 Fetch = Callable[[dict], object]
 
@@ -57,6 +60,7 @@ class Slot(NamedTuple):
     ts: int                     # when it was read: the rule's t
     addresses: frozenset
     net: Dict[str, float]
+    clean: Optional[bool] = None    # #59's record: True none failed, False one failed, None no record
 
 
 class Signal(NamedTuple):
@@ -76,14 +80,24 @@ def slot_of(path: Path) -> int:
     return int(pd.Timestamp(f"{day} {hhmm[:2]}:{hhmm[2:]}", tz="UTC").timestamp())
 
 
+def read_record(path: Path) -> Optional[bool]:
+    """A slot's read record: True if no account failed, False if one did, None if it has none we can read."""
+    record = path.parents[2] / "hlp_reads" / path.parent.name / (path.name.split(".")[0] + ".json")
+    try:
+        return not json.loads(record.read_text())["failed"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
 def read_slot(path: Path) -> Slot:
-    """One HLP file. A coin with no row has net size 0."""
+    """One HLP file and its read record. A coin with no row has net size 0."""
     df = pd.read_csv(path, usecols=["ts", "address", "coin", "szi"])
-    slot = slot_of(path)
+    slot, clean = slot_of(path), read_record(path)
     if df.empty:
-        return Slot(slot, slot, frozenset(), {})
+        return Slot(slot, slot, frozenset(), {}, clean)
     ours = df[df["coin"].isin(COINS)]
-    return Slot(slot, int(df["ts"].iloc[0]), frozenset(df["address"]), ours.groupby("coin")["szi"].sum().to_dict())
+    return Slot(slot, int(df["ts"].iloc[0]), frozenset(df["address"]), ours.groupby("coin")["szi"].sum().to_dict(),
+                clean)
 
 
 class Prices:
@@ -153,18 +167,28 @@ def fetch_recent(prices: Prices, now: int, fetch: Optional[Fetch] = None, pace: 
 
 
 # ----------------------------------------------------------------- the rule
-def walk(slots: List[Slot], prices: Prices, final: bool = False) -> Dict:
-    """Every signal in the window, from adjacent slots with the same accounts. Unless `final`, a coin
+def _void(prev: Slot, cur: Slot, guard: str, first_record: Optional[int]) -> bool:
+    """#58 voids any change in which accounts have rows. #59 voids a recorded failure, or a slot with no
+    record from the first record onward; earlier slots have no way to show a failure."""
+    if guard == "accounts":
+        return prev.addresses != cur.addresses
+    return any(s.clean is False or (s.clean is None and first_record is not None and s.slot >= first_record)
+               for s in (prev, cur))
+
+
+def walk(slots: List[Slot], prices: Prices, final: bool = False, guard: str = "accounts") -> Dict:
+    """Every signal in the window, from adjacent slots the guard lets through. Unless `final`, a coin
     stops at the first slot its candles don't reach yet, so a late candle can't change a price."""
     signals: List[Signal] = []
     counts: Counter = Counter()
     history: Dict[str, deque] = {c: deque() for c in COINS}
     waiting: set = set()
+    first_record = next((s.slot for s in slots if s.clean is not None), None)
     for prev, cur in zip(slots, slots[1:]):
         if cur.slot - prev.slot != SLOT_S:
             counts["gaps"] += 1
             continue
-        if prev.addresses != cur.addresses:
+        if _void(prev, cur, guard, first_record):
             counts["invalid_pairs"] += 1
             continue
         counts["pairs"] += 1
@@ -262,13 +286,13 @@ def evaluate(closed: pd.DataFrame) -> Dict:
             "checks": checks}
 
 
-def ledger(data: Path = DATA, fetch: Optional[Fetch] = None) -> Dict:
+def ledger(data: Path = DATA, fetch: Optional[Fetch] = None, guard: str = "accounts") -> Dict:
     """The verdict's ledger, rebuilt from the recordings once the window has closed."""
     prices = Prices()
     for path in sorted(Path(data).glob("candles/*.csv.gz")):
         load_candle_file(path, prices)
     slots = [read_slot(p) for p in slot_paths(data)]
-    w = walk(slots, prices, final=True)
+    w = walk(slots, prices, final=True, guard=guard)
     rows = trades(w["signals"], prices, final=True)
     for r in rows:
         if r["status"] == "closed":
@@ -289,12 +313,14 @@ class Book:
     """Applies the rule to each new slot. Each trade's first decision stays in the journal, so the book
     can later be compared with the ledger. `now`, `fetch` and `sleep` are injected in tests."""
 
-    def __init__(self, state, data: Path = DATA, fetch: Optional[Fetch] = None, pace: float = 0.5, log=print):
+    def __init__(self, state, data: Path = DATA, fetch: Optional[Fetch] = None, pace: float = 0.5, log=print,
+                 test: int = 58):
         self.db = sqlite3.connect(state)
         self.db.row_factory = sqlite3.Row
         self.db.execute(SCHEMA)
         self.db.commit()
         self.data, self.fetch, self.pace, self.log = Path(data), fetch, pace, log
+        self.test, self.guard = test, GUARDS[test]
         self.slots: Dict[Path, Slot] = {}
         self.candle_files: set = set()
         self.prices = Prices()
@@ -312,10 +338,11 @@ class Book:
         """Returns how many trades were written. Before the window it reads no recorded value."""
         now = int(time.time()) if now is None else now
         if now < WINDOW_START:
-            self._say_once(f"#58 waiting: the window opens {pd.Timestamp(WINDOW_START, unit='s')} UTC; no value read")
+            opens = pd.Timestamp(WINDOW_START, unit="s")
+            self._say_once(f"#{self.test} waiting: the window opens {opens} UTC; no value read")
             return 0
         if now >= WINDOW_END + 2 * HOLD_S and not self._unfinished():
-            self._say_once("#58's window has closed and every trade is settled; run espero hlp --verdict")
+            self._say_once(f"#{self.test}'s window has closed and every trade is settled; run espero hlp --verdict")
             return 0
         fresh = [p for p in slot_paths(self.data) if p not in self.slots]
         if not fresh:
@@ -328,7 +355,7 @@ class Book:
                 self.candle_files.add(p)
         fetch_recent(self.prices, now, self.fetch, self.pace)
         slots = [self.slots[p] for p in sorted(self.slots)]
-        rows = trades(walk(slots, self.prices)["signals"], self.prices)
+        rows = trades(walk(slots, self.prices, guard=self.guard)["signals"], self.prices)
         return self._record(rows, now)
 
     def _unfinished(self) -> bool:
@@ -352,16 +379,16 @@ class Book:
                             (r["coin"], r["signal_ts"], r["status"], r["entry_ts"], r["entry_px"], r["exit_ts"],
                              r["exit_px"], funding, net, pnl, now))
             wrote += 1
-            self.log(f"#58 {r['coin']} {r['status']}" + (f" net {net:+.1f} bps" if net is not None else ""))
+            self.log(f"#{self.test} {r['coin']} {r['status']}" + (f" net {net:+.1f} bps" if net is not None else ""))
         self.db.commit()
         return wrote
 
 
-def status(state, data: Path = DATA) -> List[str]:
+def status(state, data: Path = DATA, test: int = 58) -> List[str]:
     """What the book holds. Running numbers are for watching and are not a result."""
     paths = slot_paths(data)
     now = int(time.time())
-    lines = [f"#58 paper book: window {pd.Timestamp(WINDOW_START, unit='s').date()} to "
+    lines = [f"#{test} paper book: window {pd.Timestamp(WINDOW_START, unit='s').date()} to "
              f"{pd.Timestamp(WINDOW_END - 1, unit='s').date()}; "
              + ("not open yet" if now < WINDOW_START else "open" if now < WINDOW_END else "closed"),
              f"HLP slots on disk: {len(paths)}"]

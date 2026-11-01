@@ -132,6 +132,15 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlp-launch
 - Stop and remove it: `./scripts/install-hlp-launchd.sh --uninstall`. The journal stays.
 - It needs the collector running. Slots missed while the Mac slept are lost, and a gap stays a gap.
 
+[#59](../research/FORWARD_HLP2.md) is the same rule with a guard that voids only recorded failed reads. Its book runs
+beside #58's, in `hlp2-book.db`:
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlp2-launchd.sh
+```
+
+Check it with `./scripts/install-hlp2-launchd.sh --status` and `espero hlp --test 59 --status`.
+
 ## The order-book recorder
 
 `espero hlbook --loop` records Hyperliquid's top 20 levels a side on 10 coins every 5 minutes, into

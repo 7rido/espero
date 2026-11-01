@@ -96,3 +96,6 @@ data/pit/
 
 # Tardis free Hyperliquid book days (#51, research/bookwalk.py)
 data/bookwalk/
+
+# Tardis free Hyperliquid and Binance days (#52-#56, research/patterns.py)
+data/patterns/

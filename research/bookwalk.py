@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import contextlib
 import sys
+import urllib.error
 from pathlib import Path
 
 import numpy as np
@@ -32,6 +33,9 @@ FEE = VENUES["hyperliquid"].taker_bps
 RAW = ROOT / "data" / "bookwalk"
 DAYS_CSV = ROOT / "research" / "bookwalk_days.csv"
 OUTPUT = ROOT / "research" / "bookwalk_output.txt"
+SKIPPED = ["XLM", "HBAR", "kSHIB"]
+DAYS_SUPPLEMENT = ROOT / "research" / "bookwalk_days_supplement.csv"
+SUPPLEMENT = ROOT / "research" / "bookwalk_output_supplement.txt"
 
 
 def path(coin: str, day: str) -> Path:
@@ -43,8 +47,41 @@ def fetch() -> None:
         for day in DAYS:
             y, m, d = day.split("-")
             url = markout.TARDIS.format(ex="hyperliquid", kind="book_snapshot_25", y=y, m=m, d=d, sym=coin)
-            got = markout.get(url, path(coin, day))
+            try:
+                got = markout.get(url, path(coin, day))
+            except urllib.error.HTTPError as exc:
+                if exc.code != 400:  # Tardis refuses a day before a symbol's listing with a 400
+                    raise
+                got = None
             print(coin, day, "missing" if got is None else f"{got.stat().st_size / 1e6:.1f} MB", flush=True)
+
+
+def supplement() -> None:
+    """The coins the first run lacked because `fetch` had crashed on XLM's first day: the same measurement and rule."""
+    if SUPPLEMENT.exists():
+        raise SystemExit(f"{SUPPLEMENT} exists: runs once")
+    rows, missing = [], []
+    for coin in SKIPPED:
+        for day in DAYS:
+            if path(coin, day).exists():
+                rows += one_file(coin, day)
+            else:
+                missing.append((coin, day))
+    days = pd.DataFrame(rows)
+    days.to_csv(DAYS_SUPPLEMENT, index=False, float_format="%.5f")
+    main = days[days["day"] < THIN_FROM]
+    table = bw.summarize(main, FEE)
+    pd.set_option("display.width", 200, "display.max_rows", 200, "display.max_columns", 30)
+    print(f"#51 supplement: {SKIPPED}; main group {main['day'].nunique()} days; fee {FEE} bps a leg")
+    print(table.round(3).to_string(index=False))
+    print("\nVerdicts:", table.groupby(["usd", "verdict"]).size().to_dict())
+    print("missing files:", missing or "none")
+    once = main.drop_duplicates(["coin", "day"])
+    print("main-group coin-days under 20 levels:", int((once["levels"] < 20).sum()), "of", len(once))
+    print("\n== Thin group")
+    thin = days[days["day"] >= THIN_FROM]
+    print(thin.groupby(["coin", "usd"], sort=False).agg(levels=("levels", "mean"), unfillable=("unfillable", "mean"),
+                                                        cost=("cost", "mean"), p95=("p95", "mean")).round(3).to_string())
 
 
 def one_file(coin: str, day: str) -> list:
@@ -123,5 +160,11 @@ if __name__ == "__main__":
             report()
         buffer.rename(OUTPUT)
         print(OUTPUT.read_text())
+    elif command == "supplement":
+        buffer = SUPPLEMENT.with_suffix(".part")
+        with open(buffer, "w") as f, contextlib.redirect_stdout(f):
+            supplement()
+        buffer.rename(SUPPLEMENT)
+        print(SUPPLEMENT.read_text())
     else:
         raise SystemExit(__doc__)

@@ -1,0 +1,28 @@
+#51 supplement: ['XLM', 'HBAR', 'kSHIB']; main group 22 days; fee 4.5 bps a leg
+ coin    usd  days  days_with_cost   cost    low   high    p95  unfillable  round_trip verdict
+  XLM   1000    21              21  1.603  1.385  1.853  3.375       0.000      12.207 COVERED
+  XLM  10000    21              21  3.409  2.979  3.851  6.035       0.051      15.819 UNKNOWN
+  XLM 100000    21              20 10.887  9.893 11.960 16.405       0.386      30.773 UNKNOWN
+ HBAR   1000    22              22  1.654  1.466  1.830  3.459       0.001      12.307 COVERED
+ HBAR  10000    22              22  3.874  3.386  4.360  6.773       0.085      16.748 UNKNOWN
+ HBAR 100000    22              21 12.465 11.243 13.922 17.768       0.597      33.930 UNKNOWN
+kSHIB   1000    22              22  1.563  1.289  1.853  2.986       0.000      12.126 COVERED
+kSHIB  10000    22              22  3.036  2.528  3.572  5.141       0.003      15.071 COVERED
+kSHIB 100000    22              22  7.245  6.354  8.145 11.513       0.107      23.489 UNKNOWN
+
+Verdicts: {(1000, 'COVERED'): 3, (10000, 'COVERED'): 1, (10000, 'UNKNOWN'): 2, (100000, 'UNKNOWN'): 3}
+missing files: [('XLM', '2024-11-01')]
+main-group coin-days under 20 levels: 6 of 65
+
+== Thin group
+              levels  unfillable   cost    p95
+coin  usd                                     
+XLM   1000       5.0       0.001  0.988  1.997
+      10000      5.0       0.749  2.030  3.459
+      100000     5.0       1.000    NaN    NaN
+HBAR  1000       5.0       0.008  1.215  2.699
+      10000      5.0       0.804  3.851  6.903
+      100000     5.0       0.999    NaN    NaN
+kSHIB 1000       5.0       0.000  2.963  4.569
+      10000      5.0       0.031  4.887  7.199
+      100000     5.0       1.000  6.420  7.734

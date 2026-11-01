@@ -47,7 +47,7 @@ others read its 5-minute cache instead of downloading it again.
 | 7 | `data/bids/` | ~80 MB | `python research/bids.py` | Binance 5-minute klines (monthly + daily) | #30 |
 | 8 | `data/markout/` | ~30 MB | `python research/markout.py fetch` | Binance daily trade prints, reduced per coin-day; the raw file is deleted | #39 (then `... report`) |
 | 9 | `data/markout_small/` | ~55 MB | `python research/markout_small.py fetch` | as above, eight smaller coins | #41 (then `... report`) |
-| — | `data/bookwalk/` | ~2.5 GB | `python research/bookwalk.py fetch` | Tardis.dev's free Hyperliquid book days | #51 (then `... report`) |
+| — | `data/bookwalk/` | ~3.3 GB | `python research/bookwalk.py fetch` | Tardis.dev's free Hyperliquid book days | #51 (then `... report`) |
 | — | `data/polymarket/` | ~17 MB | `python research/polyhour.py` | Polymarket's public market API | #37 |
 | — | `data/cache/` | ~35 MB | fetched by `espero tsmom`, `espero board`, `research/tsmom.py` | Yahoo Finance and FRED | #4, #15 |
 | — | `data/funding/` | <1 MB | fetched by the daily job (`fundsplit`) | Binance funding history (`fapi/v1/fundingRate`) | #32 |

@@ -1,0 +1,417 @@
+test,source,regime,split,measures,gross_net,n,quote,timing,role
+#1,research/FINDINGS.md:8,funding,extremely negative funding (shorts crowded),definition of the state; next-day long,net,n/s,"when perpetual funding is extremely negative (shorts crowded, shorts paying longs), the",ex-ante,information-only
+#1,research/FINDINGS.md:13,funding,"z-score below −2, causal 30-day window",signal definition,net,n/s,signal: funding z-score below −2 (causal 30-day window),ex-ante,information-only
+#1,research/FINDINGS.md:16,time,selection 2023-05 → 2024-12; holdout 2025-01 → 2026-10,frozen split,net,n/s,selection period: 2023-05 → 2024-12 · holdout: 2025-01 → 2026-10,ex-ante,information-only
+#1,research/FINDINGS.md:22,funding,"z<−2, holdout, BTC hold 1d","long after extreme negative funding, Hyperliquid",net,38,+28.62%,ex-ante,information-only
+#1,research/FINDINGS.md:23,funding,"z<−2, holdout, BTC hold 3d","long after extreme negative funding, Hyperliquid",net,34,+29.47%,ex-ante,information-only
+#1,research/FINDINGS.md:24,funding,"z<−2, holdout, ETH hold 1d","long after extreme negative funding, Hyperliquid",net,43,+28.23%,ex-ante,information-only
+#1,research/FINDINGS.md:25,funding,"z<−2, holdout, ETH hold 3d","long after extreme negative funding, Hyperliquid",net,40,+0.33%,ex-ante,information-only
+#1,research/FINDINGS.md:27,time,holdout window,BTC and ETH buy and hold,unknown,n/s,"Buy & hold over the same window: BTC −15.1%, ETH −30.7%.",ex-ante,information-only
+#1,research/FINDINGS.md:29,trend,a period when holding lost money,reading of the holdout,net,n/s,"Looked like a genuine edge on two assets, in a period when holding lost money.",hindsight,information-only
+#1,research/FINDINGS.md:37,funding,"z<−2, selection 2023-05 → 2024-12, BTC",same rule,net,18,+1.53%,ex-ante,information-only
+#1,research/FINDINGS.md:38,funding,"z<−2, selection 2023-05 → 2024-12, ETH",same rule,net,18,−6.84%,ex-ante,information-only
+#1,research/FINDINGS.md:40,other,edge in holdout window only,doc's reading: regime effect,net,n/s,"The edge existed only in the holdout window. That is the signature of a regime effect, not a law:",hindsight,information-only
+#1,research/FINDINGS.md:41,trend,2025–26 choppy-to-down vs trending bull or real crash,doc's label for the holdout,net,n/s,"2025–26 was choppy-to-down, where buying panic pays. A trending bull or a real crash is a different",hindsight,information-only
+#1,research/FINDINGS.md:44,other,BTC and ETH share a regime,independence caveat,unknown,n/s,They share a beta and a regime.,unclear,information-only
+#1,research/FINDINGS.md:52,time,2019 (with funding z<−2),"Deribit funding, same rule",net,2,−10.12%,hindsight,information-only
+#1,research/FINDINGS.md:53,time,2020 (with funding z<−2),"Deribit funding, same rule",net,2,+8.67%,hindsight,information-only
+#1,research/FINDINGS.md:54,time,2021 (with funding z<−2),"Deribit funding, same rule",net,2,−7.97%,hindsight,information-only
+#1,research/FINDINGS.md:55,time,2022 (with funding z<−2),"Deribit funding, same rule",net,8,+10.61%,hindsight,information-only
+#1,research/FINDINGS.md:56,time,2023 (with funding z<−2),"Deribit funding, same rule",net,2,+9.05%,hindsight,information-only
+#1,research/FINDINGS.md:57,time,2024 (with funding z<−2),"Deribit funding, same rule",net,2,+2.63%,hindsight,information-only
+#1,research/FINDINGS.md:58,time,2025 (with funding z<−2),"Deribit funding, same rule",net,4,+4.72%,hindsight,information-only
+#1,research/FINDINGS.md:59,time,2026 (with funding z<−2),"Deribit funding, same rule",net,3,+0.62%,hindsight,information-only
+#1,research/FINDINGS.md:60,funding,"all years, z<−2","Deribit funding, same rule",net,25,+17.24%,ex-ante,information-only
+#1,research/FINDINGS.md:62,funding,"z<−2, 7.5 years, against buy and hold","Deribit funding, same rule",net,25,"25 trades in 7.5 years, t = 0.91, against +636% for buy & hold. No evidence of edge.",ex-ante,information-only
+#1,research/FINDINGS.md:66,funding,fixed z<−2 cut by venue,"firing rate, Deribit vs Hyperliquid",unknown,n/s,fires ~3 times a year on one venue and ~17 times a year on the other.,ex-ante,information-only
+#1,research/FINDINGS.md:69,funding,bottom 2% of trailing 30-day distribution,venue-agnostic firing rate,unknown,n/s,A venue-agnostic version (bottom 2% of the trailing 30-day distribution) fired ~190 times a year and,ex-ante,information-only
+#1,research/FINDINGS.md:70,funding,bottom 2% of trailing 30-day distribution,venue-agnostic version's return,net,n/s,returned +12% over 7.5 years with a −73% drawdown.,ex-ante,information-only
+#1,research/FINDINGS.md:77,trend,regime conditioning (trend filter),"proposal only, no result",unknown,n/s,"conditioning on regime (trend filter) tested as a pre-registered hypothesis, not discovered after",unclear,information-only
+#2,research/RESULTS.md:13,time,design 2020-01 → 2023-12,"top-1 XS momentum book, CAGR",net,n/s,**+115.27%**,ex-ante,information-only
+#2,research/RESULTS.md:14,time,holdout 2024-01 → 2026-10,"top-1 XS momentum book, CAGR",net,n/s,**−29.75%**,ex-ante,primary criterion
+#2,research/RESULTS.md:15,time,full 2020-01 → 2026-10,"top-1 XS momentum book, CAGR",net,n/s,+37.14%,ex-ante,information-only
+#2,research/RESULTS.md:19,time,"holdout, Sharpe > BTC",criterion actual,net,n/s,−0.06,ex-ante,primary criterion
+#2,research/RESULTS.md:20,time,"holdout, max DD shallower than BTC",criterion actual,net,n/s,−82.90%,ex-ante,primary criterion
+#2,research/RESULTS.md:21,time,"holdout, CAGR > 0",criterion actual,net,n/s,−29.75%,ex-ante,primary criterion
+#2,research/RESULTS.md:27,time,holdout at 4 bps round trip,"cost sensitivity, CAGR",net,n/s,−28.78%,ex-ante,information-only
+#2,research/RESULTS.md:28,time,holdout at 10 bps round trip,"cost sensitivity, CAGR",net,n/s,−29.75%,ex-ante,information-only
+#2,research/RESULTS.md:29,time,holdout at 30 bps round trip,"cost sensitivity, CAGR",net,n/s,−32.90%,ex-ante,information-only
+#2,research/RESULTS.md:36,trend,the 2020–21 alt bull,doc's label for the design period,net,n/s,The design period is what momentum looked like in the 2020–21 alt bull.,hindsight,information-only
+#2,research/RESULTS.md:39,trend,"2024–26 BTC-led, alt-seasons failing",doc's label for the holdout,net,n/s,"2024–26 was BTC-led, with alt-seasons that kept failing.",hindsight,information-only
+#2,research/RESULTS.md:41,time,holdout: book vs holding BTC,book and BTC annual return,net,n/s,"per year, −29.75% a year, while simply holding BTC made +23.3%.",ex-ante,information-only
+#2,research/RESULTS.md:59,vol,volatility-scaled sizing,"proposal only, no result",unknown,n/s,volatility-scaled position sizing instead of 100% in one coin,ex-ante,information-only
+#2,research/RESULTS.md:61,trend,universe median above its 200-day average,"proposal only, no result",unknown,n/s,"a regime filter (e.g. only when the universe median is above its 200-day average), stated in advance",ex-ante,information-only
+#1,research/RESULTS.md:72,time,holdout vs 7.5-year history,funding extremes recap,net,n/s,"looked like +28% on the holdout, died on a 7.5-year history",hindsight,information-only
+#2,research/RESULTS.md:73,time,design vs holdout,XS momentum recap,net,n/s,"looked like +2,047% on the design period, died on the holdout.",ex-ante,information-only
+#3,research/LP_NOTES.md:36,vol,markets not resolving tomorrow,"LP ratio driver, no split measured",unknown,n/s,quote markets that are not resolving tomorrow (this one resolved the day after the,hindsight,information-only
+#3,research/LP_NOTES.md:37,trend,price trended into resolution,LP two-sided quote,unknown,n/s,"sample ended, so the price trended, which is the worst path for a two-sided quote)",hindsight,information-only
+#3,research/LP_NOTES.md:38,other,new markets vs older,reward subsidy rates,unknown,n/s,new markets pay outsized rates to bootstrap liquidity,ex-ante,information-only
+#3,research/LP_NOTES.md:48,other,one regime,sample caveat,unknown,1 market,"One market, one 30-day window, one regime.",unclear,information-only
+#30,research/RESULTS_BIDS.md:5,time,April–June,"1-ATR bid, filled trades",net,n/s,"April–June, and only 7 of 40 coins were positive.",ex-ante,primary criterion
+#30,research/RESULTS_BIDS.md:10,other,bid filled,#20's 1-hour return on those events,unknown,"8,602","On the events where the bid filled, #20's 1-hour return was",hindsight,information-only
+#30,research/RESULTS_BIDS.md:11,other,bid never filled,#20's 1-hour return on those events,unknown,n/s,"On the events where it never filled, it was **+63.9 bps** (t 27.7).",hindsight,information-only
+#30,research/RESULTS_BIDS.md:34,time,Apr–Jun vs Jul–Oct,"1-ATR bid, net per fill, criterion 3",net,"8,602 fills","−1.2 bps (Apr–Jun), +3.8 bps (Jul–Oct)",ex-ante,primary criterion
+#30,research/RESULTS_BIDS.md:45,other,breakdowns that never reached the bid vs did,return from next open,unknown,n/s,"bounce: +63.9 bps from the next open, against −21.7 bps on those that did.",hindsight,information-only
+#30,research/RESULTS_BIDS.md:64,time,"Apr–Jun / Jul–Oct, 2 ATR, 1-hour exit","post-verdict exploration, net per fill",net,41% fill,+11.4 / +13.3,hindsight,information-only
+#30,research/RESULTS_BIDS.md:65,time,"Apr–Jun / Jul–Oct, 2 ATR, 4-hour exit","post-verdict exploration, net per fill",net,41% fill,+19.5 / +20.4,hindsight,information-only
+#30,research/RESULTS_BIDS.md:66,time,"Apr–Jun / Jul–Oct, 3 ATR, 1-hour exit","post-verdict exploration, net per fill",net,26% fill,+16.7 / +19.6,hindsight,information-only
+#30,research/RESULTS_BIDS.md:69,stress,forced selling overshoots,deep bid fills,unknown,n/s,"selling overshoots, and buying the overshoot pays even though those events go on to fall 46 bps",hindsight,information-only
+#30,research/RESULTS_BIDS.md:71,time,every month April to October,2-ATR bid,net,n/s,Every month from April to October was positive for the 2-ATR bid.,hindsight,information-only
+#11,research/RESULTS_CARRY.md:5,funding,"funding regime, ended 2024",delta-neutral carry book,net,n/s,the funding regime that would have cleared the,hindsight,information-only
+#11,research/RESULTS_CARRY.md:6,time,ended in 2024,delta-neutral carry book,net,n/s,bar ended in 2024.,hindsight,information-only
+#11,research/RESULTS_CARRY.md:29,time,primary window 2026-04-02 → 2026-10-28,net annualised return on equity,net,75 trades,**+5.2%**,ex-ante,primary criterion
+#11,research/RESULTS_CARRY.md:42,funding,funding about 7% a year on notional in window,"funding level, primary window",gross,n/s,against funding that averaged about 7% a year,hindsight,information-only
+#11,research/RESULTS_CARRY.md:58,time,extended 2023-05-12 → 2026-10-28,"net annualised on equity, basis zero pre-candles",net,369 trades,+9.0%,hindsight,information-only
+#11,research/RESULTS_CARRY.md:66,time,2023 (from May),"carry book, extended view",net,n/s,+8.8%,hindsight,information-only
+#11,research/RESULTS_CARRY.md:67,time,2024,"carry book, extended view",net,n/s,+16.5%,hindsight,information-only
+#11,research/RESULTS_CARRY.md:68,time,2025,"carry book, extended view",net,n/s,+2.2%,hindsight,information-only
+#11,research/RESULTS_CARRY.md:69,time,2026 (to Oct),"carry book, extended view",net,n/s,+3.3%,hindsight,information-only
+#11,research/RESULTS_CARRY.md:71,funding,2023–24 persistent premium vs since,carry book,net,n/s,"Funding carry paid well in 2023–24, when perps traded at a persistent premium, and has paid",hindsight,information-only
+#11,research/RESULTS_CARRY.md:72,funding,primary window is the current regime,carry book,net,n/s,"almost nothing since. The primary window is the current regime, and the rule fails in it.",hindsight,information-only
+#11,research/RESULTS_CARRY.md:82,funding,perp premiums 2025–26 vs earlier,premium level,unknown,n/s,Neither changes the regime finding: perp premiums in 2025–26 are a,hindsight,information-only
+#11,research/RESULTS_CARRY.md:110,funding,regime faded after 2024,scoreboard line,net,n/s,"**fail** — hedge clean, fees take half, regime faded after 2024",hindsight,information-only
+#12,research/RESULTS_CARRY2.md:18,time,primary window 2026-04-02 → 2026-10-28,"gap + maker carry, net annualised",net,28 trades,**+10.9%**,ex-ante,primary criterion
+#12,research/RESULTS_CARRY2.md:43,funding,funding available in this window,"funding level, notional and equity",gross,n/s,available in this window is about 12% a year on notional (6% on equity at 1×).,hindsight,information-only
+#12,research/RESULTS_CARRY2.md:44,funding,2024 vs this window,funding paid,gross,n/s,The regime finding from #11 stands: 2024 paid three times this.,hindsight,information-only
+#12,research/RESULTS_CARRY2.md:52,other,"seven months, one regime",sample caveat,net,"4,996 hours","**Sample.** Seven months, one regime, chosen because the venue's candle history ends there.",hindsight,information-only
+#11,research/RESULTS_CARRY2.md:84,funding,regime faded,scoreboard line,net,n/s,"fail — fees took half, regime faded",hindsight,information-only
+#14,research/RESULTS_CARRY3.md:3,time,months #12 never saw,#12's rule on Kraken,net,n/s,"in the months #12 never saw,",ex-ante,primary criterion
+#14,research/RESULTS_CARRY3.md:4,funding,funding rarely above entry bar,Kraken carry entries,net,6 trades,funding rarely paid enough to open a position,ex-ante,primary criterion
+#14,research/RESULTS_CARRY3.md:25,time,primary window 2025-10-15 → 2026-04-01,"net annualised, maker costs",net,6 trades,−0.0%,ex-ante,primary criterion
+#14,research/RESULTS_CARRY3.md:31,time,primary window at taker costs,net annualised,net,n/s,At taker costs the same window loses 1.0% a year (−3.6% on Kraken spot fees).,ex-ante,information-only
+#14,research/RESULTS_CARRY3.md:36,funding,entry bar not reached,share of time flat,net,"4,043 hours",book was flat 78% of the time.,ex-ante,information-only
+#14,research/RESULTS_CARRY3.md:37,funding,Kraken has no idle funding floor,same 15% bar across venues,unknown,n/s,"floor like Hyperliquid, so the same 15% bar is a stricter test there.",ex-ante,information-only
+#14,research/RESULTS_CARRY3.md:39,funding,funding spike that faded,exits on funding_low,net,6 trades,Every exit was `funding_low`: each position opened on a spike that faded,hindsight,information-only
+#14,research/RESULTS_CARRY3.md:41,time,months #12 ran on,Kraken carry,net,n/s,"+5.1% a year on Kraken (Sharpe 0.99 hourly, 3.51",hindsight,information-only
+#14,research/RESULTS_CARRY3.md:42,time,"same months, by venue",#12 on Hyperliquid vs Kraken,net,n/s,against #12's +10.9% on Hyperliquid in the same months.,hindsight,information-only
+#14,research/RESULTS_CARRY3.md:51,time,"months not designed on, and months designed on",Kraken carry vs bar,net,n/s,"the bar, in the months it was not designed on or in the months it was.",hindsight,information-only
+#14,research/RESULTS_CARRY3.md:67,funding,funding rarely clears bar,scoreboard line,net,n/s,funding rarely clears the bar; basis takes the rest,ex-ante,information-only
+#44,research/RESULTS_DAYMEAN_AUDIT.md:13,other,quiet share: days with ≤ 3 events,"definition, same-day event count",unknown,n/s,"""Quiet share"" is the fraction of days with ≤ 3 events: the days the day-mean",hindsight,information-only
+#44 (#18),research/RESULTS_DAYMEAN_AUDIT.md:18,other,"quiet share 5%; leg (a), forced down-breaks, 1 h",trade-weighted (day-mean +26.4),gross,"2,012 / 82",+22.9 (2.98),hindsight,information-only
+#44 (#18),research/RESULTS_DAYMEAN_AUDIT.md:19,other,quiet share 0%; D forced − organic,trade-weighted (day-mean −11.4),gross,"6,158 / 82",−14.4 (−2.68),hindsight,information-only
+#44 (#19),research/RESULTS_DAYMEAN_AUDIT.md:20,funding,"quiet share 55%; g, settlement excess",trade-weighted (day-mean +15.5),gross,"9,579 / 1,452",+15.0 (3.15),ex-ante,information-only
+#44 (#20),research/RESULTS_DAYMEAN_AUDIT.md:21,other,"quiet share 1%; new-low bounce, 1 h",trade-weighted (day-mean +14.8),gross,"136,522 / 2,055",**+5.9 (3.50)**,hindsight,information-only
+#44 (#21),research/RESULTS_DAYMEAN_AUDIT.md:22,other,"quiet share 48%; long leg, raw 24 h",trade-weighted (day-mean +51.1),gross,620 / 101,**+18.5 (0.75)**,hindsight,information-only
+#44 (#25),research/RESULTS_DAYMEAN_AUDIT.md:23,other,"quiet share 1%; forced leg, 1 h",trade-weighted (day-mean +12.3),gross,"35,319 / 1,430",**+6.1 (2.40)**,hindsight,information-only
+#44 (#25),research/RESULTS_DAYMEAN_AUDIT.md:24,other,quiet share 0%; D (oi_drop),trade-weighted (day-mean +3.2),gross,"69,666 / 1,430",+3.3 (1.93),hindsight,information-only
+#44 (#26),research/RESULTS_DAYMEAN_AUDIT.md:25,other,"quiet share 14%; leg (a), forced down-breaks, 1 h",trade-weighted (day-mean +23.5),gross,"5,971 / 415",**+19.2 (3.67)**,hindsight,information-only
+#44 (#26),research/RESULTS_DAYMEAN_AUDIT.md:26,other,quiet share 0%; D forced − organic,trade-weighted (day-mean −23.6),gross,"11,096 / 147",−22.2 (−3.54),hindsight,information-only
+#44 (#28),research/RESULTS_DAYMEAN_AUDIT.md:27,other,quiet share 100%; the push,trade-weighted equals day-mean,gross,"1,192 / 596",−1.5 (−1.44),hindsight,information-only
+#44 (#29 basis),research/RESULTS_DAYMEAN_AUDIT.md:28,other,"quiet share 100%; post-close reversal, 15 min","in-sample basis, trade-weighted",gross,"1,192 / 596",−6.0 (−5.62),hindsight,information-only
+#44 (#30),research/RESULTS_DAYMEAN_AUDIT.md:29,other,quiet share 1%; filled bids' net,trade-weighted (day-mean +1.7),net,"8,602 / 189",**−3.6 (−1.65)**,hindsight,information-only
+#44 (#33),research/RESULTS_DAYMEAN_AUDIT.md:30,funding,"quiet share 96%; shorts pay hard, m30",trade-weighted (day-mean −34.0),gross,197 / 132,**−20.1 (−0.77)**,unclear,information-only
+#44 (#35),research/RESULTS_DAYMEAN_AUDIT.md:31,other,"quiet share 22%; reclaimed sweeps, 1 h",trade-weighted (day-mean +15.3),gross,"27,008 / 2,122",**+2.1 (0.79)**,hindsight,information-only
+#44 (#37),research/RESULTS_DAYMEAN_AUDIT.md:32,other,quiet share 0%; the model's bets ($ a share),trade-weighted (day-mean +0.009),net,"2,271 / 180",+0.012 (1.34),hindsight,information-only
+#44 (#33),research/RESULTS_DAYMEAN_AUDIT.md:34,funding,shorts pay hard,t under trade-weighting,gross,n/s,But its t falls from −2.6 to −0.8.,unclear,information-only
+#44 (#20),research/RESULTS_DAYMEAN_AUDIT.md:54,other,quiet-day weighting,share of #20's published size,gross,n/s,size came from quiet-day weighting.,hindsight,information-only
+#44 (#33),research/RESULTS_DAYMEAN_AUDIT.md:56,funding,shorts pay hard,trade-weighted t,gross,n/s,"**#33 (shorts pay hard)** keeps its sign, but t −0.77.",unclear,information-only
+#44 (#43),research/RESULTS_DAYMEAN_AUDIT.md:57,funding,"shorts pay hard, from 4 h",short side,net,n/s,#43 also found the short loses at every horizon from 4 h.,unclear,information-only
+#44 (#43),research/RESULTS_DAYMEAN_AUDIT.md:71,time,2025–26,"#20's bounce at 12 h, in-sample basis",net,n/s,#43 found 12 h negative trade-weighted in 2025–26,ex-ante,information-only
+#44 (#26),research/RESULTS_DAYMEAN_AUDIT.md:87,other,"longer holds, by doc's own label",hold-period table,net,n/s,Hindsight: #43 had shown these horizons as day-means.,hindsight,information-only
+#44 (#26),research/RESULTS_DAYMEAN_AUDIT.md:91,time,"2023 / 2024, 1 h hold, 8 coins",forced bounce (uncorrected row),net,n/s,−2.8 / +0.5,hindsight,information-only
+#44 (#26),research/RESULTS_DAYMEAN_AUDIT.md:92,time,"2023 / 2024, 4 h hold, 8 coins",forced bounce (uncorrected row),net,n/s,+9.9 / +18.7,hindsight,information-only
+#44 (#26),research/RESULTS_DAYMEAN_AUDIT.md:93,time,"2023 / 2024, 12 h hold, 8 coins",forced bounce (uncorrected row),net,n/s,+31.2 / +31.3,hindsight,information-only
+#44 (#26),research/RESULTS_DAYMEAN_AUDIT.md:94,time,"2023 / 2024, 1 day hold, 8 coins",forced bounce (uncorrected row),net,n/s,+63.5 / +51.6,hindsight,information-only
+#44 (#26),research/RESULTS_DAYMEAN_AUDIT.md:96,time,2023-06 → 2024-10 only,data limit,unknown,n/s,Only 2023-06 → 2024-10 exists.,ex-ante,information-only
+#44 (#26),research/RESULTS_DAYMEAN_AUDIT.md:107,time,"both years, after 5-minute correction","forced bounce, from 4 h",net,n/s,Both years remain positive at,hindsight,information-only
+#13,research/RESULTS_DEGEN2.md:61,other,no filters vs one-entry and beat-BTC,"control vs rule, Binance.US",net,507 vs 468,"test) lost $70 against $81, with a shallower drawdown.",ex-ante,information-only
+#13,research/RESULTS_DEGEN2.md:61,other,"""beat BTC"" filter",filter effect on breakouts,net,468,"""One entry per move"" and ""beat BTC"" are",ex-ante,information-only
+#13,research/RESULTS_DEGEN2.md:68,other,with and without market filter,breakout family,gross,n/s,with and without the market filter,ex-ante,information-only
+#36,research/RESULTS_ETHENA.md:6,time,both halves,USDe flow coefficient on next-week funding,unknown,138 weeks,both halves: positive;,ex-ante,primary criterion
+#36,research/RESULTS_ETHENA.md:10,funding,high funding,when USDe is minted,unknown,138 weeks,**USDe is minted when funding is high**,ex-ante,information-only
+#36,research/RESULTS_ETHENA.md:11,funding,high funding,funding's own reversion,unknown,138 weeks,**high funding falls back on its own**,ex-ante,information-only
+#36,research/RESULTS_ETHENA.md:20,time,window 2024-03-04 → 2026-10-19,sample,unknown,138 weeks,"138 weeks, 2024-03-04 → 2026-10-19.",ex-ante,information-only
+#36,research/RESULTS_ETHENA.md:21,funding,funding level in window,Binance BTC/ETH funding,gross,138 weeks,Binance BTC/ETH funding averaged 6.3% a year.,hindsight,information-only
+#36,research/RESULTS_ETHENA.md:28,time,b in each half,"USDe flow coefficient, criterion 2",unknown,138 weeks,"+0.038, +0.028",ex-ante,primary criterion
+#36,research/RESULTS_ETHENA.md:34,funding,heavy-minting weeks with high funding,raw correlation,unknown,n/s,"heavy minting come when funding is high, and funding then falls, so a forecaster that ignores",ex-ante,information-only
+#36,research/RESULTS_ETHENA.md:37,funding,against the 6% average,one-sd flow's size,unknown,n/s,points a year. That is nothing against a 6% average.,ex-ante,information-only
+#36,research/RESULTS_ETHENA.md:43,funding,funding's own level,relevance to #12,unknown,n/s,"For #12, what matters is funding's own level, which its rule already uses.",ex-ante,information-only
+#33,research/RESULTS_FILLCOST.md:6,funding,"funding ordinary, 93.5% of coin-Mondays",30-minute drift after 00:00,gross,n/s,"coin-Mondays funding is ordinary, and the price drifts +1.1 bps in the half hour after the fill",unclear,information-only
+#33,research/RESULTS_FILLCOST.md:9,funding,longs pay hard,recovery after 00:00,gross,652,"The pre-registered effect, a recovery after 00:00 when longs pay hard, is +16 bps but noise:",unclear,primary criterion
+#33,research/RESULTS_FILLCOST.md:10,time,before vs after mid-2023,longs-paying drift,gross,n/s,"t 0.9, positive before mid-2023 and negative after.",ex-ante,primary criterion
+#33,research/RESULTS_FILLCOST.md:12,funding,"shorts pay hard, 1.5% of coin-Mondays",bucket share,gross,n/s,When **shorts pay hard** (1.5% of,unclear,primary criterion
+#33,research/RESULTS_FILLCOST.md:13,funding,shorts pay hard,30-minute drift after 00:00,gross,198,"coin-Mondays), the price **falls 34 bps** in the 30 minutes after 00:00 (t −2.6).",unclear,primary criterion
+#33,research/RESULTS_FILLCOST.md:22,funding,normal / longs ≥ 0.05% / shorts ≥ 0.05%,bucket shares,gross,"13,089","normal 93.5%, longs paying ≥ 0.05% 5.0%, shorts paying ≥ 0.05% 1.5%.",unclear,information-only
+#33,research/RESULTS_FILLCOST.md:28,funding,longs paying,"m30, criterion 1",gross,652,"+16.3 bps, t 0.92, 652 coin-Mondays",unclear,primary criterion
+#33,research/RESULTS_FILLCOST.md:30,funding,shorts paying,"m30, criterion 3",gross,198,"−34.0 bps, t −2.62, 198 coin-Mondays",unclear,primary criterion
+#33,research/RESULTS_FILLCOST.md:31,time,2020 → May 2023 vs after,"longs-paying m30, criterion 4",gross,n/s,"+21.4 bps (2020 → May 2023), −5.7 bps (after)",ex-ante,primary criterion
+#33,research/RESULTS_FILLCOST.md:35,funding,normal funding,"drift at 15, 30, 60 min",gross,n/s,"Normal-funding coin-Mondays drift −1.2, +1.1 and −3.0 bps at 15, 30",unclear,information-only
+#33,research/RESULTS_FILLCOST.md:42,funding,"shorts paying hard, Mondays 00:00","30-minute drift (longs +16.3, normal +1.1 in same line)",gross,n/s,−34.0 bps (t −2.6),unclear,information-only
+#33,research/RESULTS_FILLCOST.md:43,funding,"shorts paying hard, every day 00:00","30-minute drift (longs +8.0, normal +2.6 in same line)",gross,n/s,−18.6 bps (t −3.7),unclear,information-only
+#33,research/RESULTS_FILLCOST.md:44,funding,"shorts paying hard, every day 08:00","30-minute drift (longs +4.9, normal +0.7 in same line)",gross,n/s,−21.0 bps (t −4.4),unclear,information-only
+#33,research/RESULTS_FILLCOST.md:45,funding,"shorts paying hard, every day 16:00","30-minute drift (longs +9.6, normal +2.6 in same line)",gross,n/s,−4.2 bps (t −0.7),unclear,information-only
+#33,research/RESULTS_FILLCOST.md:47,funding,shorts pay a premium,price path around settlement,gross,n/s,"When shorts pay a premium, the price is pushed up into the settlement (shorts close before paying)",unclear,information-only
+#33,research/RESULTS_FILLCOST.md:53,time,"by year, longs paying",recovery,gross,n/s,"by year (+42, +4, −44, +19, −76 bps where there were events).",hindsight,information-only
+#33,research/RESULTS_FILLCOST.md:60,funding,shorts pay ≥ 0.05%,fill-timing note,gross,n/s,a buy of a coin whose shorts pay ≥ 0.05% is,unclear,information-only
+#33,research/RESULTS_FILLCOST.md:63,funding,shorts paying,"post-settlement drift, a lead",gross,n/s,"The shorts-paying drift (−19 to −34 bps after a settlement, t up to −4.4) was seen here, so it is a",unclear,information-only
+#43,research/RESULTS_HORIZONS.md:4,time,2025–26 holdout,"S1 12 h, day-mean",net,"6,310",+21.8 bps on 2025–26 data the choice never saw.,ex-ante,primary criterion
+#43,research/RESULTS_HORIZONS.md:6,time,"holdout, trade-weighted",book taking every S1 signal,net,"6,310","A book taking every signal earns **−9.6 bps a trade** in the holdout,",ex-ante,information-only
+#43,research/RESULTS_HORIZONS.md:8,other,quiet days,S1 trades carrying the day-mean,net,"50 of 6,310","That handed the result to **50 of 6,310 trades** on quiet days, and a trader cannot know",hindsight,information-only
+#43 (S2),research/RESULTS_HORIZONS.md:37,funding,"shorts pay hard, selection window, 12 h","short side, day-mean (selection stage)",net,n/s,−130 (−3.0),unclear,primary criterion
+#43 (S3),research/RESULTS_HORIZONS.md:38,funding,"carry, receive funding, selection window, 12 h",day-mean (selection stage),net,n/s,+7.1 (0.8),unclear,primary criterion
+#43 (S4),research/RESULTS_HORIZONS.md:39,trend,"trend control, long, selection window, 1 week",day-mean (selection stage),net,n/s,+155 (1.3),ex-ante,primary criterion
+#43,research/RESULTS_HORIZONS.md:43,funding,"S2, S3, S4 not carried","selection outcome (S2/S3 funding, S4 trend)",net,n/s,"**Not carried:** S2, S3 and S4 had no horizon with net > 0 and t ≥ 2.",unclear,primary criterion
+#43 (S2),research/RESULTS_HORIZONS.md:44,funding,"shorts pay hard, from 4 h",short side,net,n/s,#38's 30-minute fall becomes a large loss at every horizon from 4 h: the price,unclear,information-only
+#43 (S4),research/RESULTS_HORIZONS.md:46,trend,trend as per-coin trade,doc's reading,net,n/s,**S4 shows nothing as a per-coin trade.** Trend's value in this repo is as a portfolio and sizing,ex-ante,information-only
+#43,research/RESULTS_HORIZONS.md:53,time,entries 2025-01-01 → 2026-10-27,"S1 12 h, day-mean",net,n/s,"+21.8 bps, t 2.12, p 0.017: **met**",ex-ante,primary criterion
+#43,research/RESULTS_HORIZONS.md:54,time,both halves,"S1 12 h, day-mean",net,n/s,+25.1 / +18.4: **met**,ex-ante,primary criterion
+#43,research/RESULTS_HORIZONS.md:66,time,holdout (selection +43.5),day-mean net,net,n/s,**+21.8**,ex-ante,information-only
+#43,research/RESULTS_HORIZONS.md:67,time,holdout (selection +13.1),trade-weighted net,net,n/s,**−9.6**,ex-ante,information-only
+#43,research/RESULTS_HORIZONS.md:68,time,holdout,median trade,net,n/s,−9.4,ex-ante,information-only
+#43,research/RESULTS_HORIZONS.md:69,other,"without best 1% / 5% of days, holdout",day-mean,net,n/s,+12.1 / **−10.8**,hindsight,information-only
+#43,research/RESULTS_HORIZONS.md:70,time,holdout (selection 54.1%),hit rate,net,n/s,50.2%,ex-ante,information-only
+#43,research/RESULTS_HORIZONS.md:76,other,"1 same-day trigger, holdout (selection 24, +225)","trades, trade-weighted net",net,7,"7, +202",hindsight,information-only
+#43,research/RESULTS_HORIZONS.md:77,other,"2–3 same-day triggers, holdout (selection 338, +206)","trades, trade-weighted net",net,43,"43, +306",hindsight,information-only
+#43,research/RESULTS_HORIZONS.md:78,stress,"4 or more same-day triggers, holdout (selection 12,154, +7)","trades, trade-weighted net",net,"6,260","**6,260, −12**",hindsight,information-only
+#43,research/RESULTS_HORIZONS.md:81,stress,market-wide sell-off day vs isolated low,S1 trades,net,n/s,market-wide sell-off day where ten coins trigger. The isolated lows bounced hard; the sell-off,hindsight,information-only
+#43,research/RESULTS_HORIZONS.md:82,stress,sell-off lows,S1 trades,net,n/s,lows kept falling.,hindsight,information-only
+#43,research/RESULTS_HORIZONS.md:85,stress,"other coins' triggers in prior 12 h: none, 1–2, 3 or more","causal bucket, trade-weighted, holdout",net,78% of trades in top bucket,"the holdout it gives +8.3 (none before), +4.4 (1–2) and **−13.8 (3 or more, 78% of trades)**",ex-ante,information-only
+#43,research/RESULTS_HORIZONS.md:98,other,quiet-day vs crowded-day events,day-mean weighting,unknown,n/s,"weights rare quiet-day events far above crowded-day ones, and it uses same-day future information",hindsight,information-only
+#9b,research/RESULTS_LEADLAG2.md:38,vol,"lowvol_30, coin-level cross-section","factor IC, one year",unknown,n/s,lowvol_30       +0.068   2.89  +0.034   0.11   9.58  0.54  -0.03%   0.06  YES,ex-ante,information-only
+#28,research/RESULTS_LEVETF.md:25,time,with era,"trading days 596, closed days 274",gross,596 / 274,*with*,ex-ante,primary criterion
+#28,research/RESULTS_LEVETF.md:26,time,ramp era,"trading days 234, closed days 107",gross,234 / 107,*ramp*,ex-ante,information-only
+#28,research/RESULTS_LEVETF.md:27,time,before era,"trading days 871, closed days 396",gross,871 / 396,*before*,ex-ante,primary criterion
+#28,research/RESULTS_LEVETF.md:33,time,with-era trading days,"last-15-minute push, BTC/ETH",gross,596,"−1.5 bps, t −1.44, 596 days",ex-ante,primary criterion
+#28,research/RESULTS_LEVETF.md:34,other,trading minus closed days,push difference,gross,n/s,"−1.1 bps, t −0.81",ex-ante,primary criterion
+#28,research/RESULTS_LEVETF.md:35,time,with era minus before-era trading days,push difference,gross,n/s,"−2.6 bps, t −1.38",ex-ante,primary criterion
+#28,research/RESULTS_LEVETF.md:36,other,abs(r) ≥ 2% days,"push, criterion 4",gross,379,"−0.8 bps, t −0.46, 379 days",ex-ante,primary criterion
+#28,research/RESULTS_LEVETF.md:41,time,2023; ramp era; by 2025,push,gross,n/s,"fund was new: 2023 +5.2 bps (t 2.8), the ramp era +3.9 bps (t 2.6). By 2025 it is gone, and in",hindsight,information-only
+#28,research/RESULTS_LEVETF.md:42,time,2026,push,gross,n/s,2026 the last 15 minutes go *against* the day's move: −5.1 bps (t −3.6).,hindsight,information-only
+#28,research/RESULTS_LEVETF.md:50,other,"with-era trading days, 16:00 → 16:15",post-close reversal (−8.1 to 17:00),gross,596,−6.0 bps (t −5.6),ex-ante,information-only
+#28,research/RESULTS_LEVETF.md:51,other,"closed days, 16:00 → 16:15",post-close reversal (−0.5 to 17:00),gross,n/s,−1.1 bps (t −0.9),ex-ante,information-only
+#28,research/RESULTS_LEVETF.md:52,time,"before-era trading days, 16:00 → 16:15",post-close reversal (−2.8 to 17:00),gross,871,−2.8 bps (t −1.9),ex-ante,information-only
+#28,research/RESULTS_LEVETF.md:57,other,"fifth of abs(r), second to fifth buckets","post-close reversal at 15 min, post-verdict",gross,n/s,"−7.3, −4.4, −9.1, −11.2 bps",hindsight,information-only
+#28,research/RESULTS_LEVETF.md:58,time,"2024, 2025, 2026","post-close reversal, post-verdict",gross,n/s,"2024 −6.4 (t −2.9), 2025 −6.7 (t −3.8), 2026 −4.9 (t −3.0).",hindsight,information-only
+#28,research/RESULTS_LEVETF.md:59,other,every weekday,"post-close reversal, post-verdict",gross,n/s,It holds on every weekday.,hindsight,information-only
+#28,research/RESULTS_LEVETF.md:65,other,days with abs(r) ≥ 2%,post-close reversal,gross,n/s,it is −6.9 bps at 15 minutes and −10.5 bps at 1 hour,ex-ante,information-only
+#28,research/RESULTS_LEVETF.md:75,time,"from 2025-04-08, XRP trading days (closed −2.3)",push on coin with large 2x fund,gross,about 400 dates,+8.1 bps (t 4.0),hindsight,information-only
+#28,research/RESULTS_LEVETF.md:76,time,"from 2025-04-08, SOL trading days (closed −0.6)",push on coin with large 2x fund,gross,about 400 dates,+3.3 bps (t 1.9),hindsight,information-only
+#28,research/RESULTS_LEVETF.md:81,time,2020–23,"crypto daily-close push, 23:45 → 00:00 UTC",gross,n/s,At 23:45 → 00:00 UTC it was +5.5 bps (t 5.3) in,hindsight,information-only
+#28,research/RESULTS_LEVETF.md:82,time,2020–23 vs since June 2024,crypto daily-close push,gross,n/s,"2020–23, and −0.2 bps since June 2024. An effect that existed and is gone.",hindsight,information-only
+#28,research/RESULTS_LEVETF.md:84,other,"placebo: 11:45 ET, closed days",clock check,gross,n/s,"The placebo windows (11:45 ET, closed days) are flat.",ex-ante,information-only
+#34 part A,research/RESULTS_LEVPUSH.md:5,other,"trading days, placebo coins",last 15 minutes with the day's move,gross,145,"moved with the day's move by **+0.5 bps** (t 0.25, 145 trading days).",ex-ante,primary criterion
+#34 part A,research/RESULTS_LEVPUSH.md:19,other,ADA trading days (closed −3.5),push,gross,n/s,−3.7 bps (t −1.5),ex-ante,information-only
+#34 part A,research/RESULTS_LEVPUSH.md:20,other,XLM trading days (closed −4.8),push,gross,n/s,+7.4 bps (t 2.1),ex-ante,information-only
+#34 part A,research/RESULTS_LEVPUSH.md:21,other,LINK trading days (closed −1.3),push,gross,n/s,−0.4 bps (t −0.2),ex-ante,information-only
+#34 part A,research/RESULTS_LEVPUSH.md:22,other,AVAX trading days (closed −9.8),push,gross,n/s,−1.0 bps (t −0.4),ex-ante,information-only
+#34 part A,research/RESULTS_LEVPUSH.md:23,other,DOGE trading days (closed −2.8),push,gross,n/s,+1.1 bps (t 0.6),ex-ante,information-only
+#34 part A,research/RESULTS_LEVPUSH.md:27,other,"after the US close, these coins",16:00 → 16:15 reversal,gross,n/s,−4 to −7 bps in,ex-ante,information-only
+#18,research/RESULTS_LIQ.md:5,time,second half of the period,"D, forced vs organic breaks",gross,82 days,appears only in the second half of the period,ex-ante,primary criterion
+#18,research/RESULTS_LIQ.md:18,other,no liquidation in the prior hour,share of breaks,unknown,"9,213",9.3% had no liquidation at all in the hour before.,ex-ante,information-only
+#18,research/RESULTS_LIQ.md:20,other,within-day terciles of forced share,definition of forced and organic,gross,"9,212",within-day terciles of the forced share,hindsight,primary criterion
+#18,research/RESULTS_LIQ.md:24,other,forced vs organic terciles,"D, 1-hour return in break's direction",gross,82 days,"D −11.4 bps, t −2.11",hindsight,primary criterion
+#18,research/RESULTS_LIQ.md:26,time,2020-01 → 2023-05 vs 2023-06 → 2026-10,"D, criterion 3",gross,n/s,"+0.1 bps (2020-01 → 2023-05), −22.9 bps (2023-06 → 2026-10)",ex-ante,primary criterion
+#18,research/RESULTS_LIQ.md:27,other,forced down-breaks; organic up-breaks,"long legs, criterion 4",gross,n/s,"(a) forced down-breaks **+26.4 bps, t 3.85**; (b) organic up-breaks +2.5 bps, t 0.46",hindsight,primary criterion
+#18,research/RESULTS_LIQ.md:35,time,2020 → mid-2023 vs mid-2023 → 2026,D,gross,n/s,2020 → mid-2023: nothing (+0.1 bps). Mid-2023 → 2026: −22.9,ex-ante,primary criterion
+#18,research/RESULTS_LIQ.md:38,other,"market changed, or measurement improved",doc: cannot tell apart,gross,n/s,"market changed. This test cannot tell them apart, and the pre-registered answer is FAIL.",hindsight,information-only
+#18,research/RESULTS_LIQ.md:40,other,down-breaks vs up-breaks,"1-hour move, all breaks",gross,"4,776 down","down-breaks moved **−18.5 bps against their direction** in the next hour (t −3.02), so a long",ex-ante,information-only
+#18,research/RESULTS_LIQ.md:46,other,organic down-breaks,long leg,gross,n/s,buying organic down-breaks +9.0 bps.,hindsight,information-only
+#26,research/RESULTS_LIQ2.md:3,time,June 2023 → October 2024,days #18 never used,gross,429 days,On 429 days #18 never used (June 2023 → October 2024),ex-ante,primary criterion
+#26,research/RESULTS_LIQ2.md:25,other,forced vs organic terciles,"D, 1 hour",gross,147 days,"**−23.6 bps, t −4.06**, 147 days",hindsight,primary criterion
+#26,research/RESULTS_LIQ2.md:26,other,"forced vs organic, coin-centred","D, 1 hour",gross,429 days,"−7.7 bps (t −3.25), 429 days",hindsight,primary criterion
+#26,research/RESULTS_LIQ2.md:27,time,halves split at 2024-02-16,"D, criterion 3",gross,n/s,"−22.6 bps, −24.7 bps",ex-ante,primary criterion
+#26,research/RESULTS_LIQ2.md:28,other,forced down-breaks; organic up-breaks,"long legs, criterion 4",gross,n/s,"(a) forced down-breaks **+23.5 bps, t 7.13**; (b) organic up-breaks −4.5 bps",hindsight,primary criterion
+#26,research/RESULTS_LIQ2.md:35,other,busier days vs the rest,zero-liquidation share,gross,147 days,The 147 days are the busier ones (53% zeros against 77%).,hindsight,information-only
+#26,research/RESULTS_LIQ2.md:37,other,every day: forced vs no liquidation,"D, post-run check",gross,428 days,"**−12.3 bps, t −4.90, 428 days**",hindsight,information-only
+#26,research/RESULTS_LIQ2.md:38,other,quiet days vs busier days,size of D,gross,n/s,it is about half as large on the quiet days.,hindsight,information-only
+#26,research/RESULTS_LIQ2.md:41,time,2023–24,#20's bounce vs forced down-breaks,gross,n/s,at about +10 bps a day in 2023–24; forced down-breaks earned +23.5.,hindsight,information-only
+#26,research/RESULTS_LIQ2.md:43,other,"forced vs organic, 4-hour horizon",D,gross,n/s,**4 hours is stronger still** (information only): D −43.7 bps (t −5.65).,hindsight,information-only
+#26,research/RESULTS_LIQ2.md:45,other,liquidations vs taker flow,which separates reversing breaks,gross,n/s,"It is the liquidations, not the aggressive volume, that separate the",hindsight,information-only
+#21,research/RESULTS_LIQSPIKE.md:5,time,first half of sealed months,reversal R,gross,n/s,and the first half went the other way.,ex-ante,primary criterion
+#21,research/RESULTS_LIQSPIKE.md:6,trend,months when the whole market rose,long leg after long-liquidation spikes,gross,631 spikes,"raw over 24 hours, t 2.45), but in months when the whole market rose.",hindsight,information-only
+#21,research/RESULTS_LIQSPIKE.md:16,other,spike threshold from previous 720 hours,definition,gross,631 + 609,thresholds from each coin's previous 720 hours,ex-ante,primary criterion
+#21,research/RESULTS_LIQSPIKE.md:17,trend,"average coin-hour, sealed months",market baseline over 24 h,gross,n/s,The average coin-hour rose: +19.5 bps over,hindsight,information-only
+#21,research/RESULTS_LIQSPIKE.md:24,other,spikes on both sides combined,reversal R,gross,117 days,"+4.8 bps, t 0.27, 117 days",ex-ante,primary criterion
+#21,research/RESULTS_LIQSPIKE.md:25,other,long spikes; short spikes,each side vs average hour,gross,631; 609,"longs +28.0 bps (t 1.36), shorts −53.9 bps (t −1.87)",ex-ante,primary criterion
+#21,research/RESULTS_LIQSPIKE.md:26,time,Jul–Aug vs Sep–Oct,"R, criterion 3",gross,n/s,"−20.2 bps (Jul–Aug), +33.0 bps (Sep–Oct)",ex-ante,primary criterion
+#21,research/RESULTS_LIQSPIKE.md:27,other,after long spikes,raw 24-hour long leg,gross,620 / 101 per #44,"+51.1 bps, t 2.45",ex-ante,primary criterion
+#21,research/RESULTS_LIQSPIKE.md:38,time,explored months vs sealed months,each side,gross,n/s,"explored, +28 bps (t 1.4) here. After short ones: −56 bps (t −2.6) explored, −54 bps (t −1.9) here.",hindsight,information-only
+#21,research/RESULTS_LIQSPIKE.md:39,other,per event vs per day,each side,gross,n/s,"Counted per event instead of per day there is no reversal at all: longs −4.7 bps, shorts +14.9 bps.",hindsight,information-only
+#21,research/RESULTS_LIQSPIKE.md:40,stress,quiet days vs busy cascade days,reversal,gross,n/s,"Quiet days with one or two spikes reverted; busy days, when many coins cascaded together, did not.",hindsight,information-only
+#21,research/RESULTS_LIQSPIKE.md:41,trend,months when market rose,long leg,gross,n/s,"+51 bps a day after long spikes, in months when",hindsight,information-only
+#21,research/RESULTS_LIQSPIKE.md:42,trend,average coin-hour gain,"market baseline, day-weighting",gross,n/s,"the average coin-hour gained +19.5 bps a day, with day-weighting favouring the quiet days.",hindsight,information-only
+#21,research/RESULTS_LIQSPIKE.md:43,other,"long spikes; short spikes, 4 h",each side,gross,n/s,"Longs +26.0 bps (t 3.12), shorts −27.1 bps",ex-ante,information-only
+#21,research/RESULTS_LIQSPIKE.md:71,trend,rising market,"long leg, scoreboard",gross,n/s,the long leg's +51 bps was mostly a rising market,hindsight,information-only
+#20,research/RESULTS_LOWS.md:5,time,both halves of six years,"new-low bounce, 1 h",gross,"136,523",in both halves of six years,ex-ante,primary criterion
+#20,research/RESULTS_LOWS.md:26,time,2020-01 → 2023-01 vs 2023-02 → 2026-03,"new-low bounce, criterion 3",gross,n/s,"+20.0 bps (2020-01 → 2023-01), +9.6 bps (2023-02 → 2026-03)",ex-ante,primary criterion
+#20,research/RESULTS_LOWS.md:33,other,violent new extreme,doc's reading of highs vs lows,gross,n/s,"in crypto at this scale, a violent new extreme reverses",ex-ante,information-only
+#20,research/RESULTS_LOWS.md:35,time,2020 and 2021; 2022–2025; early 2026,new-low bounce by year,gross,n/s,"+25 bps in 2020 and 2021, +9 to +10 bps each year 2022–2025, +12.9",hindsight,information-only
+#20,research/RESULTS_LOWS.md:36,time,early 2026,new-low bounce,gross,81 days,"in early 2026 (81 days, t 1.34).",hindsight,information-only
+#20,research/RESULTS_LOWS.md:37,time,since 2022,"bounce, against #18's modern-market reading",gross,n/s,"the bounce is weaker since 2022, not stronger.",hindsight,information-only
+#20,research/RESULTS_LOWS.md:43,stress,entering at a crash bar's next open,why the hurdle has a cushion; no split measured,unknown,n/s,crash bar's next open.,unclear,information-only
+#39,research/RESULTS_MARKOUT.md:63,other,liquidation hours vs other hours,"conservative maker markout, 60 s, Binance",gross,n/s,**worst**: −1.1 to −1.4 (vs −0.7 to −1.1 in other hours),ex-ante,primary criterion
+#39,research/RESULTS_MARKOUT.md:64,other,"flow ""with""",conservative maker markout,gross,n/s,worse: −1.0 to −1.6,ex-ante,primary criterion
+#39,research/RESULTS_MARKOUT.md:65,other,"flow ""against""",conservative maker markout,gross,n/s,least bad: −0.7 to −1.0,ex-ante,primary criterion
+#39,research/RESULTS_MARKOUT.md:66,funding,settlement window,conservative maker markout,gross,n/s,slightly less bad than other times,ex-ante,primary criterion
+#39,research/RESULTS_MARKOUT.md:67,other,"wide spread, Hyperliquid",taker half-spread,gross,n/s,about 2× higher on a wide spread on Hyperliquid,ex-ante,primary criterion
+#39,research/RESULTS_MARKOUT.md:69,time,2023–24 vs 2026,"cost drift, BTC and ETH",gross,n/s,"2023–24 (V1, real quotes) is close to 2026 for BTC and ETH, so costs have not",hindsight,information-only
+#39,research/RESULTS_MARKOUT.md:82,funding,"settlement window, best cell","maker, Hyperliquid XRP, 300 s",net,n/s,"The best cell, net of the maker fee, is still −2.9 bps: Hyperliquid XRP, 300 s, settlement window.",ex-ante,primary criterion
+#39,research/RESULTS_MARKOUT.md:83,time,"both halves, best cell",maker markout,net,n/s,"Its day t is −2.7, with both halves negative.",ex-ante,primary criterion
+#39 (#38 basis),research/RESULTS_MARKOUT.md:109,funding,"shorts pay hard, Mondays 00:00 2020–26, 4 coins",gross; net +38 (t 0.8) in same line,gross,9,+49.2 (t 1.0),unclear,information-only
+#39 (#38 basis),research/RESULTS_MARKOUT.md:110,funding,"every settlement, Apr–Oct 2026, 4 coins",event count,unknown,0,no events,unclear,information-only
+#39 (#38 basis),research/RESULTS_MARKOUT.md:121,funding,"shorts paying hard, 4 coins, 6.8 years",event count,unknown,9,"Only 9 coin-Mondays in 6.8 years had shorts paying hard,",unclear,information-only
+#39 (#38 basis),research/RESULTS_MARKOUT.md:122,funding,"April–October 2026, 4 coins",event count,unknown,0,No settlement on these four coins in April–October 2026,unclear,information-only
+#39,research/RESULTS_MARKOUT.md:158,other,liquidation hours and wide spreads,when to cross,gross,n/s,"liquidation hours and wide spreads (on Hyperliquid, about 2× the half-spread). Cross against recent",ex-ante,information-only
+#41,research/RESULTS_MARKOUT_SMALL.md:51,funding,"settlement window, best Hyperliquid cell","maker, ARB, 300 s",net,n/s,"best cell is ARB, 300 s, settlement window: −2.1 bps, t −1.3.",ex-ante,primary criterion
+#41,research/RESULTS_MARKOUT_SMALL.md:53,other,"wide spread, YFI, 1 s",the one cell positive before fees; unvalidated horizon,gross,n/s,"YFI, 1 s, wide spread: +0.70 bps.",ex-ante,information-only
+#41,research/RESULTS_MARKOUT_SMALL.md:91,other,coin dollar volume rank,conservative markout rank correlation,gross,12 coins,**conservative +0.97**,ex-ante,information-only
+#8,research/RESULTS_MF.md:16,time,design 2021-10 → 2024-06,"MF book, CAGR",net,n/s,+9.50%,ex-ante,information-only
+#8,research/RESULTS_MF.md:17,time,design 2021-10 → 2024-06,"BTC buy and hold, CAGR",gross,n/s,+2.62%,ex-ante,information-only
+#8,research/RESULTS_MF.md:18,time,design 2021-10 → 2024-06,"equal-weight eligible, CAGR",net,n/s,+15.53%,ex-ante,information-only
+#8,research/RESULTS_MF.md:19,time,holdout 2024-07 → 2026-10,"MF book, CAGR",net,n/s,**+16.90%**,ex-ante,primary criterion
+#8,research/RESULTS_MF.md:20,time,holdout 2024-07 → 2026-10,"BTC buy and hold, CAGR",gross,n/s,+10.67%,ex-ante,primary criterion
+#8,research/RESULTS_MF.md:21,time,holdout 2024-07 → 2026-10,"equal-weight eligible, CAGR",net,n/s,−4.17%,ex-ante,information-only
+#8,research/RESULTS_MF.md:25,time,"holdout, Sharpe > BTC",criterion actual,net,n/s,0.92,ex-ante,primary criterion
+#8,research/RESULTS_MF.md:26,time,"holdout, max DD shallower than BTC",criterion actual,net,n/s,−24.09%,ex-ante,primary criterion
+#8,research/RESULTS_MF.md:27,time,"holdout, CAGR > 0",criterion actual,net,n/s,+16.90%,ex-ante,primary criterion
+#8,research/RESULTS_MF.md:28,time,"composite OOS rank IC, purged blocks",criterion actual,unknown,n/s,8.11,ex-ante,primary criterion
+#8,research/RESULTS_MF.md:40,vol,"composite without vol targeting or buffer, holdout","MF plain, CAGR",net,n/s,**−13.94%**,ex-ante,information-only
+#8,research/RESULTS_MF.md:41,vol,"no ranking, same vol-targeted construction, holdout","first 10 alphabetically, CAGR",net,n/s,+9.45%,ex-ante,information-only
+#8,research/RESULTS_MF.md:42,vol,"all eligible, vol-targeted, holdout",CAGR,net,n/s,+9.66%,ex-ante,information-only
+#8,research/RESULTS_MF.md:43,vol,"lowvol_30 alone, holdout",CAGR,net,n/s,+21.42%,ex-ante,information-only
+#8,research/RESULTS_MF.md:53,vol,realized vol doubles,"book size, also attributed to #4",net,n/s,"mechanism is the same one that made TSMOM pass: when crypto's realized vol doubles, the book",unclear,information-only
+#8,research/RESULTS_MF.md:54,vol,realized vol doubles,drawdown after halving,net,n/s,"halves, and the drawdown that follows is halved with it.",unclear,information-only
+#8,research/RESULTS_MF.md:57,vol,low-vol factor vs composite,source of added return,net,n/s,**The addition is the low-vol factor.** `lowvol_30` alone does better than the composite;,ex-ante,information-only
+#8,research/RESULTS_MF.md:61,vol,"drawdown control, low-vol tilt",doc's summary of the pass,net,n/s,"**drawdown control first, a low-vol tilt second, and no evidence for momentum**",ex-ante,information-only
+#8,research/RESULTS_MF.md:74,vol,"lowvol_30, coin-level cross-section","factor IC, full window",unknown,n/s,lowvol_30       +0.066   2.82  +0.090   0.29  10.51  0.61  +0.01%   0.06  YES,ex-ante,information-only
+#8,research/RESULTS_MF.md:75,vol,"maxret_30, coin-level cross-section","factor IC, full window",unknown,n/s,maxret_30       +0.083   4.69  +0.075   0.30  10.87  0.62  -0.01%   0.06  YES,ex-ante,information-only
+#8,research/RESULTS_MF.md:87,vol,lowvol_30 and maxret_30,same factor,unknown,n/s,**`lowvol_30` and `maxret_30` are the same factor.**,ex-ante,information-only
+#8,research/RESULTS_MF.md:96,vol,calm vs wild coins,rank vs mean,gross,n/s,"(calm) coins beat the bottom (wild) coins *most weeks*, which is what a rank correlation measures,",ex-ante,information-only
+#8,research/RESULTS_MF.md:105,vol,low-vol tilt,IC decay reading,unknown,n/s,low-vol tilt doing the work rather than the one-week reversal.,ex-ante,information-only
+#8,research/RESULTS_MF.md:131,vol,holding less when things get wild,CAGR attribution,net,n/s,A result whose first 9 points of CAGR come from holding less when things,unclear,information-only
+#8,research/RESULTS_MF.md:132,vol,"calm coins, one contaminated window",CAGR attribution,net,n/s,"get wild, and whose next 7 come from a tilt to calm coins over one contaminated window, is a reason",unclear,information-only
+#8,research/RESULTS_MF.md:150,vol,holding less when volatility rises,doc's repo-level reading,net,n/s,"has found, twice, that holding less when volatility rises is the only thing that has reliably helped.",unclear,information-only
+#6,research/RESULTS_ODDS.md:19,time,design 2022–2024,empty period,unknown,0,design 2022–2024,ex-ante,information-only
+#6,research/RESULTS_ODDS.md:20,time,holdout 2025–2026,policy-odds Spearman,unknown,422,**+0.024**,ex-ante,primary criterion
+#6,research/RESULTS_ODDS.md:25,time,"holdout, Q5 − Q1",criterion actual,unknown,422,−0.85%,ex-ante,primary criterion
+#6,research/RESULTS_ODDS.md:28,time,holdout,rule vs BTC,unknown,16 trades,+24.66% vs BTC −15.68% over the holdout,ex-ante,information-only
+#6,research/RESULTS_ODDS.md:34,time,2022–2024 has no data,design flaw,unknown,n/s,"2023-12-02, so there is no data for 2022–2024 as the pre-registration assumed.",ex-ante,information-only
+#25,research/RESULTS_OI.md:5,time,2022–2023; 2024,D by era,gross,n/s,"and the difference has faded: positive in 2022–2023, about zero in 2024, negative",hindsight,information-only
+#25,research/RESULTS_OI.md:6,time,2025–2026,D by era,gross,n/s,in 2025–2026.,hindsight,information-only
+#25,research/RESULTS_OI.md:23,other,largest vs smallest OI drop,"D, 1 hour",gross,"1,430 days","+3.2 bps, t 2.36, 1,430 days",unclear,primary criterion
+#25,research/RESULTS_OI.md:25,time,2021 → Aug 2023 vs Sep 2023 → 2026,"D, criterion 3",gross,n/s,"+7.6 bps (2021 → Aug 2023), +0.2 bps (Sep 2023 → 2026)",ex-ante,primary criterion
+#25,research/RESULTS_OI.md:26,other,forced (OI drop),"1-hour bounce, criterion 4",gross,n/s,+12.3 bps (t 6.00),unclear,primary criterion
+#25,research/RESULTS_OI.md:30,other,"forced, middle, organic",1-hour bounce (organic +9.2 on line),gross,n/s,"1-hour: forced +12.3 bps, middle +8.3,",unclear,information-only
+#25,research/RESULTS_OI.md:32,time,by year 2022 → early 2026,D,gross,n/s,"D by year: 2022 +6.7, 2023 +10.3, 2024 +1.2, 2025 −4.2, early 2026 −6.3 bps.",hindsight,information-only
+#25,research/RESULTS_OI.md:33,time,second half,"D, doc's note on criterion 3",gross,n/s,Criterion 3 passes on a technicality: the second half is +0.2 bps.,ex-ante,primary criterion
+#25,research/RESULTS_OI.md:35,time,"#26's window, mid-2023 → late 2024",OI gap vs liquidation gap,gross,n/s,the open-interest gap was about +5 bps a year on average here; #26 measured 23.6 bps with,hindsight,information-only
+#25,research/RESULTS_OI.md:38,other,"largest vs smallest OI drop, 4 h",D,gross,n/s,the 4-hour D is +7.2 bps (t 3.19),unclear,information-only
+#25,research/RESULTS_OI.md:43,time,since 2024,proxy split weakening; caution for #26,gross,n/s,"split measured by a proxy has weakened since 2024, and #26's own window ends in October 2024.",hindsight,information-only
+#5,research/RESULTS_PEAD.md:3,time,holdout,PEAD vs SPY,net,112 trades,"Sharpe below zero on the holdout, CAGR negative, while SPY made +13.4% a year.",ex-ante,primary criterion
+#5,research/RESULTS_PEAD.md:12,time,design 2010–2020,"PEAD, CAGR",net,220 trades,+6.41%,ex-ante,information-only
+#5,research/RESULTS_PEAD.md:13,time,holdout 2021–2026,"PEAD, CAGR",net,112 trades,**−1.64%**,ex-ante,primary criterion
+#5,research/RESULTS_PEAD.md:17,time,"holdout, Sharpe > SPY",criterion actual,net,112 trades,−0.05,ex-ante,primary criterion
+#5,research/RESULTS_PEAD.md:18,time,"holdout, CAGR > 0",criterion actual,net,112 trades,−1.64%,ex-ante,primary criterion
+#5,research/RESULTS_PEAD.md:31,other,not a regime story,"doc's reading, design also lost to SPY",net,n/s,This is not a regime story like,hindsight,information-only
+#5,research/RESULTS_PEAD.md:32,other,any window,doc's reading,net,n/s,"funding extremes — the rule never worked, in any window.",hindsight,information-only
+#5,research/RESULTS_PEAD.md:61,time,"design 2010–2020, small-cap pilot","CAGR, exploratory",net,211 trades,−3.66%,ex-ante,information-only
+#5,research/RESULTS_PEAD.md:62,time,"holdout 2021–2026, small-cap pilot","CAGR, exploratory",net,112 trades,+3.61%,ex-ante,information-only
+#16/#17,research/RESULTS_PEERS.md:11,time,2024-10-27 → 2025-10-27,fresh year,gross,"8,755 hours",the year before #9b's and one no test here,ex-ante,primary criterion
+#16/#17,research/RESULTS_PEERS.md:40,time,fresh year,rev_1 reversal replicates,gross,"7,313 hours OOS","**Reversal replicates on a fresh year.** `rev_1` has t 10.73, hit rate 0.55 and a spread of",ex-ante,information-only
+#16/#17,research/RESULTS_PEERS.md:41,time,2024–25 vs #9b's 2025–26,rev_1 spread and t,gross,n/s,"+4 bps per three hours, against #9b's 14.18 and +3.7 bps on 2025–26.",ex-ante,information-only
+#16/#17,research/RESULTS_PEERS.md:58,time,"two years, two venues",lead-lag tests,gross,n/s,on two different years and two venues.,ex-ante,information-only
+#37,research/RESULTS_POLYHOUR.md:9,vol,fat tails a 24-hour σ misses,doc's likely reason crowd beat the model,unknown,"4,297",most likely because it prices the fat tails a 24-hour σ misses.,hindsight,information-only
+#37,research/RESULTS_POLYHOUR.md:23,trend,Up vs down base rate,market outcome,unknown,"4,297",Up won 50.0% of the time.,hindsight,information-only
+#37,research/RESULTS_POLYHOUR.md:30,time,each half,"mean profit per bet, criterion 2",net,"2,271","+0.75, +1.09 cents",ex-ante,primary criterion
+#37,research/RESULTS_POLYHOUR.md:41,other,previous hour's BTC move,crowd's opening price,unknown,"about 4,300","start is correlated −0.46 with the previous hour's BTC move, and +0.06 with the outcome (about",ex-ante,information-only
+#37,research/RESULTS_POLYHOUR.md:44,time,hour of day,profit per bet,net,n/s,**By hour of day** the profits scatter between −8 and +8 cents with no pattern a rule could use.,hindsight,information-only
+#19,research/RESULTS_SETTLE.md:18,funding,high previous rate,event count,gross,"17,845","17,845 had a high previous rate",ex-ante,primary criterion
+#19,research/RESULTS_SETTLE.md:19,funding,"abs(rate) ≥ 0.05%, by paying side",event counts,gross,"13,732; 4,113","13,732 with longs paying, 4,113 with shorts paying",ex-ante,primary criterion
+#19,research/RESULTS_SETTLE.md:27,funding,"high rate vs baseline, minus placebo","g, settlement swing",gross,"9,579 / 1,452 days","**+15.5 bps, t 3.52**",ex-ante,primary criterion
+#19,research/RESULTS_SETTLE.md:28,funding,high rate vs baseline,excess pre and post,gross,n/s,"pre −3.3 bps (t −1.56), post **+6.9 bps** (t 2.90)",ex-ante,primary criterion
+#19,research/RESULTS_SETTLE.md:29,time,2020-01 → 2023-04 vs 2023-05 → 2026-09,"g, criterion 3",gross,875; 577 days,"+13.2 bps (2020-01 → 2023-04, 875 days), +18.8 bps (2023-05 → 2026-09, 577 days)",ex-ante,primary criterion
+#19,research/RESULTS_SETTLE.md:30,funding,after longs paid; into short cover,long-only spot legs,gross,"13,732; 4,113",(a) after the longs paid **−7.4 bps** (t −1.32); (b) into the short cover +7.1 bps (t 1.85),ex-ante,primary criterion
+#19,research/RESULTS_SETTLE.md:37,funding,"high rate, no placebo",settlement alone,gross,n/s,"The settlement alone, without the placebo, is +10.2 bps (t 3.22); the placebo",ex-ante,information-only
+#19,research/RESULTS_SETTLE.md:38,funding,"high rate, placebo hours",placebo alone,gross,n/s,alone is −4.9 bps (t −1.68): high-funding coins drift slightly against their payers at other,ex-ante,information-only
+#19,research/RESULTS_SETTLE.md:40,funding,first half mostly longs paying,composition of events,gross,n/s,The first half is mostly longs paying (the,hindsight,information-only
+#19,research/RESULTS_SETTLE.md:41,trend,2020–21 mania; 2022 onward,doc's era labels with paying side,gross,n/s,"2020–21 mania), the second mostly shorts paying (2022 onward).",hindsight,information-only
+#19,research/RESULTS_SETTLE.md:42,funding,rate 0.05–0.1% per settlement,g by rate bucket,gross,n/s,"**It grows with the rate, sharply at the extreme** (information only): +11.1 bps at 0.05–0.1%",ex-ante,information-only
+#19,research/RESULTS_SETTLE.md:43,funding,rate 0.1–0.2%; 0.2% and above,g by rate bucket,gross,277 days at the top,"+13.2 at 0.1–0.2% (t 1.42), **+86.4 bps at 0.2% and above** (t 4.21, 277",ex-ante,information-only
+#19,research/RESULTS_SETTLE.md:45,funding,grouping on the rate that actually settles,"g, not knowable in advance per doc",gross,n/s,"interval but this test could not know in advance, gives +31.1 bps (t 5.95).",hindsight,information-only
+#19,research/RESULTS_SETTLE.md:47,funding,"high rate, spot bars",g on spot,gross,n/s,"**It shows on spot too, smaller**: +11.4 bps (t 2.54).",ex-ante,information-only
+#19,research/RESULTS_SETTLE.md:52,funding,after longs paid,spot buy,gross,"13,732",buying spot right after longs paid **lost** 7.4 bps on average.,ex-ante,primary criterion
+#19,research/RESULTS_SETTLE.md:53,funding,"frothiest hours, nearly every coin paying",leg coverage,gross,n/s,"settlements, including the frothiest hours when nearly every coin paid and there was no baseline",hindsight,information-only
+#19,research/RESULTS_SETTLE.md:54,trend,whole market after those settlements,market direction,gross,n/s,"to compare with, and the whole market tended to fall after those settlements.",hindsight,information-only
+#19,research/RESULTS_SETTLE.md:56,funding,short cover,spot buy; +3.1 net of Binance.US,gross,n/s,"**Buying into the short cover** earned +7.1 bps gross (t 1.85), +3.1 bps after a Binance.US",ex-ante,primary criterion
+#19,research/RESULTS_SETTLE.md:71,funding,shorts pay a high rate,timing lead,gross,n/s,"timing a trade you would make anyway: for a coin whose shorts pay a high rate, buying in the hour",ex-ante,information-only
+#19,research/RESULTS_SETTLE.md:79,funding,"long-paying events, 2021 vs after 2024",event counts; 4-hour switch excluded,gross,"8,490 in 2021","long-paying high events fall from 8,490 in 2021 to almost none after 2024.",hindsight,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:12,time,2021–23 to holdout,fall in excess return over BTC,unknown,n/s,"excess return over BTC fell 0.71 a year from 2021–23 to the holdout, but the 95% CI on that fall runs from",hindsight,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:13,time,2021–23 to holdout,CI on the fall,unknown,n/s,"−0.55 to +1.80. It includes zero, so decay and a bad draw can't be told apart on this history.",hindsight,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:17,time,holdout,"G, book before costs, annualised log growth",gross,n/s,−0.300,ex-ante,primary criterion
+#48 (#2),research/RESULTS_SUBSTRATE.md:18,time,holdout,"B, BTC on Binance, annualised log growth",gross,n/s,+0.227,ex-ante,primary criterion
+#48 (#2),research/RESULTS_SUBSTRATE.md:19,time,holdout,"D, execution drag at $100,000 a leg",net,n/s,0.065,ex-ante,primary criterion
+#48 (#2),research/RESULTS_SUBSTRATE.md:20,time,holdout,"shortfall, B − G + D",net,n/s,0.592,ex-ante,primary criterion
+#48 (#2),research/RESULTS_SUBSTRATE.md:21,time,holdout,"θ, execution's share of the shortfall",net,n/s,**0.111 (0.104–0.118)**,ex-ante,primary criterion
+#48 (#2),research/RESULTS_SUBSTRATE.md:42,time,"holdout on Coinbase, no costs",G and B (B +0.214 on next line),gross,n/s,"On Coinbase, with no costs, G and B are −0.330 and",ex-ante,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:43,funding,"holdout, perp funding","extra drag, excluded from θ",gross,n/s,Perp funding would have added another 0.057 a,ex-ante,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:56,time,failed 2024-01 → 2026-10; 2021–23 in design,where #2 failed and made money,net,n/s,"Failed on **2024-01 → 2026-10**. 2021–23 is inside its design period, where it made money.",ex-ante,information-only
+#48 (#11),research/RESULTS_SUBSTRATE.md:57,time,failed 2026-04 → 2026-10; 2024 best year,where #11 failed and earned most,net,n/s,"Failed on **2026-04 → 2026-10**. 2024 is its **best** year (+16.46%), in an information-only view with the basis unmarked.",hindsight,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:66,time,2021–23,design-run headline vs Binance before costs,gross,n/s,is **+39.09% a year**; on Binance before costs it is +30.38%.,hindsight,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:70,time,"2021–23, $1,000 a leg",after execution,net,n/s,+27.57%,hindsight,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:71,time,"2021–23, $10,000 a leg",after execution,net,n/s,+26.69%,hindsight,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:72,time,"2021–23, $100,000 a leg",after execution,net,n/s,+23.96%,hindsight,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:73,time,"2021–23, $1,000,000 a leg",after execution,net,n/s,+15.68%,hindsight,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:75,funding,"2021–23, long perp",funding drag,gross,n/s,A long perp paid 0.155 a year of log drag in funding across 2021–23.,hindsight,information-only
+#48 (#11),research/RESULTS_SUBSTRATE.md:78,time,2024,"#11's headline, basis at zero",net,143 trades,"Its headline is **+16.46%**, with basis marked at zero.",hindsight,information-only
+#48 (#11),research/RESULTS_SUBSTRATE.md:83,time,"2024, $1,000 per position",after execution,net,143 trades,+16.06%,hindsight,information-only
+#48 (#11),research/RESULTS_SUBSTRATE.md:84,time,"2024, $10,000 per position",after execution,net,143 trades,+14.14%,hindsight,information-only
+#48 (#11),research/RESULTS_SUBSTRATE.md:85,time,"2024, $100,000 per position",after execution,net,143 trades,+8.09%,hindsight,information-only
+#48 (#11),research/RESULTS_SUBSTRATE.md:86,time,"2024, $1,000,000 per position",after execution,net,143 trades,−11.04%,hindsight,information-only
+#48,research/RESULTS_SUBSTRATE.md:131,vol,per symbol and volatility regime,impact fit; no per-regime values in doc,unknown,"100,737 buckets","and volatility regime, 100,737 buckets from 2021–23, median R² 0.42",unclear,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:235,time,"design headline, re-run vs published","a year, candles fetched today",net,n/s,"+97.10% a year against the published +115.27%, on candles fetched",ex-ante,information-only
+#48 (#2),research/RESULTS_SUBSTRATE.md:236,time,holdout re-run,reproduces exactly,net,n/s,"The holdout reproduces exactly at −29.75%, and the 69 switches in",ex-ante,information-only
+#35,research/RESULTS_SWEEPS.md:4,time,both halves and every year,"reclaimed sweeps, 1 h",gross,"27,008",in both halves and every year.,ex-ante,primary criterion
+#35,research/RESULTS_SWEEPS.md:24,other,reclaimed sweeps of yesterday's low,"long, 1 h",gross,"27,008","+15.3 bps, t 6.99",ex-ante,primary criterion
+#35,research/RESULTS_SWEEPS.md:25,other,reclaimed minus failed,"long, 1 h",gross,"27,008; 13,777","−4.2 bps, t −1.24",ex-ante,primary criterion
+#35,research/RESULTS_SWEEPS.md:26,time,each half,"reclaimed long, criterion 3",gross,n/s,+15.5 / +15.1 bps,ex-ante,primary criterion
+#35,research/RESULTS_SWEEPS.md:35,other,"reclaimed, 1 hour (+39.1 at 4 h)",long,gross,"27,008",+15.3 bps (t 7.0),ex-ante,information-only
+#35,research/RESULTS_SWEEPS.md:36,other,"failed, 1 hour (+44.1 at 4 h)",long,gross,"13,777",+19.5 bps (t 7.5),ex-ante,information-only
+#35,research/RESULTS_SWEEPS.md:38,time,"2021, 2022, 2024, 2026",years failures beat reclaims,gross,n/s,"Failures beat reclaims in 2021, 2022, 2024 and 2026.",hindsight,information-only
+#35,research/RESULTS_SWEEPS.md:40,other,without a #20 trigger vs with,reclaimed sweeps,gross,n/s,and those without one bounced the same (+12.5 against +12.7 bps).,ex-ante,information-only
+#35,research/RESULTS_SWEEPS.md:43,other,"sweeps of yesterday's high, reclaimed vs failed",paper shorts,gross,n/s,+8.0 bps when reclaimed (t 3.5) and +11.6 bps when failed (t 5.1).,ex-ante,information-only
+#15,research/RESULTS_TREND.md:14,trend,"1/3/12-month trend, long/flat, vol-sized","trend book, CAGR",net,3749 trades,+6.57%,ex-ante,primary criterion
+#15,research/RESULTS_TREND.md:15,vol,"same vol sizing, always in","volonly, CAGR",net,837 trades,+8.94%,ex-ante,information-only
+#15,research/RESULTS_TREND.md:16,vol,"no sizing, always in","static, CAGR",net,562 trades,+18.00%,ex-ante,information-only
+#15,research/RESULTS_TREND.md:17,other,60/40 SPY/TLT,"comparison, CAGR",net,210 trades,+8.22%,ex-ante,information-only
+#15,research/RESULTS_TREND.md:21,trend,trend beyond vol sizing,"excess e, criterion 1",net,n/s,k 0.759; mean(e) −0.44 bps/wk; NW t −0.18,ex-ante,primary criterion
+#15,research/RESULTS_TREND.md:22,trend,trend vs vol-matched drawdown,"max DD, criterion 2",net,n/s,−13.93%,ex-ante,primary criterion
+#15,research/RESULTS_TREND.md:23,trend,beats 60/40,"Sharpe, criterion 3",net,n/s,0.87,ex-ante,primary criterion
+#15,research/RESULTS_TREND.md:24,trend,doubled costs,"CAGR, criterion 4",net,n/s,+6.17%,ex-ante,primary criterion
+#15,research/RESULTS_TREND.md:26,trend,trend timing,doc's reading,net,n/s,Trend timing bought drawdown protection and nothing else.,ex-ante,primary criterion
+#15,research/RESULTS_TREND.md:29,vol,vol sizing with no timing,Sharpe comparison,net,n/s,"it beat 60/40 on Sharpe — but so did volonly (0.90) and static (0.88), with no timing at all.",ex-ante,information-only
+#15,research/RESULTS_TREND.md:31,vol,when volatility is high,doc's repo-level reading,net,n/s,when volatility is high does the work; the signal adds little or nothing to it.**,unclear,information-only
+#15,research/RESULTS_TREND.md:42,trend,28-day lookback alone,CAGR,net,n/s,+7.13%,ex-ante,information-only
+#15,research/RESULTS_TREND.md:43,trend,91-day lookback alone,CAGR,net,n/s,+6.25%,ex-ante,information-only
+#15,research/RESULTS_TREND.md:44,trend,364-day sign alone,CAGR,net,n/s,+6.77%,ex-ante,information-only
+#15,research/RESULTS_TREND.md:53,time,2018–2021 vs 2022–2026,"trend book, Sharpe",net,n/s,the trend book made Sharpe 1.18 in 2018–2021 and 0.57 in 2022–2026.,hindsight,information-only
+#15,research/RESULTS_TREND.md:56,time,"2022 fall, bonds",long-only rule,net,n/s,"2022 fall was a short trade this rule cannot take, and the rebounds whipsawed it.",hindsight,information-only
+#15,research/RESULTS_TREND.md:69,trend,criterion 1 on no alts,"mean(e), post-hoc",net,n/s,+0.45 bps/wk,ex-ante,information-only
+#15,research/RESULTS_TREND.md:70,trend,criterion 1 on no crypto,"mean(e), post-hoc",net,n/s,−0.01 bps/wk,ex-ante,information-only
+#15,research/RESULTS_TREND.md:73,trend,"timing vs vol sizing, post-hoc",doc's reading,net,n/s,"still adds nothing to the vol sizing, and the drawdown benefit is the same.",ex-ante,information-only
+#15,research/RESULTS_TREND.md:83,trend,trend state after ticker switch,data flaw in trend reading,unknown,n/s,"impostor's for up to a year, so its trend read ""up"" whatever it did.",ex-ante,information-only
+#15,research/RESULTS_TREND.md:115,vol,when markets are wild,"repo-level reading over #4, #8, #15",net,n/s,the one effect that survives is volatility sizing — holding less when markets are,unclear,information-only
+#15,research/RESULTS_TREND.md:116,vol,when markets are wild,repo-level reading,net,n/s,wild cuts drawdowns roughly in half.,unclear,information-only
+#4,research/RESULTS_TSMOM.md:13,time,design 2010–2020,"TSMOM, CAGR",unknown,n/s,+1.00%,ex-ante,information-only
+#4,research/RESULTS_TSMOM.md:14,time,design 2010–2020,"equal-weight, CAGR",unknown,n/s,+1.61%,ex-ante,information-only
+#4,research/RESULTS_TSMOM.md:15,time,holdout 2021–2026,"TSMOM, CAGR",unknown,70 months,**+7.26%**,ex-ante,primary criterion
+#4,research/RESULTS_TSMOM.md:16,time,holdout 2021–2026,"equal-weight, CAGR",unknown,70 months,+8.50%,ex-ante,primary criterion
+#4,research/RESULTS_TSMOM.md:17,time,full 2010–2026,"TSMOM, CAGR",unknown,n/s,+3.14%,ex-ante,information-only
+#4,research/RESULTS_TSMOM.md:18,time,full 2010–2026,"equal-weight, CAGR",unknown,n/s,+3.94%,ex-ante,information-only
+#4,research/RESULTS_TSMOM.md:22,time,"holdout, Sharpe > benchmark",criterion actual,unknown,70 months,1.08,ex-ante,primary criterion
+#4,research/RESULTS_TSMOM.md:23,time,"holdout, drawdown shallower",criterion actual,unknown,70 months,−8.15%,ex-ante,primary criterion
+#4,research/RESULTS_TSMOM.md:24,time,"holdout, CAGR > 0",criterion actual,unknown,70 months,+7.26%,ex-ante,primary criterion
+#4,research/RESULTS_TSMOM.md:28,trend,trend filter vs equal-weight,doc's reading of the pass,unknown,n/s,"**It is drawdown control, not alpha.**",ex-ante,information-only
+#4,research/RESULTS_TSMOM.md:29,trend,"trend filter vs equal-weight, holdout",drawdown,unknown,n/s,strategy made it with **44% less drawdown**.,ex-ante,information-only
+#4,research/RESULTS_TSMOM.md:35,time,2022 to 2026 by year,TSMOM,unknown,n/s,2022: +1.6%   2023: +0.3%   2024: +6.9%   2025: +10.0%   2026: +17.8%,hindsight,information-only
+#4,research/RESULTS_TSMOM.md:38,stress,"2022, long bonds fell ~30%",market state in that year,gross,n/s,2022 was the year long bonds fell ~30% and a 60/40 portfolio had its worst year in decades.,hindsight,information-only
+#4,research/RESULTS_TSMOM.md:39,trend,TLT 252-day return negative,TSMOM in cash,unknown,n/s,"held **+1.6%** because TLT's 252-day return was negative, so it sat in cash instead of holding the falling",ex-ante,information-only
+#4,research/RESULTS_TSMOM.md:40,stress,crash filter,doc's reading of trend following,unknown,n/s,it is a crash filter that,hindsight,information-only
+#4,research/RESULTS_TSMOM.md:41,trend,melt-ups,doc's reading of trend following,unknown,n/s,costs you upside in melt-ups.,hindsight,information-only
+#4,research/RESULTS_TSMOM.md:43,trend,all six assets below trend,share of months fully in cash,unknown,n/s,1–3% of months fully in cash.,ex-ante,information-only
+#4,research/RESULTS_TSMOM.md:64,trend,"252-row lookback, at time of fix",BTC and ETH trend reading,gross,n/s,the 252-row rule showed BTC +17.9% / ETH +15.6%,ex-ante,information-only
+#4,research/RESULTS_TSMOM.md:65,trend,"52-week lookback, at time of fix",BTC and ETH trend reading,gross,n/s,while the 52-week rule showed **BTC −29.5% / ETH −42.1%** (exit).,ex-ante,information-only
+#7,research/RESULTS_XS20.md:12,time,window 2023-01-01 → 2026-10-27,"XS20, CAGR",net,46 rebalances,+42.39%,ex-ante,information-only
+#7,research/RESULTS_XS20.md:14,time,window 2023-01-01 → 2026-10-27,"BTC buy and hold, CAGR",gross,n/s,**+50.67%**,ex-ante,information-only
+#7,research/RESULTS_XS20.md:15,time,window 2023-01-01 → 2026-10-27,"equal-weight all 21, CAGR",unknown,n/s,+38.64%,ex-ante,information-only
+#7,research/RESULTS_XS20.md:25,time,in this window,BTC vs XS20,net,n/s,**BTC beat it on every dimension**,hindsight,information-only
+#7,research/RESULTS_XS20.md:29,trend,cash and a trend filter vs neither,TSMOM's drawdown vs XS20's,unknown,n/s,The TSMOM book's −8% came from having cash and a trend filter; this has neither.,ex-ante,information-only

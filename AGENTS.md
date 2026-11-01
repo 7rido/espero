@@ -64,7 +64,11 @@ a public endpoint with no key. Fetch only what the task needs, and say what you 
 **Rules for data:**
 
 - **Never overwrite, re-download over, or delete the live recordings.** `fetch-data.sh live`
-  extracts with "keep existing files" for that reason.
+  extracts with "keep existing files" for that reason. They are git-ignored (`.gitignore`, class 4),
+  so never `git add -f` them, and never run `git clean -x`.
+- **A new data folder goes in `.gitignore` by its class** (cache, tick days, or recording), not by
+  test number. A recording also goes in `scripts/publish-data.sh`'s `PATHS` and `fetch-data.sh`'s
+  `LIVE`; `tests/test_manifest.py` checks that.
 - **Never commit data or publish a release.** `scripts/publish-data.sh` is the maintainer's.
 - **A gap stays a gap.** A day missing from a forward folder is recorded as missing and never
   filled from another source; the forward plans depend on this.

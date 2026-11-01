@@ -95,6 +95,9 @@ stay in Binance's archive and can be fetched again.
 |---|---|---|
 | `data/hlcollect/` | Hyperliquid snapshots: top accounts' positions, HLP and which of its accounts failed to read (#59), asset contexts, 1-minute candles | `espero hlcollect --loop`, `./scripts/install-hlcollect-launchd.sh` (macOS), or `docker compose up -d` (any OS) |
 | `data/hlbook/` | Hyperliquid's order book, top 20 levels a side, 10 frozen coins, every 5 minutes | `espero hlbook --loop`, `./scripts/install-hlbook-launchd.sh` (macOS) |
+
+These folders are in `.gitignore` on purpose, under "class 4": git must never see them, so that
+`git clean` and `git add -A` can't touch them. The release is their backup.
 | `data/book/` | order-book recordings from the fast screen and the testnet rehearsal (#42) | `espero fast`, `research/rehearsal.py` |
 
 Hyperliquid's API serves the current state, not history. A snapshot not taken is never available.
@@ -117,6 +120,14 @@ in the maintainer's `.env`, so the latest release is at most a week behind. Anyo
 It checks the SHA-256, then extracts into `data/` **without overwriting any file you already have**.
 Everything in it is public market data: Hyperliquid's published positions of its largest accounts,
 order books, klines and liquidation bars. There is no account information and no key.
+
+Each recorded folder carries a `MANIFEST.sha256`, one line per file, written by the publish script
+and checked after the extraction. A file you already had that differs from the release's is
+reported, not replaced; a file the release has that you don't is an error. To check at any time:
+
+```bash
+.venv/bin/python -m espero.manifest check data/hlcollect data/hlbook data/aggr/forward data/aggr/forward5m
+```
 
 ## Troubleshooting
 

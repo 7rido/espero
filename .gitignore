@@ -1,101 +1,73 @@
-# Python
+# Grouped by what a file is, so the rule for a new file is its class, not its test number.
+
+# ---- Python, tooling, OS
 __pycache__/
 *.py[cod]
 *.egg-info/
 build/
 dist/
 .venv/
+.venv-pit/
 venv/
-
-# Tooling
 .pytest_cache/
+.ruff_cache/
 .coverage
 htmlcov/
-
-# Local output
 results/
 *.log
-
-# OS
 .DS_Store
 
-# research data (fetched on demand by research/*.py)
-research/data/
+# ---- secrets: the template is committed, the real file never is
+.env
+.env.*
+!.env.example
 
-# paper account state
-tsmom.db
-*_paper.db
-
-# generated dashboard
-dashboard.html
-
-# SEC / price cache for research
-research/data/pead/
-
-# cached odds histories
-research/data/odds/
-
-xs.db
-
-# every account database, except fixtures that are committed on purpose
+# ---- account state and ledgers. Written by `espero daily` and the loops; the repo root is the
+# state folder for now. Every *.db is an account or a journal, except the committed features fixture.
 *.db
 !features.db
 *.db-wal
 *.db-shm
-
-# fallback cache for Yahoo/FRED series (rebuilt on demand)
-data/cache/
-
-# runtime state written by `espero daily`
-state/
-KILL
-.venv/
-
-# recorded order books and the fast-screen journal (session data, not code)
-data/book/
-fast.db
 *.db.lock
-
-# secrets: the template is committed, the real file never is
-.env
-.env.*
-!.env.example
-# #18's downloads: a few hundred MB, re-downloadable (research/liq.py)
-data/liq/
-# #19's downloads: funding history and hourly bars, re-downloadable (research/settle.py)
-data/settle/
-# #20's downloads: 5-minute bars, about a gigabyte, re-downloadable (research/lows.py)
-data/lows/
-# #22 paper ledger, rebuilt daily from data/aggr/forward
-liqfwd_trades.csv
-liqfwd_short_trades.csv
-lows_fwd_trades.csv
-liqbreak_trades.csv
-# #25 open-interest downloads (research/oi.py)
-data/oi/
-# #26 COIN-M liquidation downloads (research/liq2.py)
-data/liq2/
-# #28's extra 5-minute months and days, re-downloadable (research/levetf.py)
-data/levetf/
-# #30 downloads: 5-minute months and days, re-downloadable (research/bids.py)
-data/bids/
-# the Hyperliquid collector, public data, re-collectable only going forward (espero/hlcollect.py)
-data/hlcollect/
-data/hlbook/
-# espero rate: its record of ratings and a cached liquidation fetch
-data/rate/
-# #32's Binance funding cache (espero/fundsplit.py)
-data/funding/
-# #37 Polymarket downloads (research/polyhour.py)
-data/polymarket/
+/*.csv
+dashboard.html
+KILL
+state/
 docker-state/
+paper-books/
 
-# point-in-time store and its environment (research/substrate_fetch.py)
+# ---- data, class 1: committed fixtures. Nothing here is ignored: data/*.csv, data/panel*/,
+# data/trend/, data/aggr/explore/, data/aggr/holdout/ and the degen bars #10's numbers came from.
+
+# ---- data, class 2: caches fetched from a public archive by the script that uses them.
+# Safe to delete; the script downloads them again (docs/DATA.md, section 2).
+data/cache/
+data/lows/
+data/liq/
+data/liq2/
+data/oi/
+data/settle/
+data/levetf/
+data/bids/
+data/markout/
+data/markout_small/
+data/polymarket/
+data/funding/
+data/rate/
+data/degen/*
+research/data/
+
+# ---- data, class 3: tick days from Tardis and Binance, tens of gigabytes, fetchable again with time.
 data/pit/
-.venv-pit/
-
-# Tardis free Hyperliquid book days (#51, research/bookwalk.py)
+data/patterns/
 data/bookwalk/
 
-# Tardis free Hyperliquid and Binance days (#52-#56, research/patterns.py)
-data/patterns/
+# ---- data, class 4: recordings that cannot be fetched again. Hyperliquid serves no history and
+# aggr deletes its bars after days. They live in the weekly release (scripts/publish-data.sh), each
+# with a MANIFEST.sha256 (python -m espero.manifest). Ignored so that `git clean` and `git add -A`
+# never touch them. Never delete them. data/lows/forward/ is the same class but is under data/lows/.
+data/hlcollect/
+data/hlbook/
+data/book/
+data/aggr/forward/
+data/aggr/forward5m/

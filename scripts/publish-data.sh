@@ -18,7 +18,8 @@ DAY="$(date -u +%Y-%m-%d)"
 TAG="data-$DAY"
 OUT="${TMPDIR:-/tmp}/espero-live-data"
 NAME="espero-live-data.tar.gz"
-PATHS=(data/hlcollect data/book data/lows/forward data/aggr/forward data/aggr/forward5m)
+PYTHON="${PYTHON:-$REPO/.venv/bin/python}"
+PATHS=(data/hlcollect data/hlbook data/book data/lows/forward data/aggr/forward data/aggr/forward5m)
 
 cd "$REPO"
 if [ "${1:-}" != "--dry-run" ] && gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
@@ -28,6 +29,9 @@ fi
 present=()
 for p in "${PATHS[@]}"; do [ -d "$p" ] && present+=("$p"); done
 [ ${#present[@]} -gt 0 ] || { echo "nothing to publish: none of ${PATHS[*]} exists" >&2; exit 1; }
+
+# each folder carries its own hash list, so a fetched copy can be checked file by file
+"$PYTHON" -m espero.manifest write "${present[@]}"
 
 rm -rf "$OUT" && mkdir -p "$OUT"
 tar -czf "$OUT/$NAME" "${present[@]}"

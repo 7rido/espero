@@ -15,6 +15,7 @@ GH_REPO="${GH_REPO:-7rido/espero}"
 PYTHON="${PYTHON:-$REPO/.venv/bin/python}"
 NAME="espero-live-data.tar.gz"
 URL="https://github.com/$GH_REPO/releases/latest/download"
+LIVE=(data/hlcollect data/hlbook data/book data/lows/forward data/aggr/forward data/aggr/forward5m)
 
 cd "$REPO"
 
@@ -28,6 +29,12 @@ live() {
     # -k: a file that already exists here is kept, so a local recording is never overwritten
     tar -xzkf "$tmp/$NAME" -C "$REPO" 2>/dev/null || true
     echo "extracted into data/ (existing files kept)"
+    # a local file that was kept may differ from the release's; that is reported, not an error
+    present=()
+    for p in "${LIVE[@]}"; do [ -f "$p/MANIFEST.sha256" ] && present+=("$p"); done
+    if [ ${#present[@]} -gt 0 ] && [ -x "$PYTHON" ]; then
+        "$PYTHON" -m espero.manifest check "${present[@]}" || echo "a file in the release is missing here" >&2
+    fi
     status
 }
 
@@ -49,7 +56,7 @@ archives() {
 }
 
 status() {
-    for p in data/hlcollect data/book data/lows/forward data/aggr/forward data/aggr/forward5m \
+    for p in "${LIVE[@]}" \
              data/lows data/liq data/liq2 data/oi data/settle data/levetf data/bids \
              data/markout data/markout_small data/polymarket; do
         if [ -d "$p" ]; then

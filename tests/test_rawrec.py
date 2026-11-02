@@ -70,6 +70,7 @@ class TestLine(unittest.TestCase):
             ("coinbase", b'{"type":"match","product_id":"BTC-USD","side":"sell"}', ("match", "BTC-USD")),
             ("coinbase", b'{"type":"l2update","product_id":"HYPE-USD","changes":[]}', ("l2update", "HYPE-USD")),
             ("coinbase", b'{"type":"heartbeat","product_id":"BTC-USD"}', ("_ctrl", "")),
+            ("coinbase", b'{"type":"ticker","product_id":"BTC-USD","best_bid":"1"}', ("ticker", "BTC-USD")),
             ("coinbase", b'{"type":"subscriptions","channels":[]}', ("_ctrl", "")),
         ]
         self.assertEqual(json.loads(rr.line(T0, "_ctrl", "", b"pong"))["d"], "pong", "a text frame stays valid JSON")
@@ -269,7 +270,7 @@ class TestSubscriptions(unittest.TestCase):
         self.assertNotIn("orderbook", "".join(rr.bybit_subscribe(["BTCUSDT"], books=False)))
         cb = json.loads(rr.coinbase_subscribe(["BTC-USD", "HYPE-USD"])[0])
         self.assertEqual(cb, {"type": "subscribe", "product_ids": ["BTC-USD", "HYPE-USD"],
-                              "channels": ["matches", "heartbeat", "level2_batch"]})
+                              "channels": ["matches", "heartbeat", "ticker", "level2_batch"]})
         self.assertNotIn("level2", "".join(rr.coinbase_subscribe(["BTC-USD"], books=False)))
         self.assertEqual(rr.Feed("coinbase", ["BTC-USD"], None).url(), rr.COINBASE_WS)
 

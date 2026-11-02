@@ -3,6 +3,9 @@
     espero rawrec --watch BTC,ETH          # refreshes every 2 s; ctrl-c stops
     espero rawrec --watch BTC --read       # adds a column of words for what the book and flow show: untested
 
+Under each coin a second block gives trades, dollars, buy share and liquidations by side over 5 minutes,
+30 minutes and an hour; the screen starts from the previous hour's file so the hour window is full.
+
 It reads what `espero rawrec --loop` wrote in the last second, so it needs no second connection to any
 venue and shows exactly what the tape holds, lag included. It shows no return and no rule. With `--read`
 it adds, at the account holder's request, a column of words for what the book and the last minute's flow
@@ -33,6 +36,8 @@ from . import rawrec as rr
 REFRESH_S = 2.0
 FLOW_S = 60
 LIQ_S = 300
+WINDOWS = (("5m", 300), ("30m", 1800), ("1h", 3600))
+KEEP_S = 3600
 DEPTH_BPS = 10.0
 LAG_FRAMES = 200
 DELTA_BUFFER = 2000
@@ -117,6 +122,13 @@ class Book:
         band = mid * bps / 1e4
         return sum(p * s * self.ct_val for p, s in self.bids.items() if mid - p <= band) + \
             sum(p * s * self.ct_val for p, s in self.asks.items() if p - mid <= band)
+
+    def prune_outside(self, best_bid: float, best_ask: float) -> None:
+        """Drop levels a venue's ticker says are gone: bids above its best bid, asks below its best ask.
+        A windowed feed (Coinbase's level2_50) never deletes a level that left the window."""
+        self.bids = {p: s for p, s in self.bids.items() if p <= best_bid}
+        self.asks = {p: s for p, s in self.asks.items() if p >= best_ask}
+        self.ok = bool(self.bids and self.asks) and max(self.bids) < min(self.asks)
 
     def okx_checksum_ok(self, want: int) -> bool:
         """OKX: crc32 over the top 25 bid and ask levels interleaved, 'px:sz:px:sz...', on the strings the
@@ -252,6 +264,8 @@ class VenueState:
                     self.book.apply(bids, asks, COINBASE_WINDOW)
             elif ch == "rest.book":
                 self.book.set([(x[0], x[1]) for x in d["bids"]], [(x[0], x[1]) for x in d["asks"]])
+            elif ch == "ticker" and d.get("best_bid") and d.get("best_ask"):
+                self.book.prune_outside(float(d["best_bid"]), float(d["best_ask"]))
             elif ch in ("match", "last_match"):
                 t_ms = _iso_ms(d["time"])
                 self.trades.append((t_ms, float(d["price"]) * float(d["size"]), d["side"] == "sell"))   # the maker sold: the taker bought
@@ -276,29 +290,37 @@ class VenueState:
                 else:
                     self.book.apply(bids, asks, BYBIT_WINDOW)
 
+    def window(self, now_ms: int, seconds: int) -> Dict[str, object]:
+        """Trades, dollars, buy share and liquidations by side over the last `seconds` (an hour is kept)."""
+        since = now_ms - seconds * 1000
+        tr = [x for x in self.trades if x[0] >= since]
+        usd = sum(x[1] for x in tr)
+        buy = sum(x[1] for x in tr if x[2])
+        lq = [x for x in self.liqs if x[0] >= since]
+        return {"trades": len(tr), "usd": usd, "buy_share": buy / usd if usd else None,
+                "liq_buy": sum(x[1] for x in lq if x[2] == "buy"), "liq_sell": sum(x[1] for x in lq if x[2] == "sell")}
+
     def row(self, now_ms: int) -> Dict[str, object]:
-        while self.trades and now_ms - self.trades[0][0] > FLOW_S * 1000:
+        while self.trades and now_ms - self.trades[0][0] > KEEP_S * 1000:
             self.trades.popleft()
-        while self.liqs and now_ms - self.liqs[0][0] > LIQ_S * 1000:
+        while self.liqs and now_ms - self.liqs[0][0] > KEEP_S * 1000:
             self.liqs.popleft()
-        usd = sum(x[1] for x in self.trades)
-        buy = sum(x[1] for x in self.trades if x[2])
+        minute, five = self.window(now_ms, FLOW_S), self.window(now_ms, LIQ_S)
         b, a = self.book.top()
         return {"venue": self.venue, "bid": b, "ask": a, "spread_bps": self.book.spread_bps(),
-                "depth_usd": self.book.depth_usd(), "trades_1m": len(self.trades), "usd_1m": usd,
-                "buy_share": buy / usd if usd else None,
-                "liq_buy_5m": sum(x[1] for x in self.liqs if x[2] == "buy"),
-                "liq_sell_5m": sum(x[1] for x in self.liqs if x[2] == "sell"),
+                "depth_usd": self.book.depth_usd(), "trades_1m": minute["trades"], "usd_1m": minute["usd"],
+                "buy_share": minute["buy_share"], "liq_buy_5m": five["liq_buy"], "liq_sell_5m": five["liq_sell"],
                 "lag_ms": statistics.median(self.lags) if self.lags else None,
-                "age_s": (now_ms - self.last_rt) / 1000 if self.last_rt else None, "frames": self.frames}
+                "age_s": (now_ms - self.last_rt) / 1000 if self.last_rt else None, "frames": self.frames,
+                "windows": {name: self.window(now_ms, sec) for name, sec in WINDOWS}}
 
 
 # ------------------------------------------------------------------ following the tape
 def follow(raw: Path, venue: str, clock: Callable[[], int] = lambda: int(time.time() * 1000),
            start_ms: Optional[int] = None, symbols: Optional[List[str]] = None) -> Iterator[Optional[dict]]:
-    """Yield records as the recorder writes them: the current hour file from the beginning, then every
-    new line, switching to the next hour's file when it appears. Yields None when nothing new arrived.
-    Cut frames (a restart) are handled as `rawrec.FrameDecoder` does."""
+    """Yield records as the recorder writes them: the hour file of `start_ms` (default now) from the
+    beginning, then every new line, moving to the next hour's file when it appears and this one is read.
+    Yields None when nothing new arrived. Cut frames (a restart) are handled as `rawrec.FrameDecoder` does."""
     pos = 0
     path = rr.hour_path(raw, venue, start_ms or clock())
     fh = None
@@ -306,6 +328,14 @@ def follow(raw: Path, venue: str, clock: Callable[[], int] = lambda: int(time.ti
     keys = [f'"s":"{s_}"'.encode() for s_ in symbols] + [b'"ch":"liquidation-orders"'] if symbols else None
     while True:
         want = rr.hour_path(raw, venue, clock())
+        if fh is None and path.exists():
+            want = path                             # begin where asked (an hour back), not at now
+        elif fh is not None and want != path:
+            day, hh = path.parent.name, int(path.stem.split(".")[0])
+            t = dt.datetime.strptime(f"{day} {hh:02d}", "%Y-%m-%d %H").replace(tzinfo=dt.timezone.utc)
+            following = rr.hour_path(raw, venue, int(t.timestamp() * 1000) + 3_600_000)
+            if following != want and following.exists():
+                want = following                    # the hour after this one, before jumping to now
         if fh is None or (want != path and want.exists()):
             if fh is not None:
                 fh.close()
@@ -379,6 +409,13 @@ def render(coin: str, rows: List[Dict[str, object]], now_ms: int, reads: Optiona
                      f"{depth:>14}{r['trades_1m']:>10}{r['usd_1m'] / 1e6:>8.2f}{f(r['buy_share'], '.2f'):>6}"
                      f"{r['liq_buy_5m'] / 1e3:>11.0f}k{r['liq_sell_5m'] / 1e3:>11.0f}k{f(r['lag_ms'], '.0f'):>8}{f(r['age_s'], '.0f'):>7}"
                      + (f"   {reads[i]}" if reads else ""))
+    lines.append(f"{'flow by window':<12}" + "".join(f"{name:>8}{'$M':>8}{'buy':>6}{'liq buy':>9}{'liq sell':>10}" for name, _ in WINDOWS))
+    for r in rows:
+        cells = ""
+        for name, _ in WINDOWS:
+            w = r["windows"][name]
+            cells += f"{w['trades']:>8}{w['usd'] / 1e6:>8.2f}{f(w['buy_share'], '.2f'):>6}{w['liq_buy'] / 1e3:>8.0f}k{w['liq_sell'] / 1e3:>9.0f}k"
+        lines.append(f"{r['venue']:<12}" + cells)
     return "\n".join(lines)
 
 
@@ -393,7 +430,8 @@ def watch(raw: Path, coins: List[str], refresh_s: float = REFRESH_S, out=sys.std
         os.nice(10)                                 # the recorder wins the CPU; this screen can wait
     except (OSError, AttributeError):
         pass
-    feeds = {v: follow(raw, v, clock, symbols=[symbols_for(c)[v] for c in coins]) for v in venues}
+    start = clock() - KEEP_S * 1000                 # from the previous hour's file, so the hour window is full
+    feeds = {v: follow(raw, v, clock, start_ms=start, symbols=[symbols_for(c)[v] for c in coins]) for v in venues}
     rounds = 0
     while max_rounds is None or rounds < max_rounds:
         for v, gen in feeds.items():

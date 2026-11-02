@@ -43,7 +43,9 @@ says so (`truncated`), and reads on from the next frame. Nothing is ever rewritt
   replay those fills on the book they rested in.
 * Coinbase Exchange spot (added 2026-11-02 at the account holder's request): `matches` (every trade; `side` is
   the maker's, so a `sell` maker means the taker bought), `level2_batch` (a 50-level snapshot, then changes
-  every 50 ms, absolute sizes; the venue serves it as `level2_50`), `heartbeat`, and a REST level-2 book every
+  every 50 ms, absolute sizes; the venue serves it as `level2_50`, and a level that leaves the window is never
+  deleted), `ticker` (the best bid and ask on every trade, which prunes those stale levels), `heartbeat`, and a
+  REST level-2 book every
   `SNAPSHOT_EVERY_S`. BTC-USD, ETH-USD and the carry books' coins, whose spot leg #12 prices there.
 * Binance USDⓈ-M: `trade` (every print, what aggr-server itself reads), `aggTrade`, `depth@100ms` (diffs,
   absolute size per level), `depth20@100ms` (the top 20 levels whole, every 100 ms: the snapshot the diffs
@@ -191,7 +193,7 @@ def classify(venue: str, frame: bytes) -> Tuple[str, str]:
             return ch, sym.upper()
     elif venue == "coinbase":
         t = d.get("type")
-        if t in ("match", "last_match", "snapshot", "l2update") and d.get("product_id"):
+        if t in ("match", "last_match", "snapshot", "l2update", "ticker") and d.get("product_id"):
             return t, str(d["product_id"])
     return "_ctrl", ""
 
@@ -552,7 +554,7 @@ def hl_subscribe(coins: List[str], books: bool = True) -> List[str]:
 
 
 def coinbase_subscribe(symbols: List[str], books: bool = True) -> List[str]:
-    channels = ["matches", "heartbeat"] + (["level2_batch"] if books else [])
+    channels = ["matches", "heartbeat", "ticker"] + (["level2_batch"] if books else [])
     return [json.dumps({"type": "subscribe", "product_ids": list(symbols), "channels": channels})]
 
 

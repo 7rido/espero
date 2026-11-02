@@ -94,6 +94,15 @@ def parse_order_response(resp: Any) -> dict:
     return {"status": "error", "oid": None, "filled": 0.0, "avg_px": None, "error": str(st.get("error", st))[:200]}
 
 
+def _cloid(raw: str):
+    """The SDK's Cloid when it is installed; the bare string for injected fakes."""
+    try:
+        from hyperliquid.utils.types import Cloid
+    except ImportError:
+        return raw
+    return Cloid(raw)
+
+
 # -------------------------------------------------------------------- exchange
 @dataclass
 class OrderResult:
@@ -146,9 +155,10 @@ class TestnetExchange:
         return self._meta
 
     def limit(self, coin: str, side: str, size: float, price: float, tif: str = "Alo",
-              reduce_only: bool = False) -> OrderResult:
+              reduce_only: bool = False, cloid: Optional[str] = None) -> OrderResult:
         """Resting limit order. `tif` Alo = add-liquidity-only (rejected rather
-        than crossing: the maker test), Gtc = may take, Ioc = take or cancel."""
+        than crossing: the maker test), Gtc = may take, Ioc = take or cancel.
+        `cloid` (0x + 32 hex) tags the order so a timed-out call can be looked up."""
         if side not in ("buy", "sell"):
             raise ValueError("side must be buy or sell")
         if coin not in self.meta:
@@ -157,9 +167,14 @@ class TestnetExchange:
         sz, px = round_size(size, sd), round_price(price, sd, side)
         if sz <= 0:
             raise ValueError(f"{coin}: size {size} rounds to zero at {sd} decimals")
-        resp = self.ex.order(coin, side == "buy", sz, px, {"limit": {"tif": tif}}, reduce_only=reduce_only)
+        kw = {"cloid": _cloid(cloid)} if cloid else {}
+        resp = self.ex.order(coin, side == "buy", sz, px, {"limit": {"tif": tif}}, reduce_only=reduce_only, **kw)
         p = parse_order_response(resp)
         return OrderResult(coin, side, sz, px, tif, **p)
+
+    def order_status(self, cloid: str) -> dict:
+        """The venue's record of an order by client id: {"status": "unknownOid"} if it never arrived."""
+        return self.info.query_order_by_cloid(self.address, _cloid(cloid))
 
     def book(self, coin: str) -> tuple[float, float]:
         """Best bid and ask on the testnet book. The mirror prices from here,

@@ -651,6 +651,7 @@ espero/
     tca.py            # Transaction cost analysis for the paper accounts.
     reconcile.py      # Reconcile our record of orders against the exchange's record of fills (#40,
     hl_exchange.py    # Hyperliquid **testnet** order path. The only code in espero that signs anything.
+    hlp_testnet.py    # #59's signals placed as real orders on Hyperliquid's testnet, to prove the order path, never …
     rawbars.py        # #61: aggr's forward bars rebuilt from the raw streams (research/PREREGISTRATION_RAWBARS.md).
     replaysim.py      # #62: the paper fills replayed on the recorded book (research/PREREGISTRATION_REPLAYSIM.md).
     robustness.py     # Robustness readouts reported beside every result from #61 on (research/ROBUSTNESS_STANDARD.md) …

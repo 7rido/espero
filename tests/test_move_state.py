@@ -87,6 +87,7 @@ class TestInstallersRefuseABookLeftInTheRoot(unittest.TestCase):
 
     BOOKS = {"install-launchd.sh": "tsmom.db", "install-carry-launchd.sh": "carry-maker.db",
              "install-hlp-launchd.sh": "hlp-book.db", "install-hlp2-launchd.sh": "hlp2-book.db",
+             "install-hlp2-testnet-launchd.sh": "hlp2-testnet.db",
              "install-paper-launchd.sh": "paper-btc-usd-hl.db"}
 
     def test_each_installer_stops_before_touching_launchd(self):

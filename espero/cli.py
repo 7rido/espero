@@ -656,6 +656,42 @@ def _cmd_hlp(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_hlp_testnet(args: argparse.Namespace) -> int:
+    """#59's signals as real testnet orders: proves the order path, not the edge."""
+    from . import hlp_testnet as ht
+    from .hl_exchange import TestnetRefused
+    from .lock import JournalBusy, JournalLock
+
+    state = args.state or str(state_path("hlp2-testnet.db"))
+    book = str(state_path(args.book))
+    if args.status:
+        print("\n".join(ht.summary(state)))
+        return 0
+    try:
+        ex = _testnet_exchange()
+    except TestnetRefused as exc:
+        print(f"refused: {exc}")
+        return 2
+    try:
+        with JournalLock(state):
+            run = ht.Executor(state, book, ex, usd=args.usd)
+            try:
+                print(f"#59 TESTNET executor: ${args.usd:,.0f} per trade from {ex.address}, reading {book} -> {state}; "
+                      f"kill switch {run.stop_file}", flush=True)
+                if not args.loop:
+                    run.step()
+                    return 0
+                run_loop(run.step, args.interval, label="hlp testnet")
+            except KeyboardInterrupt:
+                print("stopped")
+            finally:
+                run.close()
+    except JournalBusy as exc:
+        print(exc)
+        return 2
+    return 0
+
+
 def _cmd_ladder(args: argparse.Namespace) -> int:
     """#60: no paper book; its ledger is rebuilt once after the window closes, from the recordings."""
     from . import hlpbook as hp
@@ -1570,6 +1606,15 @@ def build_parser() -> argparse.ArgumentParser:
     hp.add_argument("--status", action="store_true", help="what the book holds; running numbers are not a result")
     hp.add_argument("--verdict", action="store_true", help="the registered verdict, once, after 2027-03-31")
     hp.set_defaults(func=_cmd_hlp)
+
+    ht = sub.add_parser("hlp-testnet", help="#59's signals as real TESTNET orders (mechanics, not a result)")
+    ht.add_argument("--book", default="hlp2-book.db", help="#59's paper journal, read only")
+    ht.add_argument("--state", default=None, help="executor journal (default hlp2-testnet.db)")
+    ht.add_argument("--usd", type=float, default=100.0, help="testnet notional per trade (default 100)")
+    ht.add_argument("--loop", action="store_true")
+    ht.add_argument("--interval", type=float, default=30.0)
+    ht.add_argument("--status", action="store_true", help="what it has done; mechanics only")
+    ht.set_defaults(func=_cmd_hlp_testnet)
 
     la = sub.add_parser("ladder", help="#60: what is recorded for it (default), or its verdict once, after 2027-03-31")
     la.add_argument("--data", default=None, help="folder (default data/hlcollect in the repo)")

@@ -110,6 +110,11 @@ No stopping early on the running numbers, and no re-tuning of the percentiles, t
 Any paper book for this test runs in its own journal, apart from #58's. It simulates fills, holds no key, signs
 nothing and doesn't touch testnet. **The verdict comes from the ledger rebuilt from the recordings, not from a book.**
 
+*Note, 2026-11-02, no change to the rule:* a separate testnet executor (`espero hlp-testnet`,
+`espero/hlp_testnet.py`) reads this book's journal and places its trades as real orders on Hyperliquid's
+testnet, in its own journal, to test the order path. The book itself is unchanged and still signs nothing.
+Nothing the executor records enters this test's verdict.
+
 ## Known confounds
 
 #58's all apply:

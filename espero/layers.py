@@ -39,7 +39,7 @@ LAYERS: Dict[str, Tuple[str, List[str]]] = {
                ["hlcollect", "hlbook", "book", "manifest", "rawrec", "binance_archive", "tapewatch", "deribit"]),
     "measure": ("costs on prints, fills on tape, the point-in-time store and the ledger of every trial",
                 ["markout", "execsim", "pit", "trials", "factor_eval", "detector", "audit", "tca", "reconcile",
-                 "hl_exchange", "rawbars", "replaysim", "robustness", "sleeves"]),
+                 "hl_exchange", "hlp_testnet", "rawbars", "replaysim", "robustness", "sleeves"]),
     "operate": ("the commands, the screens, the scheduler and this table",
                 ["cli", "ui", "runner", "loop", "lock", "notify", "dashboard", "report", "board", "carry_view",
                  "fast", "broker", "layers", "__init__", "__main__"]),

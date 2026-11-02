@@ -86,6 +86,22 @@ class TestHlp2Agent(unittest.TestCase):
 
 
 @unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
+class TestHlp2TestnetAgent(unittest.TestCase):
+    def test_reads_59s_journal_and_writes_its_own(self):
+        out = subprocess.run(["bash", str(ROOT / "scripts" / "install-hlp2-testnet-launchd.sh"), "--print"],
+                             capture_output=True, text=True, check=True,
+                             env={"PATH": "/usr/bin:/bin", "HOME": "/tmp", "PYTHON": "/x/python"}).stdout
+        p = plistlib.loads(out.encode())
+        self.assertEqual(p["Label"], "com.espero.hlp2-testnet")
+        self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "hlp-testnet", "--loop",
+                                                 "--book", str(ROOT / "state" / "hlp2-book.db"),
+                                                 "--state", str(ROOT / "state" / "hlp2-testnet.db")])
+        self.assertEqual(p["WorkingDirectory"], str(ROOT))
+        self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
+        self.assertTrue(p["StandardOutPath"].endswith("hlp2-testnet.log"))
+
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
 class TestPaperAgent(unittest.TestCase):
     def test_kept_alive_on_hyperliquid_with_its_journal_in_the_repo(self):
         out = subprocess.run(["bash", str(ROOT / "scripts" / "install-paper-launchd.sh"), "--print"],

@@ -122,11 +122,12 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/move-state.sh     
 
 1. Stop every writer: `./scripts/install-launchd.sh --uninstall`, `install-carry-launchd.sh --uninstall`,
    `install-hlp-launchd.sh --uninstall`, `install-hlp2-launchd.sh --uninstall`,
+   `install-hlp2-testnet-launchd.sh --uninstall`,
    `install-paper-launchd.sh --uninstall`, and any `espero ui` paper loop. The collectors (`hlcollect`,
    `hlbook`) write only `data/` and keep running.
 2. `./scripts/move-state.sh --apply`. It refuses if a writer is still loaded, a file is still open,
    or the destination already has a file of the same name.
-3. Reinstall the writers with the same five scripts, without `--uninstall`. They find the books in
+3. Reinstall the writers with the same six scripts, without `--uninstall`. They find the books in
    `state/`. The paper loop catches up its bars; the hlp books re-read every slot `hlcollect`
    recorded while they were down (`Book.step` walks every slot file it hasn't seen), and before
    2026-11-05 they read nothing at all, so a move done before then costs them nothing.
@@ -171,6 +172,39 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlp2-launc
 ```
 
 Check it with `./scripts/install-hlp2-launchd.sh --status` and `espero hlp --test 59 --status`.
+
+### #59 on testnet
+
+`espero hlp-testnet --loop` places #59's trades as real orders on Hyperliquid's **testnet**, to prove the order
+path before any rule passes. It reads `hlp2-book.db` without writing to it, and keeps its own journal,
+`hlp2-testnet.db`. It signs through `espero/hl_exchange.py`, so the same guards apply: `HL_NETWORK=testnet`,
+`ESPERO_ALLOW_HL_TESTNET=1` and the testnet key in `.env`. Mainnet isn't reachable from it.
+
+- **Entry.** When the book records a new signal, it buys $100 of the coin (`--usd`) with a crossing IOC at the
+  testnet ask, at most 50 bps over. Expect it 2 to 3 minutes after the slot: the book sees a signal only once
+  the next 1-minute candle has closed and its 60-second loop has fetched it, and this loop runs every 30
+  seconds. A signal it can't send within 5 minutes is recorded as `late` and not traded, matching the rule's
+  own tolerance.
+- **Exit.** Four hours after its own fill, it sells exactly what it bought, with an IOC at the bid that goes
+  50, 200, 500, then 1000 bps through on each unfilled try.
+- **Coins.** XRP, LINK, TRX and LTC aren't listed on testnet, so their signals are recorded as
+  `not_on_testnet`; the paper book still trades all 14.
+- **Shared account.** carry-maker's mirror trades the same testnet account. Hyperliquid nets one position per
+  coin per account, so this never reads positions or sends reduce-only orders. Each trade is tracked by its own
+  client order ids.
+- **After a crash.** An order whose call failed is looked up by its client id before anything new is sent. An
+  open trade keeps its exit time across restarts.
+- **Kill switch.** Create `state/hlp2-testnet.stop`. While it exists, new signals are skipped and every open
+  trade is sold at once. Delete it to resume.
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlp2-testnet-launchd.sh
+```
+
+Check it with `./scripts/install-hlp2-testnet-launchd.sh --status` and `espero hlp-testnet --status`, which
+shows lag after the signal, slippage against the testnet mid, exit tries and fees. These are mechanics only:
+testnet prices and depth aren't mainnet's, and #59's result comes from its ledger. Remove it with the same
+script and `--uninstall`; the journal stays.
 
 ## #60, the liquidation ladder
 
@@ -243,6 +277,7 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlcollect-
 - Data goes to `data/hlcollect/` (not committed), roughly 12–17 MB a day.
 - A restart fetches only the slots not on disk. Slots missed while the Mac slept are lost:
   Hyperliquid keeps no history of positions, and only about three days of 1-minute candles.
+
 ## The Deribit recorder
 
 `espero deribit --loop` records Deribit's book summary every 5 minutes, for idea 16 in

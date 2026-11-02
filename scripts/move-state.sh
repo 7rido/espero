@@ -14,7 +14,7 @@ set -euo pipefail
 REPO="${REPO:-$(cd "$(dirname "$0")/.." && pwd)}"
 STATE_DIR="${STATE_DIR:-${ESPERO_STATE_DIR:-$REPO/state}}"
 LAUNCHCTL="${LAUNCHCTL:-launchctl}"
-WRITERS=(com.espero.daily com.espero.carry-taker com.espero.carry-maker com.espero.hlp com.espero.hlp2 com.espero.paper)
+WRITERS=(com.espero.daily com.espero.carry-taker com.espero.carry-maker com.espero.hlp com.espero.hlp2 com.espero.hlp2-testnet com.espero.paper)
 
 cd "$REPO"
 items=()

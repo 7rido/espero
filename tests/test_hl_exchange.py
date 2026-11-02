@@ -114,6 +114,16 @@ class TestExchange(unittest.TestCase):
         self.assertEqual(ex.ex.orders[0], ("ETH", "sell", 0.1234, 2344.6, "Alo", False))
         self.assertEqual((r.status, r.oid), ("resting", 1))
 
+    def test_cloid_is_passed_only_when_given(self):
+        ex = exchange()
+        seen = []
+        order = ex.ex.order
+        ex.ex.order = lambda *a, **kw: (seen.append(kw), order(*a, **kw))[1]
+        ex.limit("ETH", "buy", 0.1, 2000, tif="Ioc", cloid="0x" + "a" * 32)
+        ex.limit("ETH", "buy", 0.1, 2000, tif="Ioc")
+        self.assertEqual(str(seen[0]["cloid"]), "0x" + "a" * 32)
+        self.assertNotIn("cloid", seen[1])
+
     def test_unknown_coin_and_zero_size_refused(self):
         ex = exchange()
         with self.assertRaises(ValueError):

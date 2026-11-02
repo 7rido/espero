@@ -1,0 +1,82 @@
+# Exploration — #67's design window: new Binance USD-M perps after they list
+
+**Not a test.** This fixes, before any price is read, the event list, the split between #67's design window and
+its holdout, the specification tried on the design window, and what the design run may and may not change.
+#67's pre-registration, `PREREGISTRATION_LISTDRIFT.md`, follows the design run and is committed before the holdout
+is read.
+
+Script: [listdrift.py](listdrift.py), rule [espero/listdrift.py](../espero/listdrift.py), event list
+[listdrift_events.csv](listdrift_events.csv). This document and the event list were committed before the script
+read any price.
+
+## The question
+
+After Binance lists a new USDT-margined perpetual on a crypto token, does the price drift down over the next week
+to month against BTC, after funding and costs? Two mechanisms predict it. A newly launched token meets supply from
+airdrop recipients, unlocks and early holders. And a perpetual opens short selling on a coin that until then could
+only be bought. The report the account holder brought on 2026-11-02 grades the evidence C: a post-listing fade that
+replicated on a pre-specified Bybit holdout in an unrefereed study, and listing-day pops in older samples.
+
+## The events, from metadata only
+
+- **Symbols:** every USDT perpetual in the point-in-time store's daily klines (`data/pit/klines_1d`, 1,056 USD-M
+  symbols since 2020, delisted ones included) whose first bar is in 2023-01 or later and whose name has no `_`
+  (dated contracts): 734. The month of the first bar comes from file names.
+- **Type:** Binance's own `underlyingType`, from the newest Wayback capture of `fapi/v1/exchangeInfo` since 2023
+  that lists the symbol (the newest is 2026-10-01). Only `COIN` is kept. Excluded: 174 US equities, 15 Hong Kong,
+  8 Korean and 2 Chinese equities, 8 commodities, 4 pre-market contracts, 1 FX pair, 1 index.
+- **Listing day:** the UTC day of Binance's `onboardDate`. Excluded: 6 whose onboard month differs from the first
+  bar's month (re-listings, or a record that moved), 1 with no onboard date, 1 whose asset, without a 1000-style
+  multiplier, traded under another symbol before.
+- **Events: 513.** By listing year: 96 in 2023, 129 in 2024, 237 in 2025 and 51 in 2026.
+- Some events are old tokens getting their first Binance perpetual rather than new tokens. The second mechanism
+  covers them; nothing here separates the two.
+
+## The split, fixed now
+
+- **Design:** positions whose entry and exit both fall inside 2023-01-01 → 2024-12-31. `listdrift.py --design`
+  refuses any kline or funding file after 2024-12.
+- **Holdout:** positions inside 2025-01-01 → 2026-09-30. September 2026 is the last month whose funding file is
+  published and whose BTC funding is in the store. Read once by `listdrift.py --holdout`, which refuses until the
+  hold is set and the pre-registration is committed unchanged.
+- A position that straddles 2025-01-01 belongs to neither.
+
+## What has been seen before this
+
+- Daily bars of these symbols were read for #48 (the universe for #2's attribution), and Binance USD-M returns
+  have been read by many tests. No test here has measured a return after a listing.
+- The holdout overlaps #49's sealed window (2025-01 → 2026-09) by date. #49 seals book depth against the next
+  day's return for the 20 most-traded coins. Nothing here opens a book file or relates anything to depth.
+- The author knows the 2023–26 market in general, and the common claim that new tokens fall after launch.
+
+## The specification tried on the design window
+
+1. **Position.** Short the listing and long BTCUSDT, one unit of notional each, opened at the open of the day after
+   the listing day and closed at the open H days later, H being 7, 14 or 30.
+2. **Daily P&L.** Each leg's price move over its entry price. Funding from Binance's archive, settled rates: a
+   settlement counts when it falls after the entry and at or before the exit, scaled by the day's close over the
+   entry price; a short receives a positive rate. Costs on the first and the last day, per side: the listing 15 bps,
+   Binance's taker fee of 5 plus an assumed half-spread of 10, which no measurement covers (about 3.5 times the
+   widest half-spread #39 measured on any coin, 2.8 bps on OP on Hyperliquid); BTC 5.33 bps, measured
+   (`espero.costs`).
+3. **A listing that stops trading** inside the hold closes at its last close, and the hedge closes with it.
+4. **The series.** Each day's mean P&L over the positions open that day, in calendar time, so overlapping listings
+   and their shared market moves are one observation a day. Its t is Newey-West with `FDR_STANDARD.md`'s lag count,
+   on a daily series as the standard says.
+5. **Conditions tried.** Both halves of the days positive. The median position positive. And the same short
+   against a point-in-time basket instead of BTC, price only: the 30 coins with the most quote volume over the 30
+   days before the entry, each first traded at least 365 days before it and with a bar on every one of those days,
+   BTC, ETH, pegged coins, indexes and non-coins left out.
+6. **Information tried:** the trade gross of funding and costs; the short alone; funding per position; the
+   listing cost per side at which the trade breaks even; entry two days after the listing.
+
+## What the design run may change, and what it may not
+
+- **May change:** H, chosen as the largest design t among 7, 14 and 30, the other two becoming information; the
+  assumed half-spread, upward only; the information readouts; bugs. Whatever changes is named in the
+  pre-registration as chosen on the design window.
+- **May not change:** the event list and its exclusions; the split; entry at the open of the day after the listing;
+  BTC as the hedge; funding and costs counted; the calendar-time series and its t; the bar, t ≥ 3 with
+  Benjamini-Hochberg q < 0.05 over every judged test; the conditions.
+- If the design window shows no drift at any H, the test may be abandoned before any holdout read. That would be
+  reported here, not hidden.

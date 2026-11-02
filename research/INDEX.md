@@ -604,6 +604,14 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `volf_run.txt`
 - `volf_series.csv`
 
+## #67 — New Binance USD-M perps after they list, short against BTC
+
+*#67 (not in trials.csv)*
+
+- `EXPLORE_LISTDRIFT.md`
+- `listdrift.py`  (rule: `espero/listdrift.py`)
+- `listdrift_events.csv`
+
 ## Cross-cutting
 
 **The ledger of every test**

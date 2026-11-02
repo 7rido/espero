@@ -242,7 +242,7 @@ def run_daily(state_dir: Path = Path("."), cash_tsmom: float = 100.0, cash_xs: f
         return result
 
     tsmom_db, xs_db, mf_db = state_dir / "tsmom.db", state_dir / "xs.db", state_dir / "mf.db"
-    paper_db, live_db = state_dir / "paper.db", state_dir / "live.db"
+    paper_db = state_dir / "paper.db"
 
     with Lock(state_dir / "daily.lock"):
         if dry_run:
@@ -287,7 +287,7 @@ def run_daily(state_dir: Path = Path("."), cash_tsmom: float = 100.0, cash_xs: f
 
         def render():
             out = dash.write(state_dir / "dashboard.html", readout=True, tsmom_db=tsmom_db, paper_db=paper_db,
-                             live_db=live_db, xs_db=xs_db, mf_db=mf_db, mf_hl_db=state_dir / "mf-hl.db",
+                             xs_db=xs_db, mf_db=mf_db, mf_hl_db=state_dir / "mf-hl.db",
                              board=True, offline=dry_run)
             return {"note": f"wrote {out}"}
 

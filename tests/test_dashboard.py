@@ -19,8 +19,7 @@ class TestDashboard(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_empty_state_does_not_crash(self):
-        html = dashboard.render(self.dir / "none.db", self.dir / "p.db", self.dir / "l.db",
-                             self.dir / "x.db")
+        html = dashboard.render(self.dir / "none.db", self.dir / "p.db", self.dir / "x.db")
         self.assertIn("No accounts yet", html)
         self.assertIn("<!doctype html>", html)
 
@@ -34,7 +33,7 @@ class TestDashboard(unittest.TestCase):
                  positions={"SPY": acc.units["SPY"] * 100.0},
                  signals={"SPY": 0.139})
 
-        html = dashboard.render(path, self.dir / "p.db", self.dir / "l.db", self.dir / "x.db", offline=True)
+        html = dashboard.render(path, self.dir / "p.db", self.dir / "x.db", offline=True)
         self.assertIn("Cross-asset trend", html)
         self.assertIn(f"${eq:,.2f}", html)   # net of the 10 bps cost
         self.assertIn("SPY", html)
@@ -49,7 +48,7 @@ class TestDashboard(unittest.TestCase):
         eq = acc.equity(pd.Series({"SPY": 100.0}))
         acc.save(1_793_059_200, eq, {"SPY": 1 / 6}, "init",
                  positions={"SPY": acc.units["SPY"] * 100.0}, signals={"SPY": 0.1})
-        html = dashboard.render(path, self.dir / "p.db", self.dir / "l.db", self.dir / "x.db", offline=True)
+        html = dashboard.render(path, self.dir / "p.db", self.dir / "x.db", offline=True)
         for title in ("Equities", "Bonds", "Commodities", "Crypto", "Cash"):
             self.assertIn(title, html)
         self.assertIn("plan", html)          # the move column exists
@@ -62,7 +61,7 @@ class TestDashboard(unittest.TestCase):
         eq = acc.equity(pd.Series({"SPY": 50.0}))
         acc.save(1_793_059_200, eq, {"SPY": 1 / 6}, "init",
                  positions={"SPY": acc.units["SPY"] * 50.0})
-        html = dashboard.render(path, self.dir / "p.db", self.dir / "l.db", self.dir / "x.db", offline=True)
+        html = dashboard.render(path, self.dir / "p.db", self.dir / "x.db", offline=True)
         self.assertIn(f"${eq:,.2f}", html)
 
 
@@ -79,10 +78,10 @@ class TestForwardAndBoardCards(unittest.TestCase):
         self.tmp.cleanup()
 
     def render(self, **kw):
-        return dashboard.render(self.dir / "t.db", self.dir / "p.db", self.dir / "l.db", self.dir / "x.db", **kw)
+        return dashboard.render(self.dir / "t.db", self.dir / "p.db", self.dir / "x.db", **kw)
 
     def test_readout_card_only_when_asked(self):
-        paths = (self.dir / "a.db", self.dir / "b.db", self.dir / "c.db", self.dir / "d.db")
+        paths = (self.dir / "a.db", self.dir / "b.db", self.dir / "c.db")
         self.assertNotIn("Reading the market", dashboard.render(*paths))
         html = dashboard.render(*paths, readout=True)
         self.assertIn("Reading the market", html)

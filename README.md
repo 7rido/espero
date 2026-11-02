@@ -123,40 +123,15 @@ launchd catches up scheduled jobs after a sleep, but a recorder records nothing 
 stays a gap. `docker compose up` is the alternative on any machine, and on a Mac it has the same gaps. Never point it
 and launchd at the same `data/` folder. Setting `ESPERO_PUBLISH_AS` also publishes the live recordings every Monday.
 
-## Live trading — EXPERIMENTAL, off by default, and paranoid when on
+## Live trading — there is none
 
-`espero live` connects to a real Coinbase Advanced account and can place real orders. It is a dry-run
-tool with a trapdoor, not a product: it has never been reconciled against a venue, and it is not part
-of the scheduled run. The October 2026 audit fixed four bugs in it (the daily loss limit never reset,
-the risk gate was fed constants instead of the day's P&L, SELL signals were ignored so live ran a
-different rule from the one that was tested, and the exit fee was not charged). Four things
-must all be true before a single order leaves the process:
-
-1. `.env` contains a CDP key pair (never commit it — `.env` is gitignored; `.env.example` lists
-   every variable the repo reads, Hyperliquid testnet settings included)
-2. `ESPERO_ALLOW_LIVE=1` is set
-3. `--confirm-live` is passed
-4. no `KILL` file exists in the working directory
-
-Without `--confirm-live` the bot runs as a **dry run**: it reads your real balance and price, decides
-what it *would* do, and logs it. Orders are also hard-capped by `--max-notional` (default $25) and the
-process halts itself for the day at `--max-daily-loss` (default $15). Every order carries a
-`client_order_id` generated before the call, so a retry is deduplicated instead of doubling.
-
-```bash
-cp .env.example .env      # fill in COINBASE_API_KEY and COINBASE_API_SECRET (or _SECRET_FILE)
-espero live               # dry run: reads the account, sends nothing
-espero live --loop --interval 60
-
-# only after the dry run looks right, and only if you can afford to lose it:
-ESPERO_ALLOW_LIVE=1 espero live --confirm-live --max-notional 25 --max-daily-loss 15
-touch KILL                # stops the loop on its next pass
-```
-
-Honest limits of this version: stops are **software** stops checked once per bar, not exchange-side
-orders — if the process dies, the stop dies with it. There is no reconciliation against the venue
-yet, no partial-fill handling, and no funding. Fills are market orders at bar close, not the next
-bar's open the backtest assumes; the journal records both so the difference is measurable.
+The repo has no mainnet order path. The Coinbase adapter and `espero live` were removed on
+2026-11-01: that path had never been reconciled against a venue, and it served the four original
+strategies, which failed their tests. The only code that signs anything is
+[espero/hl_exchange.py](espero/hl_exchange.py), on Hyperliquid's **testnet**, for #12's maker
+mirror, behind three guards that refuse anything but a testnet URL. A real order is the account
+holder's own act, placed outside this repo with their own keys. `.env.example` lists every variable
+the repo reads, and none of them can move money.
 
 ## What it does not do (yet)
 
@@ -590,8 +565,7 @@ espero/
     journal.py      # SQLite: bars, signals, orders, positions, equity
     risk.py         # pre-trade gate: size, exposure, daily loss cap
     paper.py        # simulated loop: closed bar -> signal -> next-bar fill -> journal
-    broker.py       # Broker protocol, Coinbase Advanced adapter, DryRun wrapper
-    live.py         # EXPERIMENTAL: real orders, capped and gated, same signals
+    broker.py       # reads .env (load_env); named from the order adapter it held until 2026-11-01
     tsmom.py        # monthly cross-asset trend paper account
     xs.py           # weekly cross-sectional crypto paper account, degraded-universe guard
     cash.py         # where idle cash lives, and why

@@ -7,7 +7,6 @@ import io
 import logging
 import math
 import os
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -54,20 +53,6 @@ class TestEnvParser(unittest.TestCase):
         self.assertNotIn("AwEHoUQDQgAE", v)
         self.assertNotIn("lower", v)
         self.assertTrue(all("AwEH" not in x and "MHc" not in x for x in w))   # warnings never quote values
-
-    def test_live_opt_in_is_never_read_from_a_file(self):
-        with tempfile.TemporaryDirectory() as d:
-            p = Path(d) / ".env"
-            p.write_text("ESPERO_ALLOW_LIVE=1\nESPERO_AUDIT_X=ok\n")
-            with mock.patch.dict(os.environ, {}, clear=False):
-                os.environ.pop("ESPERO_ALLOW_LIVE", None)
-                os.environ.pop("ESPERO_AUDIT_X", None)
-                err = io.StringIO()
-                with mock.patch.object(sys, "stderr", err):
-                    broker.load_env(str(p))
-                self.assertNotIn("ESPERO_ALLOW_LIVE", os.environ)
-                self.assertEqual(os.environ["ESPERO_AUDIT_X"], "ok")
-                self.assertIn("ESPERO_ALLOW_LIVE is ignored", err.getvalue())
 
     def test_shell_variables_still_win(self):
         with tempfile.TemporaryDirectory() as d:

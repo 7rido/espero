@@ -70,7 +70,7 @@ rm KILL             # resume
 ```
 
 The KILL file pauses marks too. A long pause leaves a gap, nothing else; the accounts resume from
-their stored units and cash. (The same file name stops `espero live`.)
+their stored units and cash.
 
 ## Things that go wrong
 
@@ -249,5 +249,7 @@ docker compose logs -f daily     # the daily job's output
 
 ## Live trading
 
-Off, and out of scope for the scheduler. `espero live` is an experimental dry-run tool; see the
-README section on it. Do not add it to the plist.
+There is none. The Coinbase order path (`espero live`) was removed on 2026-11-01: it had never been
+reconciled against a venue and served strategies that failed. The only code that signs anything is
+`espero/hl_exchange.py`, on Hyperliquid's testnet, for #12's maker mirror. A real order is the account
+holder's own act, outside this repo.

@@ -1,6 +1,6 @@
 """Static HTML dashboard for the paper accounts.
 
-Reads tsmom.db / paper.db / live.db and writes one self-contained file with
+Reads tsmom.db / xs.db / mf.db / paper.db and writes one self-contained file with
 inline SVG. No server, no framework, no JavaScript dependencies -- open it in
 a browser and it works offline.
 
@@ -79,7 +79,7 @@ def esc(v) -> str:
 
 
 def render(tsmom_db: Path = Path("tsmom.db"), paper_db: Path = Path("paper.db"),
-           live_db: Path = Path("live.db"), xs_db: Path = Path("xs.db"), offline: bool = False,
+           xs_db: Path = Path("xs.db"), offline: bool = False,
            mf_db: Optional[Path] = None, board: bool = False, mf_hl_db: Optional[Path] = None,
            readout: bool = False) -> str:
     """`offline=True` (the daily job's dry run) skips the live-signal preview and the
@@ -276,8 +276,7 @@ def render(tsmom_db: Path = Path("tsmom.db"), paper_db: Path = Path("paper.db"),
     if board and not offline:
         cards.append(_board_card())
 
-    for name, path, label in (("Paper (bar strategy)", paper_db, "paper"),
-                              ("Live (dry run)", live_db, "live")):
+    for name, path, label in (("Paper (bar strategy)", paper_db, "paper"),):
         if not path.exists():
             continue
         db = sqlite3.connect(path)

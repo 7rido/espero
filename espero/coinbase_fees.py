@@ -3,8 +3,8 @@
 `GET https://api.exchange.coinbase.com/fees` returns the account's maker and
 taker rates and its 30-day USD volume (docs.cdp.coinbase.com, Exchange API,
 Fees). It needs an *Exchange* API key with the "view" permission: key, secret
-(base64) and passphrase, signed with HMAC-SHA256. That is a different key from
-the Advanced Trade (CDP) pair `espero live` uses.
+(base64) and passphrase, signed with HMAC-SHA256. It is the only Coinbase key the
+repo reads; nothing here can place an order.
 
 Nothing here can trade: the only request is that one GET. The credentials are
 read from the environment (.env) and never printed or logged.

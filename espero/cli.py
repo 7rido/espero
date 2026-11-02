@@ -19,9 +19,7 @@ from . import features as fx
 from . import tsmom as tsm
 from . import xs as xsm
 from .backtest import Config, run
-from .broker import BrokerError, broker_from_env
 from .journal import Journal
-from .live import LiveConfig, LiveTrader
 from .loop import run_loop
 from .paper import PaperConfig, PaperTrader
 from .report import buy_and_hold, equity_png, format_matrix, matrix
@@ -979,73 +977,6 @@ def _degen_loop(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_live(args: argparse.Namespace) -> int:
-    from .lock import JournalBusy, JournalLock
-
-    try:
-        with JournalLock(args.state):
-            return _live_loop(args)
-    except JournalBusy as exc:
-        print(f"refusing to start: {exc}")
-        return 3
-
-
-def _live_loop(args: argparse.Namespace) -> int:
-    from .data import recent_closed_bars
-
-    try:
-        broker = broker_from_env(dry_run=not args.confirm_live)
-    except BrokerError as exc:
-        print(f"cannot start: {exc}", file=sys.stderr)
-        return 2
-
-    journal = Journal(args.state)
-    cfg = LiveConfig(product=args.product, granularity=args.granularity,
-                     max_notional=args.max_notional, max_daily_loss=args.max_daily_loss)
-    trader = LiveTrader(journal, broker, cfg, kill_file=args.kill_file)
-
-    print(f"broker   {broker.name}   live={broker.live}")
-    print(f"product  {args.product} {args.granularity}s")
-    try:
-        print(f"price    {broker.price(args.product):.2f}")
-        print(f"balance  {broker.balance(cfg.quote_currency):.2f} {cfg.quote_currency}")
-    except Exception as exc:  # noqa: BLE001 - surface credential problems plainly
-        print(f"credential check failed: {exc}", file=sys.stderr)
-        journal.close()
-        return 2
-    if not broker.live:
-        print("mode     DRY RUN - orders are logged, never sent")
-
-    def step() -> None:
-        df = recent_closed_bars(args.product, args.granularity, args.seed)
-        if df.empty:
-            print("no candles returned")
-            return
-        known = journal.last_bar_ts(args.product) or 0
-        fresh = [r for r in df.to_dict("records") if int(r["ts"]) > known]
-        if not fresh:
-            print(_waiting(args.granularity))
-            return
-        for bar in fresh[:-1]:
-            journal.add_bar(args.product, bar)
-        print(f"bar {fresh[-1]['dt']} close={fresh[-1]['close']:.2f}")
-        for event in trader.on_bar(fresh[-1]):
-            print("  ", event)
-
-    if args.loop:
-        try:
-            run_loop(step, args.interval, label=f"live {args.product}")
-        except KeyboardInterrupt:
-            print("stopped")
-        finally:
-            journal.close()
-        return 0
-
-    step()
-    journal.close()
-    return 0
-
-
 def _cmd_features(args: argparse.Namespace) -> int:
     if args.source == "hl":
         df, col, name = fx.hyperliquid_funding(pages=args.pages), "funding", "hl_funding_btc"
@@ -1138,7 +1069,7 @@ def _cmd_scan(args: argparse.Namespace) -> int:
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 STATE_FILES = ("tsmom.db", "xs.db", "mf.db", "health.json")
 # every path a command takes as a bare file name resolves against the state folder, not the cwd
-STATE_ARGS = ("state", "state_dir", "tsmom_db", "paper_db", "live_db", "xs_db", "mf_db", "kill_file")
+STATE_ARGS = ("state", "state_dir", "tsmom_db", "paper_db", "xs_db", "mf_db")
 STATE_DEFAULTS = {"out": "dashboard.html"}
 
 
@@ -1198,7 +1129,6 @@ def _cmd_ui(args: argparse.Namespace) -> int:
 def _cmd_dashboard(args: argparse.Namespace) -> int:
     out = dash.write(args.out, tsmom_db=pathlib.Path(args.tsmom_db),
                      paper_db=pathlib.Path(args.paper_db),
-                     live_db=pathlib.Path(args.live_db),
                      xs_db=pathlib.Path(args.xs_db), mf_db=pathlib.Path(args.mf_db),
                      mf_hl_db=pathlib.Path(args.mf_db).with_name("mf-hl.db"), board=True, readout=True)
     print(f"wrote {out}")
@@ -1392,20 +1322,6 @@ def build_parser() -> argparse.ArgumentParser:
     ft.add_argument("--pages", type=int, default=70)
     ft.add_argument("--token", default="", help="Polymarket CLOB token id")
     ft.set_defaults(func=_cmd_features)
-
-    lv = sub.add_parser("live", help="trade a real account (dry-run unless confirmed)")
-    lv.add_argument("--product", default="BTC-USD")
-    lv.add_argument("--granularity", type=int, default=3600)
-    lv.add_argument("--state", default="live.db")
-    lv.add_argument("--seed", type=int, default=300)
-    lv.add_argument("--max-notional", type=float, default=25.0)
-    lv.add_argument("--max-daily-loss", type=float, default=15.0)
-    lv.add_argument("--kill-file", default="KILL")
-    lv.add_argument("--loop", action="store_true")
-    lv.add_argument("--interval", type=float, default=60.0)
-    lv.add_argument("--confirm-live", action="store_true",
-                    help="actually send orders (also needs ESPERO_ALLOW_LIVE=1)")
-    lv.set_defaults(func=_cmd_live)
 
     tm = sub.add_parser("tsmom", help="cross-asset trend paper account")
     tm.add_argument("--state", default="tsmom.db")
@@ -1617,7 +1533,6 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("-o", "--out", default="dashboard.html")
     d.add_argument("--tsmom-db", default="tsmom.db")
     d.add_argument("--paper-db", default="paper.db")
-    d.add_argument("--live-db", default="live.db")
     d.add_argument("--xs-db", default="xs.db")
     d.add_argument("--mf-db", default="mf.db")
     d.add_argument("--open", action="store_true")

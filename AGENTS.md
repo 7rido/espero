@@ -19,9 +19,9 @@ every command, and `espero <command> --help` its flags.
 
 - **Read, print, ask for or type a key.** `.env` is the account holder's. An agent may check whether
   a variable is set, never its value.
-- **Place a real order.** `espero live` stays off. `espero/hl_exchange.py` signs on Hyperliquid's
-  testnet only, and its guards must not be weakened. Every real order is the account holder's own
-  act.
+- **Place a real order.** There is no mainnet order path in this repo, and none is to be added.
+  `espero/hl_exchange.py` is the only code that signs anything, on Hyperliquid's testnet only, and
+  its guards must not be weakened. Every real order is the account holder's own act.
 - **Re-tune a frozen test.** A `research/FORWARD_*.md` or `PREREGISTRATION_*.md` that is committed is
   fixed: its rule, data, criteria and outcomes. A later idea gets a new number and a new document.
 - **Stop a forward test early** or read its running numbers as a result. Verdicts are judged once,

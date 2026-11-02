@@ -190,10 +190,11 @@ SHIB trades as kSHIB, per 1,000 coins, and is converted back. #8 itself stays on
 For research, `panel.build_hyperliquid(coins, days, granularity)` gives daily bars from August 2020
 or hourly bars for the last ~208 days. Details: research/ERRATA.md, 2026-10-29.
 
-## Drawer 5: live money. Off.
+## Drawer 5: live money. There is no drawer.
 
-`espero live` is experimental and needs `.env` keys, `ESPERO_ALLOW_LIVE=1` and `--confirm-live`
-before it sends anything. Leave this drawer shut; see the README section before opening it.
+The repo has no mainnet order path; `espero live` was removed on 2026-11-01. The only signing code
+is the Hyperliquid testnet mirror (`espero/hl_exchange.py`), and a real order is yours to place,
+outside this repo.
 
 ## Where things are
 

@@ -19,7 +19,7 @@ will use, and loads the agent. Options are environment variables:
 | variable | default | meaning |
 |---|---|---|
 | `HOUR`, `MINUTE` | `7`, `30` | local time of the daily run |
-| `STATE_DIR` | repo root | where `tsmom.db`, `xs.db`, `dashboard.html`, `health.json` live |
+| `STATE_DIR` | `state/` under the repo | where `tsmom.db`, `xs.db`, `dashboard.html`, `health.json` live (`ESPERO_STATE_DIR` is read too; see "Where the state lives") |
 | `ESPERO_LOG_DIR` | `~/Library/Logs/espero` | rotating `daily.log` plus launchd's stdout/stderr |
 | `PYTHON` | `.venv/bin/python` | interpreter |
 | `ESPERO_WEBHOOK_URL` | unset | Slack/Discord-style webhook for failures and rebalances |
@@ -46,9 +46,9 @@ run. The exit code is 1 if any step failed, 0 otherwise, 3 if another run holds 
 
 ```bash
 launchctl print gui/$(id -u)/com.espero.daily | grep -E 'state|last exit'
-cat health.json                      # last_run, last_success, per-step ok/error/equity
+cat state/health.json                # last_run, last_success, per-step ok/error/equity
 tail -50 ~/Library/Logs/espero/daily.log
-open dashboard.html
+open state/dashboard.html
 ```
 
 `health.json` is the thing to look at first. `last_success` older than two days means the run is
@@ -102,6 +102,34 @@ stored decision, not a recomputation.
 ```
 
 The databases and logs are left in place.
+
+## Where the state lives
+
+Every account, journal, ledger, `health.json`, `dashboard.html`, `KILL` and the home screen's
+`paper-books/` live in **one state folder**, `state/` under the repo. Every command resolves it the
+same way (`espero.cli.state_dir`): an explicit `--state-dir` or `--state` path; else
+`ESPERO_STATE_DIR`; else the current folder if it holds an account; else the project's `state/`.
+A bare `--state tsmom.db` means the file in that folder, wherever the command was started from.
+
+Until 2026-11-01 the state lived in the repo root, and the loops installed before then still write
+there. **Moving it is a one-time, by-hand step, because a journal moved under a running loop splits
+its book.** The installers refuse to start a loop whose book is still in the root, so the order is:
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/move-state.sh      # lists what would move; moves nothing
+```
+
+1. Stop every writer: `./scripts/install-launchd.sh --uninstall`, `install-carry-launchd.sh --uninstall`,
+   `install-hlp-launchd.sh --uninstall`, `install-hlp2-launchd.sh --uninstall`,
+   `install-paper-launchd.sh --uninstall`, and any `espero ui` paper loop. The collectors (`hlcollect`,
+   `hlbook`) write only `data/` and keep running.
+2. `./scripts/move-state.sh --apply`. It refuses if a writer is still loaded, a file is still open,
+   or the destination already has a file of the same name.
+3. Reinstall the writers with the same five scripts, without `--uninstall`. They find the books in
+   `state/`; the hlp and paper loops catch up the slots they missed.
+4. `cat state/health.json` after the next daily run, and `espero ui` shows the same accounts.
+
+A Docker install never had this: its state is the `ESPERO_STATE_DIR` volume (default `docker-state/`).
 
 ## The always-on paper trader
 

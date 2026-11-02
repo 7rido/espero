@@ -7,15 +7,18 @@
 #   ./scripts/install-hlp2-launchd.sh --status      # running? last exit?
 #   ./scripts/install-hlp2-launchd.sh --print       # render the plist to stdout, change nothing
 #
-# The journal is hlp2-book.db in the repo; the log ~/Library/Logs/espero/hlp2.log.
+# The journal is hlp2-book.db in state/ under the repo (STATE_DIR or ESPERO_STATE_DIR to change
+# that); the log ~/Library/Logs/espero/hlp2.log.
 set -euo pipefail
 
-REPO="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="${REPO:-$(cd "$(dirname "$0")/.." && pwd)}"
 TEMPLATE="$REPO/deploy/launchd/com.espero.hlp2.plist.template"
-STATE="$REPO/hlp2-book.db"
+STATE_DIR="${STATE_DIR:-${ESPERO_STATE_DIR:-$REPO/state}}"
+STATE="$STATE_DIR/hlp2-book.db"
 LOG_DIR="${ESPERO_LOG_DIR:-$HOME/Library/Logs/espero}"
 PYTHON="${PYTHON:-$REPO/.venv/bin/python}"
 DOMAIN="gui/$(id -u)"
+LAUNCHCTL="${LAUNCHCTL:-launchctl}"
 LABEL="com.espero.hlp2"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
@@ -32,7 +35,7 @@ case "${1:-}" in
         render
         exit 0 ;;
     --uninstall)
-        launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+        "$LAUNCHCTL" bootout "$DOMAIN/$LABEL" 2>/dev/null || true
         rm -f "$PLIST"
         echo "removed $LABEL (the journal $STATE stays)"
         exit 0 ;;
@@ -51,12 +54,17 @@ if ! "$PYTHON" -c "import espero.hlpbook" >/dev/null 2>&1; then
     echo "$PYTHON cannot import espero.hlpbook; install the package into it first" >&2
     exit 1
 fi
-mkdir -p "$LOG_DIR" "$HOME/Library/LaunchAgents"
+# a journal left in the root would be abandoned for a fresh one; move it first
+if [ -e "$REPO/$(basename "$STATE")" ] && [ ! -e "$STATE" ]; then
+    echo "$REPO/$(basename "$STATE") exists but $STATE does not: run ./scripts/move-state.sh first" >&2
+    exit 1
+fi
+mkdir -p "$LOG_DIR" "$STATE_DIR" "$HOME/Library/LaunchAgents"
 render > "$PLIST"
 plutil -lint "$PLIST" >/dev/null
-launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
-launchctl bootstrap "$DOMAIN" "$PLIST"
-launchctl enable "$DOMAIN/$LABEL"
+"$LAUNCHCTL" bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+"$LAUNCHCTL" bootstrap "$DOMAIN" "$PLIST"
+"$LAUNCHCTL" enable "$DOMAIN/$LABEL"
 echo "installed $LABEL  ->  $STATE, log $LOG_DIR/hlp2.log"
 echo "status:  ./scripts/install-hlp2-launchd.sh --status"
 echo "follow:  tail -f $LOG_DIR/hlp2.log"

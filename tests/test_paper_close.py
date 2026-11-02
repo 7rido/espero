@@ -182,13 +182,12 @@ class TestPaperBooks(PaperTestCase):
                 self.assertEqual(sorted(b["path"].name for b in ui.all_paper_books(s)), ["paper-a.db", "paper-b.db"])
                 self.assertEqual([b["path"].name for b in ui.all_paper_books(t)], ["paper-a.db"])
 
-    def test_a_home_screen_loop_keeps_its_book_in_the_project_not_a_temp_folder(self):
+    def test_a_home_screen_loop_keeps_its_book_beside_the_accounts_not_in_a_temp_folder(self):
         from espero import ui
-        repo = Path(ui.__file__).resolve().parents[1]
-        self.assertEqual(ui.PAPER_DIR, repo / "paper-books")
+        self.assertEqual(ui.paper_dir("/st"), Path("/st/paper-books"))
         answers = iter(["Run a paper loop (stays here; ctrl-c returns)", "1 hour",
                         "Hyperliquid perp (its fees and actual hourly funding)"])
-        with tempfile.TemporaryDirectory() as t, mock.patch.object(ui, "PAPER_DIR", Path(t) / "books"), \
+        with tempfile.TemporaryDirectory() as t, \
                 mock.patch.object(ui.questionary, "select") as select, \
                 mock.patch.object(ui.questionary, "text") as text, mock.patch.object(ui, "_run") as run:
             select.side_effect = lambda *a, **k: mock.Mock(ask=lambda: next(answers))
@@ -196,5 +195,5 @@ class TestPaperBooks(PaperTestCase):
             ui.act_paper(mock.Mock(), Path(t))
             cmd = run.call_args[0][1]
             book = Path(cmd[cmd.index("--state") + 1])
-            self.assertEqual(book, Path(t) / "books" / "paper-bch-usd-hl.db")
+            self.assertEqual(book, Path(t) / "paper-books" / "paper-bch-usd-hl.db")
             self.assertTrue(book.parent.is_dir())

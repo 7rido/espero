@@ -304,7 +304,7 @@ def _degen_defaults(args: argparse.Namespace) -> argparse.Namespace:
     if getattr(args, "venue", None) is None:
         args.venue = "hyperliquid" if hl else "binanceus"
     if hasattr(args, "state") and not args.state:
-        args.state = "degen-hl.db" if hl else "degen.db"
+        args.state = str(state_path("degen-hl.db" if hl else "degen.db"))
     return args
 
 
@@ -608,7 +608,7 @@ def _cmd_hlp(args: argparse.Namespace) -> int:
     from .lock import JournalBusy, JournalLock
 
     data = Path(args.data) if args.data else hp.DATA
-    state = args.state or {58: "hlp-book.db", 59: "hlp2-book.db"}[args.test]
+    state = args.state or str(state_path({58: "hlp-book.db", 59: "hlp2-book.db"}[args.test]))
     if args.status:
         print("\n".join(hp.status(state, data, args.test)))
         return 0
@@ -1120,19 +1120,57 @@ def _cmd_scan(args: argparse.Namespace) -> int:
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 STATE_FILES = ("tsmom.db", "xs.db", "mf.db", "health.json")
+# every path a command takes as a bare file name resolves against the state folder, not the cwd
+STATE_ARGS = ("state", "state_dir", "tsmom_db", "paper_db", "live_db", "xs_db", "mf_db", "kill_file")
+STATE_DEFAULTS = {"out": "dashboard.html"}
 
 
-def state_dir(given: Optional[str] = None) -> Path:
-    """Where the accounts live. An explicit --state-dir wins; otherwise the current folder if
-    it holds any account, else the project folder. Started from anywhere else, the screens
-    used to read an empty folder and show $0.00 as if the accounts had gone."""
+def _holds_accounts(folder: Path) -> bool:
+    return any((folder / name).exists() for name in STATE_FILES)
+
+
+def state_dir(given: Optional[str] = None, env: Optional[dict] = None) -> Path:
+    """Where the accounts live, in order: an explicit --state-dir; ESPERO_STATE_DIR; the current
+    folder if it holds an account; the project's state/ if it does; the project folder if it
+    does (where the accounts lived before they moved); else the project's state/. Started from
+    anywhere else, the screens used to read an empty folder and show $0.00 as if the accounts
+    had gone."""
+    env = os.environ if env is None else env
     if given:
         return Path(given)
-    if any((Path.cwd() / name).exists() for name in STATE_FILES):
+    if env.get("ESPERO_STATE_DIR"):
+        return Path(env["ESPERO_STATE_DIR"])
+    if _holds_accounts(Path.cwd()):
         return Path(".")
-    if (PROJECT_DIR / "pyproject.toml").exists():
+    if not (PROJECT_DIR / "pyproject.toml").exists():
+        return Path(".")
+    if _holds_accounts(PROJECT_DIR / "state"):
+        return PROJECT_DIR / "state"
+    if _holds_accounts(PROJECT_DIR):
         return PROJECT_DIR
-    return Path(".")
+    return PROJECT_DIR / "state"
+
+
+def state_path(name, env: Optional[dict] = None) -> Path:
+    """A bare file name (`tsmom.db`) lives in the state folder; a path with a folder is itself."""
+    p = Path(name)
+    return p if p.parent != Path(".") or p.is_absolute() else state_dir(env=env) / p
+
+
+def place_state(args: argparse.Namespace, env: Optional[dict] = None) -> argparse.Namespace:
+    """Resolve every state argument once, after parsing, so no command reads the cwd by accident."""
+    for name in STATE_ARGS:
+        value = getattr(args, name, None)
+        if name == "state_dir":
+            if value is None or value == ".":
+                args.state_dir = state_dir(env=env)
+            continue
+        if isinstance(value, str) and value:
+            setattr(args, name, str(state_path(value, env=env)))
+    for name, default in STATE_DEFAULTS.items():
+        if getattr(args, name, None) == default:
+            setattr(args, name, str(state_path(default, env=env)))
+    return args
 
 
 def _cmd_ui(args: argparse.Namespace) -> int:
@@ -1581,7 +1619,7 @@ def main(argv=None) -> int:
             return _cmd_ui(argparse.Namespace(state_dir=None))
         parser.print_help()
         return 0
-    return args.func(args)
+    return args.func(place_state(args))
 
 
 if __name__ == "__main__":

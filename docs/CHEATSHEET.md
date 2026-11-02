@@ -15,8 +15,8 @@ cd "/Users/fredp/Espero Trading QuantBot/espero"
 Every menu item is one of the commands in the drawers below; the two most useful without the menu:
 
 ```bash
-cat health.json          # did this morning's run work? last_success, per-step ok/error/equity
-open dashboard.html      # what the accounts hold, their equity curves, and what the trades cost
+cat state/health.json    # did this morning's run work? last_success, per-step ok/error/equity
+open state/dashboard.html  # what the accounts hold, their equity curves, and what the trades cost
 ```
 
 The bot itself needs nothing from you. launchd runs it every day at 07:30.

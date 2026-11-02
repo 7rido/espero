@@ -55,11 +55,12 @@ class TestDefaults(unittest.TestCase):
 
     def test_hyperliquid_is_the_default_source_venue_and_book(self):
         a = self.parse("paper")
-        self.assertEqual((a.source, a.venue, a.state), ("hyperliquid", "hyperliquid", "degen-hl.db"))
+        self.assertEqual((a.source, a.venue, Path(a.state).name), ("hyperliquid", "hyperliquid", "degen-hl.db"))
+        self.assertEqual(Path(a.state).parent, cli.state_dir())     # the book lives with the accounts
 
     def test_coinbase_keeps_the_forward_test_book(self):
         a = self.parse("paper", "--source", "coinbase")
-        self.assertEqual((a.venue, a.state), ("binanceus", "degen.db"))
+        self.assertEqual((a.venue, Path(a.state).name), ("binanceus", "degen.db"))
 
     def test_explicit_choices_win(self):
         a = self.parse("paper", "--venue", "kraken", "--state", "x.db")

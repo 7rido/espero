@@ -82,4 +82,6 @@ a public endpoint with no key. Fetch only what the task needs, and say what you 
   pass leads to.
 - `tests/`: `python -m unittest discover -s tests -t .` (or `pytest`).
 - `docs/RUNBOOK.md`: the scheduled jobs and how to recover them.
-- `health.json`: the last `espero daily` run, one entry per step.
+- `state/`: every account, journal, ledger and `health.json` (the last `espero daily` run, one entry
+  per step). `espero.cli.state_dir` says how it is found; a bare `--state name.db` lives there. Until
+  the move in docs/RUNBOOK.md ("Where the state lives") is done, they may still be in the repo root.

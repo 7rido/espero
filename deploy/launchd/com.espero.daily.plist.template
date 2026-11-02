@@ -44,6 +44,8 @@
         <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin</string>
         <key>ESPERO_LOG_DIR</key>
         <string>__LOG_DIR__</string>
+        <key>ESPERO_STATE_DIR</key>
+        <string>__STATE_DIR__</string>
         <key>PYTHONUNBUFFERED</key>
         <string>1</string>
     </dict>

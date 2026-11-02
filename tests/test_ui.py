@@ -207,15 +207,56 @@ class TestStateDir(unittest.TestCase):
         os.chdir(self.old)
         self.tmp.cleanup()
 
-    def test_an_empty_folder_falls_back_to_the_project(self):
+    def project(self):
+        """A stand-in project folder, so the rungs below don't depend on this checkout's state."""
+        import tempfile
+        from unittest import mock
+
         from espero import cli
-        self.assertEqual(cli.state_dir(), cli.PROJECT_DIR)
+        d = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        (d / "pyproject.toml").write_text("")
+        return mock.patch.object(cli, "PROJECT_DIR", d), d
+
+    def test_an_empty_folder_falls_back_to_the_project_state_folder(self):
+        from espero import cli
+        patch, d = self.project()
+        with patch:
+            self.assertEqual(cli.state_dir(env={}), d / "state")
 
     def test_a_folder_with_accounts_is_used(self):
         from espero import cli
         Path(self.tmp.name, "xs.db").write_text("")
-        self.assertEqual(cli.state_dir(), Path("."))
+        self.assertEqual(cli.state_dir(env={}), Path("."))
+
+    def test_the_project_state_folder_wins_over_the_project_root(self):
+        from espero import cli
+        patch, d = self.project()
+        (d / "tsmom.db").write_text("")
+        with patch:
+            self.assertEqual(cli.state_dir(env={}), d)       # before the move: the root holds the books
+            (d / "state").mkdir()
+            (d / "state" / "tsmom.db").write_text("")
+            self.assertEqual(cli.state_dir(env={}), d / "state")
+
+    def test_the_environment_wins_over_folders(self):
+        from espero import cli
+        Path(self.tmp.name, "xs.db").write_text("")
+        self.assertEqual(cli.state_dir(env={"ESPERO_STATE_DIR": "/elsewhere"}), Path("/elsewhere"))
 
     def test_an_explicit_folder_wins(self):
         from espero import cli
-        self.assertEqual(cli.state_dir("/somewhere"), Path("/somewhere"))
+        self.assertEqual(cli.state_dir("/somewhere", env={"ESPERO_STATE_DIR": "/elsewhere"}), Path("/somewhere"))
+
+    def test_bare_names_land_in_the_state_folder_and_paths_stay(self):
+        import argparse
+
+        from espero import cli
+        env = {"ESPERO_STATE_DIR": "/st"}
+        self.assertEqual(cli.state_path("tsmom.db", env=env), Path("/st/tsmom.db"))
+        self.assertEqual(cli.state_path("books/p.db", env=env), Path("books/p.db"))
+        self.assertEqual(cli.state_path("/abs/p.db", env=env), Path("/abs/p.db"))
+        args = argparse.Namespace(state="xs.db", state_dir=".", tsmom_db="/abs/t.db", out="dashboard.html",
+                                  cmd="x")
+        cli.place_state(args, env=env)
+        self.assertEqual((args.state, str(args.state_dir), args.tsmom_db, args.out),
+                         ("/st/xs.db", "/st", "/abs/t.db", "/st/dashboard.html"))

@@ -6,23 +6,24 @@
 #   ./scripts/install-launchd.sh --uninstall
 #   ./scripts/install-launchd.sh --run-now   # install and kick one run immediately
 #
-# State (tsmom.db, xs.db, dashboard.html, health.json) lives in the repo root
-# unless STATE_DIR is set. Logs go to ~/Library/Logs/espero/.
+# State (tsmom.db, xs.db, dashboard.html, health.json) lives in state/ under the repo unless
+# STATE_DIR or ESPERO_STATE_DIR says otherwise. Logs go to ~/Library/Logs/espero/.
 set -euo pipefail
 
-REPO="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="${REPO:-$(cd "$(dirname "$0")/.." && pwd)}"
 LABEL="com.espero.daily"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 TEMPLATE="$REPO/deploy/launchd/$LABEL.plist.template"
-STATE_DIR="${STATE_DIR:-$REPO}"
+STATE_DIR="${STATE_DIR:-${ESPERO_STATE_DIR:-$REPO/state}}"
 LOG_DIR="${ESPERO_LOG_DIR:-$HOME/Library/Logs/espero}"
 HOUR="${HOUR:-7}"
 MINUTE="${MINUTE:-30}"
 PYTHON="${PYTHON:-$REPO/.venv/bin/python}"
 DOMAIN="gui/$(id -u)"
+LAUNCHCTL="${LAUNCHCTL:-launchctl}"
 
 uninstall() {
-    launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+    "$LAUNCHCTL" bootout "$DOMAIN/$LABEL" 2>/dev/null || true
     rm -f "$PLIST"
     echo "removed $LABEL"
 }
@@ -43,6 +44,13 @@ if ! "$PYTHON" -c "import espero" >/dev/null 2>&1; then
     exit 1
 fi
 
+# a book left in the root would be abandoned for a fresh one; move it first
+for f in tsmom.db xs.db mf.db; do
+    if [ -e "$REPO/$f" ] && [ ! -e "$STATE_DIR/$f" ]; then
+        echo "$REPO/$f exists but $STATE_DIR/$f does not: run ./scripts/move-state.sh first" >&2
+        exit 1
+    fi
+done
 mkdir -p "$LOG_DIR" "$STATE_DIR" "$HOME/Library/LaunchAgents"
 
 sed -e "s|__PYTHON__|$PYTHON|g" \
@@ -57,9 +65,9 @@ plutil -lint "$PLIST" >/dev/null
 # preflight with the exact interpreter launchd will use
 "$PYTHON" -m espero daily --dry-run --state-dir "$STATE_DIR" >/dev/null
 
-launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
-launchctl bootstrap "$DOMAIN" "$PLIST"
-launchctl enable "$DOMAIN/$LABEL"
+"$LAUNCHCTL" bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+"$LAUNCHCTL" bootstrap "$DOMAIN" "$PLIST"
+"$LAUNCHCTL" enable "$DOMAIN/$LABEL"
 
 echo "installed $LABEL"
 echo "  runs     daily at $(printf '%02d:%02d' "$HOUR" "$MINUTE") local time"
@@ -69,6 +77,6 @@ echo "  logs     $LOG_DIR/daily.log"
 echo "  status   launchctl print $DOMAIN/$LABEL | grep -E 'state|last exit'"
 
 if [ "${1:-}" = "--run-now" ]; then
-    launchctl kickstart "$DOMAIN/$LABEL"
+    "$LAUNCHCTL" kickstart "$DOMAIN/$LABEL"
     echo "kicked one run; tail -f $LOG_DIR/daily.log"
 fi

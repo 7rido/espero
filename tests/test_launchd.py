@@ -28,7 +28,7 @@ class TestCarryAgents(unittest.TestCase):
             args = p["ProgramArguments"]
             self.assertEqual(args[:5], ["/x/python", "-m", "espero", "carry", "paper"])
             self.assertEqual(args[args.index("--costs") + 1], costs)
-            self.assertEqual(args[args.index("--state") + 1], str(ROOT / f"carry-{costs}.db"))
+            self.assertEqual(args[args.index("--state") + 1], str(ROOT / "state" / f"carry-{costs}.db"))
             self.assertIn("--loop", args)
             self.assertEqual(p["WorkingDirectory"], str(ROOT))          # where .env is read
             self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
@@ -64,7 +64,7 @@ class TestHlpAgent(unittest.TestCase):
         p = plistlib.loads(out.encode())
         self.assertEqual(p["Label"], "com.espero.hlp")
         self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "hlp", "--loop", "--state",
-                                                 str(ROOT / "hlp-book.db")])
+                                                 str(ROOT / "state" / "hlp-book.db")])
         self.assertEqual(p["WorkingDirectory"], str(ROOT))
         self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
         self.assertTrue(p["StandardOutPath"].endswith("hlp.log"))
@@ -79,7 +79,7 @@ class TestHlp2Agent(unittest.TestCase):
         p = plistlib.loads(out.encode())
         self.assertEqual(p["Label"], "com.espero.hlp2")
         self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "hlp", "--test", "59", "--loop",
-                                                 "--state", str(ROOT / "hlp2-book.db")])
+                                                 "--state", str(ROOT / "state" / "hlp2-book.db")])
         self.assertEqual(p["WorkingDirectory"], str(ROOT))
         self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
         self.assertTrue(p["StandardOutPath"].endswith("hlp2.log"))
@@ -95,7 +95,7 @@ class TestPaperAgent(unittest.TestCase):
         self.assertEqual(p["Label"], "com.espero.paper")
         self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "paper", "--product", "BTC-USD",
                                                  "--source", "hyperliquid", "--state",
-                                                 str(ROOT / "paper-btc-usd-hl.db"), "--loop"])
+                                                 str(ROOT / "state" / "paper-btc-usd-hl.db"), "--loop"])
         self.assertEqual(p["WorkingDirectory"], str(ROOT))
         self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
         self.assertTrue(p["StandardOutPath"].endswith("paper.log"))

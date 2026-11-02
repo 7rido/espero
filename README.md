@@ -97,9 +97,9 @@ The product is the two paper accounts. `espero daily` marks both, rebalances whe
 says so, rewrites the dashboard and a `health.json`, and a launchd agent runs it every morning:
 
 ```bash
-./scripts/install-launchd.sh         # 07:30 local, state in the repo root, logs in ~/Library/Logs/espero
-cat health.json                      # last_run, last_success, per-step ok / error / equity
-touch KILL                           # pause everything; rm KILL to resume
+./scripts/install-launchd.sh         # 07:30 local, state in state/, logs in ~/Library/Logs/espero
+cat state/health.json                # last_run, last_success, per-step ok / error / equity
+touch state/KILL                     # pause everything; rm state/KILL to resume
 ```
 
 Each step is isolated (a Yahoo failure in one account does not stop the other or the dashboard), a

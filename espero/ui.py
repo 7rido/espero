@@ -456,8 +456,14 @@ def act_deposit(console, state):
         _run(console, [which, "--state", str(state / f"{which}.db"), "--deposit", f"{amt}"], state)
 
 
-# not /tmp: macOS clears it on restart, which cost a book with an open trade on 2026-10-31
+# where home-screen loops kept their books before the state moved out of the root; still read
 PAPER_DIR = Path(__file__).resolve().parent.parent / "paper-books"
+
+
+def paper_dir(state) -> Path:
+    """Where a home-screen loop keeps its book: beside the accounts, never /tmp, which macOS
+    clears on restart (that cost a book with an open trade on 2026-10-31)."""
+    return Path(state) / "paper-books"
 
 
 def paper_books(folder: Path = PAPER_DIR) -> List[dict]:
@@ -501,8 +507,9 @@ def paper_books(folder: Path = PAPER_DIR) -> List[dict]:
 
 
 def all_paper_books(state) -> List[dict]:
-    """The books from home-screen loops in PAPER_DIR, plus any in the state folder, like the launchd agent's."""
-    folders = dict.fromkeys(Path(f).resolve() for f in (PAPER_DIR, state))
+    """The books from home-screen loops, plus any in the state folder itself, like the launchd agent's,
+    plus the old root folder if it still exists."""
+    folders = dict.fromkeys(Path(f).resolve() for f in (paper_dir(state), state, PAPER_DIR))
     return [b for f in folders for b in paper_books(f)]
 
 
@@ -551,8 +558,9 @@ def act_paper(console, state):
             venue = questionary.select("Charge whose fees?", choices=["binanceus", "coinbase", "kraken", "hyperliquid"],
                                        default="binanceus", style=STYLE, pointer="❯").ask() or "binanceus"
         # one journal per price source: Coinbase and Hyperliquid bars must never mix in one book
-        PAPER_DIR.mkdir(parents=True, exist_ok=True)
-        db = PAPER_DIR / f"paper-{product.lower()}{'-hl' if hl_src else ''}{'-5m' if five else ''}.db"
+        books = paper_dir(state)
+        books.mkdir(parents=True, exist_ok=True)
+        db = books / f"paper-{product.lower()}{'-hl' if hl_src else ''}{'-5m' if five else ''}.db"
         console.print(Text(f"ctrl-c returns to the menu; the book is {db}. Buy and close by hand from a second "
                            "espero ui window (Paper trading)", style=MUTED))
         _run(console, ["paper", "--product", product, "--granularity", "300" if five else "3600", "--venue", venue,

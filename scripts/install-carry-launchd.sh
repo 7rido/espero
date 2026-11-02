@@ -8,16 +8,17 @@
 #   ./scripts/install-carry-launchd.sh --status      # running? last exit?
 #   ./scripts/install-carry-launchd.sh --print       # render the plists to stdout, change nothing
 #
-# The books (carry-taker.db, carry-maker.db) live in the repo root unless STATE_DIR
-# is set. Logs go to ~/Library/Logs/espero/carry-taker.log and carry-maker.log.
+# The books (carry-taker.db, carry-maker.db) live in state/ under the repo unless STATE_DIR or
+# ESPERO_STATE_DIR says otherwise. Logs go to ~/Library/Logs/espero/carry-taker.log and carry-maker.log.
 set -euo pipefail
 
-REPO="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="${REPO:-$(cd "$(dirname "$0")/.." && pwd)}"
 TEMPLATE="$REPO/deploy/launchd/com.espero.carry.plist.template"
-STATE_DIR="${STATE_DIR:-$REPO}"
+STATE_DIR="${STATE_DIR:-${ESPERO_STATE_DIR:-$REPO/state}}"
 LOG_DIR="${ESPERO_LOG_DIR:-$HOME/Library/Logs/espero}"
 PYTHON="${PYTHON:-$REPO/.venv/bin/python}"
 DOMAIN="gui/$(id -u)"
+LAUNCHCTL="${LAUNCHCTL:-launchctl}"
 BOOKS="taker maker"
 
 label() { echo "com.espero.carry-$1"; }
@@ -43,7 +44,7 @@ case "${1:-}" in
         exit 0 ;;
     --uninstall)
         for b in $BOOKS; do
-            launchctl bootout "$DOMAIN/$(label "$b")" 2>/dev/null || true
+            "$LAUNCHCTL" bootout "$DOMAIN/$(label "$b")" 2>/dev/null || true
             rm -f "$(plist "$b")"
             echo "removed $(label "$b")"
         done
@@ -65,14 +66,21 @@ if ! "$PYTHON" -c "import espero" >/dev/null 2>&1; then
     echo "$PYTHON cannot import espero; install the package into it first" >&2
     exit 1
 fi
+# a book left in the root would be abandoned for a fresh one; move it first
+for b in $BOOKS; do
+    if [ -e "$REPO/carry-$b.db" ] && [ ! -e "$STATE_DIR/carry-$b.db" ]; then
+        echo "$REPO/carry-$b.db exists but $STATE_DIR/carry-$b.db does not: run ./scripts/move-state.sh first" >&2
+        exit 1
+    fi
+done
 mkdir -p "$LOG_DIR" "$STATE_DIR" "$HOME/Library/LaunchAgents"
 
 for b in $BOOKS; do
     render "$b" > "$(plist "$b")"
     plutil -lint "$(plist "$b")" >/dev/null
-    launchctl bootout "$DOMAIN/$(label "$b")" 2>/dev/null || true
-    launchctl bootstrap "$DOMAIN" "$(plist "$b")"
-    launchctl enable "$DOMAIN/$(label "$b")"
+    "$LAUNCHCTL" bootout "$DOMAIN/$(label "$b")" 2>/dev/null || true
+    "$LAUNCHCTL" bootstrap "$DOMAIN" "$(plist "$b")"
+    "$LAUNCHCTL" enable "$DOMAIN/$(label "$b")"
     echo "installed $(label "$b")  ->  $STATE_DIR/carry-$b.db, log $LOG_DIR/carry-$b.log"
 done
 echo "status:  ./scripts/install-carry-launchd.sh --status"

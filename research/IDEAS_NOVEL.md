@@ -264,8 +264,8 @@ Hyperliquid alone, with Binance as the signal. It needs second-by-second recordi
   it would inform is #26's rule, already a pass. A pre-registration would test whether the open-interest
   split improves #26's rule out of sample, nothing else.
 - **Status.** Explored on 2026-11-02 on the days before it ([EXPLORE_OI5M.md](EXPLORE_OI5M.md)): the
-  same sign as #25 at 5 minutes, t at most 2.5 on 81 hours. The forward test it suggests is written there;
-  no pre-registration yet.
+  same sign as #25 at 5 minutes, t at most 2.5 on 81 hours. Pre-registered as #65
+  ([FORWARD_OI5M.md](FORWARD_OI5M.md)) the same day, window 2026-11-03 to 2027-03-31.
 
 ### Not worth trying here
 

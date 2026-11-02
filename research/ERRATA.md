@@ -5,6 +5,23 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
+## 2026-11-02: HLP's positions are mostly out of sight; #58 and #59 read about 4% of the vault
+
+**No rule, threshold or criterion changes; a finding about the recording, written during the forward windows.**
+`FORWARD_HLP.md` and `FORWARD_HLP2.md` take HLP's inventory from `clearinghouseState` of the vault address and
+its child addresses (`vaultDetails` → `relationship.childAddresses`), which `espero/hlcollect.py` reads every 15
+minutes. Checked on 2026-11-02 09:00 UTC: the vault reports $158.1M of equity; its seven children are Strategy
+A ($3.0M), Strategy B ($3.1M), Strategy X ($100.7M), Liquidator ($1.0M), Liquidator 2 ($30.0M), Liquidator 3
+($0.5M) and Liquidator 4 ($1.0M). Only Strategy A and B return positions (177 coins each, $6.9M of notional
+together, nothing in BTC or ETH); Strategy X returns an account value of 0 and no positions, that is, the
+endpoint does not show the account that holds 64% of the vault, and the four liquidator accounts hold nothing
+at the time of the read. Every recorded `hlp` file since the collector started (2026-10-29) shows the same two
+accounts and about $7M gross, so this is the state of the whole forward window, not a change in it. Both tests
+therefore measure the inventory changes of two small strategies, not of the market maker that the
+pre-registrations describe; their verdicts stand as registered, over what the recording holds, and this note
+is what a reader should weigh them against. `hlp_reads` records the eight addresses as read with none failed,
+so the missing account is not a failed read and the tests' void rule does not apply.
+
 ## 2026-11-02: Binance's liquidation stream delivers nothing from this machine; #61's Binance liquidation columns are never comparable here
 
 **No tolerance or criterion changes; written before any comparable day exists (the first is 2026-11-03).**

@@ -19,7 +19,7 @@ will use, and loads the agent. Options are environment variables:
 | variable | default | meaning |
 |---|---|---|
 | `HOUR`, `MINUTE` | `7`, `30` | local time of the daily run |
-| `STATE_DIR` | `state/` under the repo | where `tsmom.db`, `xs.db`, `dashboard.html`, `health.json` live (`ESPERO_STATE_DIR` is read too; see "Where the state lives") |
+| `STATE_DIR` | `state/` under the repo | where `tsmom.db`, `xs.db`, `dashboard.html`, `health.json` live (`ESPERO_STATE_DIR` is read too, from the environment or the plist, not from `.env`; see "Where the state lives") |
 | `ESPERO_LOG_DIR` | `~/Library/Logs/espero` | rotating `daily.log` plus launchd's stdout/stderr |
 | `PYTHON` | `.venv/bin/python` | interpreter |
 | `ESPERO_WEBHOOK_URL` | unset | Slack/Discord-style webhook for failures and rebalances |
@@ -126,7 +126,9 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/move-state.sh     
 2. `./scripts/move-state.sh --apply`. It refuses if a writer is still loaded, a file is still open,
    or the destination already has a file of the same name.
 3. Reinstall the writers with the same five scripts, without `--uninstall`. They find the books in
-   `state/`; the hlp and paper loops catch up the slots they missed.
+   `state/`. The paper loop catches up its bars; the hlp books re-read every slot `hlcollect`
+   recorded while they were down (`Book.step` walks every slot file it hasn't seen), and before
+   2026-11-05 they read nothing at all, so a move done before then costs them nothing.
 4. `cat state/health.json` after the next daily run, and `espero ui` shows the same accounts.
 
 A Docker install never had this: its state is the `ESPERO_STATE_DIR` volume (default `docker-state/`).

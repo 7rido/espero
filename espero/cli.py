@@ -653,6 +653,22 @@ def _cmd_ladder(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_liqvault(args: argparse.Namespace) -> int:
+    """#64: no paper book; its ledger is rebuilt once after the window closes, from the recordings."""
+    from . import liqvault as lv
+
+    data = Path(args.data) if args.data else lv.DATA
+    if args.verdict:
+        if time.time() < lv.WINDOW_END:
+            print("#64 is judged once, after 2027-03-31. Not before, and its recordings are not read before then.")
+            return 2
+        out = lv.ledger(data)
+        print(json.dumps({k: v for k, v in out.items() if k not in ("rows", "later_rows")}, indent=1, default=float))
+        return 0
+    print("\n".join(lv.status(data)))
+    return 0
+
+
 def _cmd_hlbook(args: argparse.Namespace) -> int:
     """Hyperliquid's order book every 5 minutes, saved under data/hlbook/. Status shows counts, never values."""
     from . import hlbook as hb
@@ -1539,6 +1555,10 @@ def build_parser() -> argparse.ArgumentParser:
     la.add_argument("--data", default=None, help="folder (default data/hlcollect in the repo)")
     la.add_argument("--verdict", action="store_true", help="the registered verdict, once, after the window closes")
     la.set_defaults(func=_cmd_ladder)
+    lq = sub.add_parser("liqvault", help="#64: what is recorded for it (default), or its verdict once, after 2027-03-31")
+    lq.add_argument("--data", default=None, help="folder (default data/hlcollect in the repo)")
+    lq.add_argument("--verdict", action="store_true", help="the registered verdict, once, after the window closes")
+    lq.set_defaults(func=_cmd_liqvault)
 
     hc = sub.add_parser("hlcollect", help="record Hyperliquid's positions, HLP, contexts and 1m candles (public data)")
     hc.add_argument("--loop", action="store_true", help="run forever (what launchd runs)")

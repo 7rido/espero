@@ -577,6 +577,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `PREREGISTRATION_SLEEVES.md.ots`
 - `sleeves.py`  (rule: `espero/sleeves.py`)
 
+## #64 — Forward: the liquidator vault's inventory
+
+*#64 forward_pending*
+
+- `FORWARD_LIQVAULT.md`
+- `FORWARD_LIQVAULT.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

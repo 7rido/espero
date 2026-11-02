@@ -139,6 +139,7 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
     "63": ("The portfolio layer: how passes combine, fixed before any two exist", ["PREREGISTRATION_SLEEVES.md",
                                                                                    "PREREGISTRATION_SLEEVES.md.ots",
                                                                                    "sleeves.py"]),
+    "64": ("Forward: the liquidator vault's inventory", ["FORWARD_LIQVAULT.md", "FORWARD_LIQVAULT.md.ots"]),
 }
 
 # files that belong to the project as a whole, not to one test

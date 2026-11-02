@@ -29,7 +29,7 @@ LAYERS: Dict[str, Tuple[str, List[str]]] = {
     "rules": ("one module per hypothesis: the frozen rule and its criteria, pure, no I/O",
               ["liq", "liqspike", "lows", "bids", "settle", "oi", "levetf", "levpush", "sweeps", "fillcost", "carry",
                "degen", "polyhour", "ethena", "horizons", "catchup", "bookwalk", "patterns", "trend", "factors",
-               "signals", "regimes", "rate", "ladder"]),
+               "signals", "regimes", "rate", "ladder", "liqvault"]),
     "forward": ("the daily job's steps: record a day, rebuild a ledger, decide nothing until 2027-03-31",
                 ["liqfwd", "lowsfwd", "liqbreak", "fundsplit", "postclose", "bidsfwd", "settlefwd", "liqhold"]),
     "accounts": ("paper books and the machinery that holds a position honestly",

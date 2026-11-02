@@ -217,7 +217,8 @@ Hyperliquid alone, with Binance as the signal. It needs second-by-second recordi
   be in thin coins the raw tape does not record, so the fill is the paper book's, not a replay. The
   collector's 15-minute cadence is the ceiling on timing; a faster read of the four liquidator
   addresses alone costs little and would be the first change.
-- **Status.** Idea. No pre-registration written. Nothing of #58, #59 or #60 changes.
+- **Status.** Pre-registered as #64 ([FORWARD_LIQVAULT.md](FORWARD_LIQVAULT.md)) on 2026-11-02, window
+  2026-11-04 to 2027-03-31. Nothing of #58, #59 or #60 changes.
 
 ### Not worth trying here
 

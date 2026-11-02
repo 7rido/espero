@@ -42,7 +42,10 @@ every command, and `espero <command> --help` its flags.
    `espero/venues.py`. Never a hidden or zero fee.
 4. **Fills come after the signal.** At the next bar's open, never the signal bar's close.
 5. **Mutation-check new tests.** Break the code a test guards and confirm the test fails.
-6. **Tests number upward.** Check `README.md` and `research/` for the last `#NN` before taking one.
+6. **Tests number upward.** Check `research/INDEX.md` for the last `#NN` before taking one. Every file
+   a test adds to `research/` is claimed in `research/index.py` (its `TESTS` table), and the index is
+   regenerated with `python research/index.py`; CI fails on an unclaimed file or a stale index. The
+   folder stays flat: scripts, tests and #48's seal address its files by name.
 7. **From #61 on, the statistical bar is FDR and t ≥ 3, both.** Benjamini-Hochberg at q < 0.05 over every judged test, and
    |t| ≥ 3 on the same t, in the registered direction. Missing either is a fail. #1 to #60 keep their committed criteria.
    See `research/FDR_STANDARD.md`.

@@ -617,7 +617,7 @@ espero/
   tests/            # over 1,000 tests
   deploy/launchd/   # the LaunchAgent templates; the scripts/install-*-launchd.sh scripts render them
   Dockerfile, docker-compose.yml  # the collector and the daily job as two services
-  research/         # one pre-registration and one results file per hypothesis
+  research/         # one pre-registration and one results file per hypothesis; INDEX.md lists every file by test
   data/             # committed BTC/ETH daily candles so the numbers reproduce offline
   docs/AUDIT.md     # the audit that started this
   docs/AUDIT_2026-10.md  # the second audit: what broke on a bad day, and the factor stack

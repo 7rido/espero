@@ -21,7 +21,9 @@ from .factor_eval import newey_west_t
 
 DAY_MS = 86_400_000
 HOLDS = (7, 14, 30)                 # days; the design window picks one, the other two are information
-CHOSEN_HOLD: Optional[int] = None   # set from the design run, committed with the pre-registration
+CHOSEN_HOLD: Optional[int] = 7      # the largest design t without the cover rule (1.65), set before the
+                                    # pre-registration was committed
+COVER = False                       # the cover rule was tried on the design window and set aside
 FEE_BPS = 5.0                       # Binance USD-M taker, espero.costs.FEES_BPS
 LISTING_HALF_SPREAD_BPS = 10.0      # assumed: a coin in its first month is unmeasured (see the pre-registration)
 SETTLE_SLACK_MS = 60_000            # the archive stamps settlements a few ms after the hour

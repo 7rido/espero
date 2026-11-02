@@ -1,0 +1,49 @@
+#67 listing drift: DESIGN, files through 2024-12
+
+USDT perps first traded 2023-01 or later: 734; events: 513
+  excluded, type EQUITY: 174
+  excluded, type HK_EQUITY: 15
+  excluded, type COMMODITY: 8
+  excluded, type KR_EQUITY: 8
+  excluded, listing month differs from the first bar's: 6
+  excluded, type PREMARKET: 4
+  excluded, type CN_EQUITY: 2
+  excluded, no listing time: 1
+  excluded, index: 1
+  excluded, base listed before: 1
+  excluded, type FX: 1
+costs per side: listing 15.00 bps (fee 5.0 + assumed half-spread 10.0), BTC 5.3342 bps (espero.costs, measured)
+
+listing day = the first daily bar's day; Binance's onboardDate fell on it for 190 of 222 positions, earlier by {1: 25, 2: 4, 4: 3} days for the rest
+
+hold 7 days: short the listing, long BTC, net of funding and costs
+  net                                          positions  222  days  519  daily mean   +4.66 bps  t  +0.12  mean position   +0.28%  median   +6.06%
+  gross: no funding, no costs                  positions  222  days  519  daily mean  +24.74 bps  t  +0.65  mean position   +1.33%  median   +6.56%
+  unhedged short, net                          positions  222  days  519  daily mean  -10.66 bps  t  -0.26  mean position   -1.06%  median   +2.88%
+  abnormal: short the listing, long the basket positions  222  days  519  daily mean  +29.17 bps  t  +0.79  mean position   +1.68%  median   +7.93%
+  without the cover rule, net                  positions  222  days  565  daily mean  +54.48 bps  t  +1.65  mean position   +2.55%  median   +9.99%
+  covered early by a close above the listing day's high: 88 of 222
+  funding per position: mean -0.64%  median +0.03%; break-even listing cost per side +29.2 bps
+  halves +26.66 / -17.43 bps a day; dropped {}
+
+hold 14 days: short the listing, long BTC, net of funding and costs
+  net                                          positions  214  days  616  daily mean  +12.20 bps  t  +0.39  mean position   +0.91%  median   +1.00%
+  gross: no funding, no costs                  positions  214  days  616  daily mean  +24.09 bps  t  +0.77  mean position   +1.93%  median   +2.42%
+  unhedged short, net                          positions  214  days  616  daily mean   -7.12 bps  t  -0.21  mean position   -1.46%  median   -2.63%
+  abnormal: short the listing, long the basket positions  214  days  616  daily mean  +19.28 bps  t  +0.65  mean position   +2.24%  median   +2.81%
+  without the cover rule, net                  positions  214  days  664  daily mean  +37.33 bps  t  +1.17  mean position   +3.63%  median  +13.29%
+  covered early by a close above the listing day's high: 101 of 214
+  funding per position: mean -0.62%  median +0.04%; break-even listing cost per side +60.3 bps
+  halves +42.47 / -18.07 bps a day; dropped {}
+
+hold 30 days: short the listing, long BTC, net of funding and costs
+  net                                          positions  199  days  674  daily mean  +11.21 bps  t  +0.49  mean position   +2.85%  median   -0.67%
+  gross: no funding, no costs                  positions  199  days  674  daily mean  +18.33 bps  t  +0.80  mean position   +3.81%  median   -0.55%
+  unhedged short, net                          positions  199  days  674  daily mean  -11.20 bps  t  -0.44  mean position   -2.05%  median   -7.30%
+  abnormal: short the listing, long the basket positions  199  days  674  daily mean  +14.70 bps  t  +0.68  mean position   +4.55%  median   -1.37%
+  without the cover rule, net                  positions  199  days  706  daily mean  +19.92 bps  t  +0.95  mean position   +6.11%  median  +20.46%
+  covered early by a close above the listing day's high: 111 of 199
+  funding per position: mean -0.55%  median +0.07%; break-even listing cost per side +157.4 bps
+  halves +29.67 / -7.25 bps a day; dropped {}
+
+design choice: the hold with the largest t is 30 days (t +0.49)

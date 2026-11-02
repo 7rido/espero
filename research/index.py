@@ -147,7 +147,9 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
     "67": ("New Binance USD-M perps after they list, short against BTC", ["EXPLORE_LISTDRIFT.md", "listdrift.py", "listdrift_events.csv",
                                                                             "listdrift_manifest.csv", "listdrift_design_run.txt",
                                                                             "listdrift_design_run_onboard.txt",
-                                                                            "listdrift_design_run_nocover.txt"]),
+                                                                            "listdrift_design_run_nocover.txt",
+                                                                            "listdrift_design_run_cover.txt", "PREREGISTRATION_LISTDRIFT.md",
+                                                                            "PREREGISTRATION_LISTDRIFT.md.ots"]),
 }
 
 # files that belong to the project as a whole, not to one test

@@ -214,7 +214,7 @@ def run(design: bool) -> Tuple[List[str], dict]:
 
     results = {}
     for key, p in plans.items():
-        net, gross, unhedged, abn, uncovered, info, covered = {}, {}, {}, {}, {}, {}, {}
+        net, gross, unhedged, abn, other, info, covered, would = {}, {}, {}, {}, {}, {}, {}, {}
         for _, r in p.iterrows():
             s, entry, exit_ = r["symbol"], r["entry"], r["exit"]
             b, fr = allbars.get(s), rates.get(s)
@@ -222,14 +222,16 @@ def run(design: bool) -> Tuple[List[str], dict]:
                 info[s] = "no bars" if b is None else "funding missing"
                 continue
             level = ld.cover_level(b, r["listing_day"])
-            ev = ld.event(b, btc, entry, exit_, fr, btc_rates, lc, hc, cover=level)
+            reg = level if ld.COVER else None                      # the registered trade's cover, if any
+            ev = ld.event(b, btc, entry, exit_, fr, btc_rates, lc, hc, cover=reg)
             if ev.empty:
                 info[s] = "no entry bar"
                 continue
             net[s] = ev
-            covered[s] = ld.cover_exit(b, entry, exit_, level)
-            gross[s] = ld.event(b, btc, entry, exit_, fr, btc_rates, 0.0, 0.0, with_funding=False, cover=level)
-            uncovered[s] = ld.event(b, btc, entry, exit_, fr, btc_rates, lc, hc)
+            covered[s] = ld.cover_exit(b, entry, exit_, reg)
+            would[s] = ld.cover_exit(b, entry, exit_, level)
+            gross[s] = ld.event(b, btc, entry, exit_, fr, btc_rates, 0.0, 0.0, with_funding=False, cover=reg)
+            other[s] = ld.event(b, btc, entry, exit_, fr, btc_rates, lc, hc, cover=None if ld.COVER else level)
             stop = covered[s]
             short = ld.leg(b, entry, stop, -1)
             f_short = ld.funding(fr, short, entry, ld.close_of(short, stop), -1).reindex(short.index).fillna(0.0)
@@ -237,9 +239,9 @@ def run(design: bool) -> Tuple[List[str], dict]:
             cst.iloc[0] -= lc
             cst.iloc[-1] -= lc
             unhedged[s] = pd.DataFrame({"net": short["pnl"] + f_short + cst})
-            abn[s] = ld.abnormal(b, {m: allbars[m] for m in members_at(entry, s)}, entry, exit_, cover=level)
+            abn[s] = ld.abnormal(b, {m: allbars[m] for m in members_at(entry, s)}, entry, exit_, cover=reg)
         results[key] = {"plan": p, "net": net, "gross": gross, "unhedged": unhedged, "abnormal": abn, "dropped": info,
-                        "uncovered": uncovered, "covered": covered, "bars": allbars}
+                        "other": other, "covered": covered, "would": would, "bars": allbars}
     return report(results, design, lc, hc, e, allbars), results
 
 
@@ -297,9 +299,9 @@ def report(results: dict, design: bool, lc: float, hc: float, e: pd.DataFrame, a
         say(line("gross: no funding, no costs", r["gross"]))
         say(line("unhedged short, net", r["unhedged"]))
         say(line("abnormal: short the listing, long the basket", r["abnormal"]))
-        say(line("without the cover rule, net", r["uncovered"]))
-        n_cov = sum(1 for s, x in r["covered"].items() if x != r["plan"].set_index("symbol").at[s, "exit"])
-        say(f"  covered early by a close above the listing day's high: {n_cov} of {len(r['covered'])}")
+        say(line(("without" if ld.COVER else "with") + " the cover rule, net", r["other"]))
+        n_cov = sum(1 for s, x in r["would"].items() if x != r["plan"].set_index("symbol").at[s, "exit"])
+        say(f"  the cover rule closes early, on a close above the listing day's high: {n_cov} of {len(r['would'])}")
         fund = ld.totals(r["net"], "funding")
         say(f"  funding per position: mean {fund.mean() * 100:+.2f}%  median {fund.median() * 100:+.2f}%; "
             f"break-even listing cost per side {ld.break_even_bps(r['net'], lc):+.1f} bps")

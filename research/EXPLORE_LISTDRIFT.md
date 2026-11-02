@@ -148,3 +148,11 @@ second run's is kept as [listdrift_design_run_nocover.txt](listdrift_design_run_
   to the trade without the rule is the account holder's call, asked on 2026-11-02; its projected holdout t is
   about 1.8, against a bar of 3.
 - Until then `listdrift.CHOSEN_HOLD` stays unset, and `--holdout` refuses.
+
+## Set aside, and what #67 registers
+
+On the account holder's decision on 2026-11-02, before any holdout read, the cover rule is set aside: #67
+registers the trade without it, at 7 days, the largest design t without the rule (1.65), as the hold rule above
+says. The cover rule's code stays, tested, and the covered trade is printed as information. The final code was
+rehearsed on the design window and reproduces the second run (output [listdrift_design_run.txt](listdrift_design_run.txt);
+the third run's is kept as [listdrift_design_run_cover.txt](listdrift_design_run_cover.txt)).

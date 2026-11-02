@@ -609,8 +609,11 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 *#67 (not in trials.csv)*
 
 - `EXPLORE_LISTDRIFT.md`
+- `PREREGISTRATION_LISTDRIFT.md`
+- `PREREGISTRATION_LISTDRIFT.md.ots`
 - `listdrift.py`  (rule: `espero/listdrift.py`)
 - `listdrift_design_run.txt`
+- `listdrift_design_run_cover.txt`
 - `listdrift_design_run_nocover.txt`
 - `listdrift_design_run_onboard.txt`
 - `listdrift_events.csv`

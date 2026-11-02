@@ -52,7 +52,8 @@ open state/dashboard.html
 ```
 
 `health.json` is the thing to look at first. `last_success` older than two days means the run is
-failing or not firing; the `steps` block says which.
+failing or not firing; the `steps` block says which. `python scripts/status.py --print` turns it,
+with the ledger and the recordings on disk, into one page (`docs/STATUS.md` is its last snapshot).
 
 ## Run one now
 

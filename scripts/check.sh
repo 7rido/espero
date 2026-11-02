@@ -35,6 +35,11 @@ echo "== tests =="
 "$PY" -m unittest discover -s tests -t . -v
 
 echo
+echo "== shape =="
+"$PY" research/index.py --check        # every research file claimed; INDEX.md current
+"$PY" -m unittest tests.test_shape     # no state at the root; every daily step has a plan; every module a test
+
+echo
 echo "== audit table =="
 "$PY" -m espero matrix
 

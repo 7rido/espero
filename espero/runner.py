@@ -52,6 +52,25 @@ log = logging.getLogger("espero.daily")
 LOG_DIR = Path(os.environ.get("ESPERO_LOG_DIR", Path.home() / "Library" / "Logs" / "espero"))
 TRADE_NOTES = ("init", "rebalance", "deposit")
 
+# every step and the document it serves; tests/test_shape.py holds the two lists to each other
+PLANS = {
+    "tsmom": "research/PREREGISTRATION_TSMOM.md",       # #4's paper account
+    "xs": "research/PREREGISTRATION_XS20.md",           # the weekly cross-sectional account
+    "mf": "research/FORWARD_MF.md",                     # #8's forward test
+    "mf-hl": "research/FORWARD_MF.md",                  # #8 on Hyperliquid prices, information only
+    "liqfwd": "research/FORWARD_LIQ.md",                # #22, and #23 (FORWARD_LIQSHORT.md) in the same step
+    "lowsfwd": "research/FORWARD_LOWS.md",              # #24
+    "liqbreak": "research/FORWARD_LIQBREAK.md",         # #27
+    "fundsplit": "research/FORWARD_FUNDSPLIT.md",       # #32
+    "postclose": "research/FORWARD_POSTCLOSE.md",       # #29
+    "levpush": "research/PREREGISTRATION_LEVPUSH.md",   # #34's forward part
+    "bidsfwd": "research/FORWARD_BIDS2.md",             # #31
+    "settlefwd": "research/FORWARD_SHORTSPAY.md",       # #38
+    "liqhold": "research/FORWARD_LIQHOLD.md",           # #45
+    "publish": "docs/DATA.md",                          # Monday's data release
+    "dashboard": "docs/RUNBOOK.md",
+}
+
 
 @dataclass
 class StepResult:

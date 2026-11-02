@@ -79,3 +79,26 @@ Read-only; nothing is fetched and nothing under `data/` is written.
   clock and the 7-day horizon; the primary statistic and its bar (t ≥ 3 and Benjamini-Hochberg q < 0.05 over
   every judged test, `FDR_STANDARD.md`); the monthly comparison against #63's 90 days.
 - The design run estimates power for the pre-registration. It cannot pass or fail #66.
+
+## The design run
+
+Run on 2026-11-02 after `b29f6e4`, in ten seconds; output [volf_design_run.txt](volf_design_run.txt). **Nothing in
+the specification changed after it.** No bug was found, and the day rule, the training minimum, the log form and
+the smearing stand as written above.
+
+- **Coins:** 38 of 42 have bars before 2023 (ARB, SEI, TIA and WLD list later). Most coins have 99% of their
+  calendar days complete; ICP has 490 of 600.
+- **Weekly:** 98 Sundays with a forecast (2021-02 → 2022-12), 2,551 cells. Mean QLIKE 0.700 for #8's 30-day
+  variance and 0.480 for the HAR. Mean gap +0.188, sd 0.787, t 2.19 (Newey-West, 3 lags). Halves +0.089 and
+  +0.286. All 29 coins with a year of cells favour the HAR.
+- **Monthly:** 22 month ends, mean gap +0.036, t 0.71.
+- **Information:** the next day, t 3.15 over 700 origins. MSE ratio 1.17 in the HAR's favour. A calibrated
+  trailing regression closes part of the gap (#8's variance against it +0.122, it against the HAR +0.066, t 2.88),
+  so the gain is part calibration and part the 5-minute data. HAR with funding and open interest reached 35 cells
+  on one coin, because open interest starts in late 2021 for most coins and the model needs a year of it.
+  Sizing with the HAR halves the share of weeks a position runs above twice its volatility target (6.0% → 3.3%).
+- **Power.** The gap is heavy-tailed: crash weeks, when both forecasts are far too low, carry most of its
+  variance. If the holdout's effect and dependence match the design's, its t at 169 Sundays is about 2.9, about
+  an even chance of clearing 3. The earlier design year was weaker (+0.094 in 2021 against +0.295 in 2022). The
+  bar stays where `FDR_STANDARD.md` puts it: a new test clears q < 0.05 over the 33 judged tests at |t| ≥ 2.52
+  today, so t ≥ 3 binds.

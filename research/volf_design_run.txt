@@ -1,0 +1,65 @@
+#66 volatility forecast: DESIGN window, files through 2022-12
+
+coins with bars: 38 of 42; without: ['ARB', 'SEI', 'TIA', 'WLD']
+  BTC   BTCUSDT       first complete day 2020-01-02  complete  1095 of  1096 days  funding days  1096  OI days   680
+  ETH   ETHUSDT       first complete day 2020-01-02  complete  1095 of  1096 days  funding days  1096  OI days   367
+  SOL   SOLUSDT       first complete day 2020-09-15  complete   831 of   839 days  funding days   839  OI days   364
+  BNB   BNBUSDT       first complete day 2020-02-11  complete  1055 of  1056 days  funding days  1056  OI days   366
+  XRP   XRPUSDT       first complete day 2020-01-07  complete  1083 of  1091 days  funding days  1091  OI days   367
+  ADA   ADAUSDT       first complete day 2020-02-01  complete  1065 of  1066 days  funding days  1066  OI days   367
+  DOGE  DOGEUSDT      first complete day 2020-07-11  complete   904 of   905 days  funding days   905  OI days   367
+  AVAX  AVAXUSDT      first complete day 2020-09-24  complete   829 of   830 days  funding days   830  OI days   367
+  LINK  LINKUSDT      first complete day 2020-01-18  complete  1079 of  1080 days  funding days  1080  OI days   365
+  DOT   DOTUSDT       first complete day 2020-08-23  complete   861 of   862 days  funding days   862  OI days   363
+  TRX   TRXUSDT       first complete day 2020-01-16  complete  1074 of  1082 days  funding days  1082  OI days   357
+  SHIB  1000SHIBUSDT  first complete day 2021-05-11  complete   600 of   601 days  funding days   601  OI days   365
+  LTC   LTCUSDT       first complete day 2020-01-10  complete  1080 of  1088 days  funding days  1088  OI days   361
+  BCH   BCHUSDT       first complete day 2020-01-02  complete  1095 of  1096 days  funding days  1096  OI days   367
+  ATOM  ATOMUSDT      first complete day 2020-02-08  complete  1058 of  1059 days  funding days  1059  OI days   366
+  ETC   ETCUSDT       first complete day 2020-01-17  complete  1080 of  1081 days  funding days  1081  OI days   359
+  XLM   XLMUSDT       first complete day 2020-01-21  complete  1069 of  1077 days  funding days  1077  OI days   360
+  NEAR  NEARUSDT      first complete day 2020-10-16  complete   800 of   808 days  funding days   808  OI days   365
+  OP    OPUSDT        first complete day 2022-06-02  complete   213 of   214 days  funding days   214  OI days   191
+  FIL   FILUSDT       first complete day 2020-10-17  complete   799 of   807 days  funding days   807  OI days   364
+  INJ   INJUSDT       first complete day 2022-08-18  complete   136 of   137 days  funding days   137  OI days   115
+  RUNE  RUNEUSDT      first complete day 2020-09-05  complete   848 of   849 days  funding days   849  OI days   360
+  AAVE  AAVEUSDT      first complete day 2020-10-17  complete   806 of   807 days  funding days   807  OI days   360
+  MKR   MKRUSDT       first complete day 2020-08-14  complete   863 of   871 days  funding days   871  OI days   342
+  CRV   CRVUSDT       first complete day 2020-09-02  complete   851 of   852 days  funding days   852  OI days   356
+  SNX   SNXUSDT       first complete day 2020-08-15  complete   869 of   870 days  funding days   870  OI days   351
+  SUSHI SUSHIUSDT     first complete day 2020-09-05  complete   841 of   849 days  funding days   849  OI days   353
+  YFI   YFIUSDT       first complete day 2020-09-01  complete   845 of   853 days  funding days   853  OI days   358
+  ALGO  ALGOUSDT      first complete day 2020-06-17  complete   928 of   929 days  funding days   929  OI days   363
+  XTZ   XTZUSDT       first complete day 2020-02-07  complete  1059 of  1060 days  funding days  1060  OI days   355
+  EOS   EOSUSDT       first complete day 2020-01-09  complete  1088 of  1089 days  funding days  1089  OI days   355
+  ZEC   ZECUSDT       first complete day 2020-02-06  complete  1053 of  1061 days  funding days  1061  OI days   361
+  DASH  DASHUSDT      first complete day 2020-02-05  complete  1061 of  1062 days  funding days  1062  OI days   361
+  KSM   KSMUSDT       first complete day 2020-10-15  complete   801 of   809 days  funding days   809  OI days   352
+  ICP   ICPUSDT       first complete day 2021-05-12  complete   490 of   600 days  funding days   600  OI days    83
+  HBAR  HBARUSDT      first complete day 2021-03-18  complete   647 of   655 days  funding days   655  OI days   362
+  VET   VETUSDT       first complete day 2020-02-15  complete  1044 of  1052 days  funding days  1052  OI days   361
+  THETA THETAUSDT     first complete day 2020-05-28  complete   948 of   949 days  funding days   949  OI days   365
+
+Primary: weekly origins at Sunday's close, the next 7 days' mean squared daily return,
+QLIKE(#8's 30-day trailing variance) - QLIKE(HAR), averaged over coins at each origin; positive = HAR better
+  origins 98  cells 2551  mean gap +0.1875  t +2.19 (Newey-West, 3 lags)  p 0.0286
+  halves: earlier +0.0885  later +0.2864
+  breadth: 1.000 of 29 coins with >= 52 weekly cells have a positive mean gap
+Monthly: month-end origins, the next calendar month, #63's 90-day trailing variance against the HAR
+  origins 22  mean gap +0.0361  t +0.71
+Outcome: INCONCLUSIVE
+
+Information only, deciding nothing:
+  (a) daily: next day, #8's 30-day vs HAR        origins   700  cells  18450  mean +0.1589  t  +3.15  (lags 6)
+  (b) weekly MSE on the variance, trailing over HAR: 1.1693
+  (c) calibrated trailing vs HAR                 origins    98  cells   2551  mean +0.0658  t  +2.88  (lags 3)
+      #8's 30-day vs calibrated trailing         origins    98  cells   2551  mean +0.1216  t  +1.43  (lags 3)
+  (d) HAR vs HAR + funding + open interest       origins    35  cells     35  mean -0.0392  t  -0.53  (lags 3)  coins 1
+  (e) sizing with #8's 30-day  cells   2551  mean |log realized/target vol| 0.4388  over 2x target 0.0596  week-to-week |change| in log scale 0.1327
+  (e) sizing with HAR          cells   2551  mean |log realized/target vol| 0.4318  over 2x target 0.0333  week-to-week |change| in log scale 0.1247
+  (f) by year of origin: 2021 +0.0936 (954); 2022 +0.2954 (1597)
+      by tier: BTC+ETH +0.1700 (196); other +0.2241 (2355)
+  (g) mean QLIKE: #8's 30-day 0.6997  HAR 0.4798
+  (h) coins whose mean gap is negative: ICP -0.0616 (6)
+
+Power: the design's weekly gap has mean +0.1875, sd 0.7870 over 98 origins, t +2.19. At the holdout's 169 origins, the same effect and dependence give t about +2.87.

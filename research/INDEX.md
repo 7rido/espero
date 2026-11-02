@@ -597,6 +597,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `EXPLORE_VOLF.md`
 - `volf.py`  (rule: `espero/volf.py`)
+- `volf_design_run.txt`
 
 ## Cross-cutting
 

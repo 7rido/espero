@@ -596,6 +596,8 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 *#66 (not in trials.csv)*
 
 - `EXPLORE_VOLF.md`
+- `PREREGISTRATION_VOLF.md`
+- `PREREGISTRATION_VOLF.md.ots`
 - `volf.py`  (rule: `espero/volf.py`)
 - `volf_design_run.txt`
 

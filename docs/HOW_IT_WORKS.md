@@ -29,14 +29,17 @@ flowchart LR
 2. **Fetch the day.** `espero daily` at 07:30 local saves yesterday's aggr liquidation bars and
    Binance's 5-minute files for 42 coins. aggr deletes its bars after days, so a day missed is a gap,
    recorded as missing, never filled from another source.
-3. **Rebuild the ledgers.** Each forward step applies its frozen rule to everything recorded so far
-   and rewrites one CSV in `state/`. `runner.PLANS` names the document each step serves. The numbers in
-   those CSVs are for watching; the plans say they decide nothing.
+3. **Rebuild the ledgers.** Each forward step applies its frozen rule to the aggr bars and Binance
+   files fetched so far and rewrites one CSV in `state/`. `runner.PLANS` names the document each step
+   serves. The numbers in those CSVs are for watching; the plans say they decide nothing. The three
+   Hyperliquid tests (#58, #59, #60) have no daily step: their verdicts are computed from the
+   recordings themselves, once, by `espero hlp --verdict` and `espero ladder --verdict`.
 4. **Paper books, beside the ledgers.** #12's carry books, #58/#59's HLP books and the BTC paper loop
    hold simulated positions from the same recordings. They are information only; no verdict reads them.
 5. **Judge once.** After 2027-03-31, each `research/FORWARD_*.md` is applied as written: its criteria,
-   its halves, its not-one-coin check, its cost bar. The verdict is written to `RESULTS_*.md` and a row
-   of `research/trials.csv`. Running numbers before that date are never a result.
+   its halves, its not-one-coin check, its cost bar, from the ledger CSV, or for #58–#60 from the
+   recordings directly. The verdict is written to `RESULTS_*.md` and a row of `research/trials.csv`.
+   Running numbers before that date are never a result.
 6. **Count it against everything else.** From #61 on, a pass needs Benjamini-Hochberg q < 0.05 over the
    whole ledger and |t| ≥ 3, both ([FDR_STANDARD.md](../research/FDR_STANDARD.md)). A pass that pays
    leads where [FORWARD_FAMILY.md](../research/FORWARD_FAMILY.md) says, and nowhere else.

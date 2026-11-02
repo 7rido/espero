@@ -63,8 +63,9 @@ def first_line(path: Path) -> str:
     """The first line of the module's docstring, or '' when it has none."""
     text = path.read_text(encoding="utf-8")
     m = re.search(r'^\s*(?:r|u)?"""(.*?)(?:"""|$)', text, re.S | re.M)
-    if not m:
-        return ""
+    code = re.search(r"^(?:import |from |def |class )", text, re.M)
+    if not m or (code and m.start() > code.start()):
+        return ""       # a docstring further down belongs to a function, not the module
     line = m.group(1).strip().splitlines()[0].strip() if m.group(1).strip() else ""
     if len(line) > 96:
         line = line[:96].rsplit(" ", 1)[0].rstrip(",;:") + " …"

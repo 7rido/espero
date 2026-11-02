@@ -17,9 +17,9 @@ every test tried, with costs measured on real prints and fills that were physica
   Benjamini-Hochberg q < 0.05 over the whole ledger and |t| ≥ 3, both.
 - **Costs that were measured, not assumed:** #39 and #41 put a round trip at 10–14 bps from
   Binance and Hyperliquid prints; every rule is charged that, or a venue's fee, never zero.
-- **Paper books, not a trading bot.** Two paper accounts, two carry books and three forward books run
-  under launchd; nothing in the tree can place a mainnet order, and the account holder places any
-  real one outside it.
+- **Paper books, not a trading bot.** Two paper accounts, two carry books, two forward books (#58,
+  #59) and a BTC paper trader run under launchd; nothing in the tree can place a mainnet order, and
+  the account holder places any real one outside it.
 - **A test suite that fails when you cheat:** causal indicators, next-bar fills, numbers pinned to
   committed data, and tests that hold the repo's own shape (every module in a layer, every research
   file claimed, every daily step with its plan).

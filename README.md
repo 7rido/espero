@@ -611,6 +611,7 @@ espero/
     ladder.py         # #60: buying after the price falls through a dense band of long liquidation prices
     liqvault.py       # #64: taking the side of HLP's liquidator vaults when they are handed a position
     oi5m.py           # #65: a sharp 5-minute fall read by its open interest, cascade or repricing …
+    volf.py           # #66: a HAR forecast of next week's variance from 5-minute bars, against the books' trailing …
     # forward: the daily job's steps: record a day, rebuild a ledger, decide nothing until 2027-03-31
     liqfwd.py         # #22's forward paper test (research/FORWARD_LIQ.md): record aggr's hourly bars
     lowsfwd.py        # #24's forward paper test (research/FORWARD_LOWS.md): record Binance's daily

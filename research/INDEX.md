@@ -591,6 +591,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `FORWARD_OI5M.md`
 - `FORWARD_OI5M.md.ots`
 
+## #66 — A HAR volatility forecast against the books' trailing variance
+
+*#66 (not in trials.csv)*
+
+- `EXPLORE_VOLF.md`
+- `volf.py`  (rule: `espero/volf.py`)
+
 ## Cross-cutting
 
 **The ledger of every test**

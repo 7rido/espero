@@ -80,3 +80,33 @@ replicated on a pre-specified Bybit holdout in an unrefereed study, and listing-
   Benjamini-Hochberg q < 0.05 over every judged test; the conditions.
 - If the design window shows no drift at any H, the test may be abandoned before any holdout read. That would be
   reported here, not hidden.
+
+## The design run, twice
+
+Both runs read files through 2024-12 only. The holdout is unread.
+
+**First run, listing day = Binance's onboardDate** (output [listdrift_design_run_onboard.txt](listdrift_design_run_onboard.txt)).
+For 32 of 222 design positions the onboardDate fell one to four days before the symbol's first trade. 25 positions
+therefore opened at the first print rather than a day after it, and 7 found no bar to open on. This breaks the
+promise above, entry at the open of the day after the listing day, so it is a bug, and it is the one change made
+to the event list: the events and their exclusions stand, decided by the onboardDate as before, but each is dated by
+its first daily bar (`espero.listdrift.dated`). The correction uses no return. Its t moved down, and it is kept.
+
+**Second run, listing day = the first trade** (output [listdrift_design_run.txt](listdrift_design_run.txt)). Net of
+funding and costs, short the listing and long BTC:
+
+| hold | positions | t, daily series | mean position | median position | gross t | against the basket, t | funding per position, mean |
+|---|---|---|---|---|---|---|---|
+| 7 days | 222 | 1.65 (was 1.97) | +2.6% | +10.0% | 2.35 | 2.37 | −1.3% |
+| 14 days | 214 | 1.17 (was 1.28) | +3.6% | +13.3% | 1.67 | 1.39 | −1.5% |
+| 30 days | 199 | 0.95 (was 1.11) | +6.1% | +20.5% | 1.35 | 1.08 | −1.6% |
+
+- **The hold is 7 days**, the largest t, as the rule above says.
+- **The drift is there and the trade is weak.** The median listing falls about 10% against BTC in its first week.
+  A few listings rise hard against the short and pay heavy funding while they do: mean funding is −1.3% a position
+  against a median of +0.1%, and the mean position is a quarter of the median. The halves fade, +81 then +28 bps
+  a day. The break-even listing cost is about 140 bps a side, so costs are not the problem.
+- **The abandon clause does not apply:** there is drift at every hold. **Power is low:** at the holdout's 638 days
+  the same effect gives t about 1.8, perhaps 2 with 2025's denser listings, against a bar of 3.
+- The holdout is the only historical sample for this question. Whether to read it with this specification, or to
+  add a cover rule first, is the account holder's decision, asked on 2026-11-02 before any pre-registration.

@@ -58,6 +58,15 @@ class TestEvents(unittest.TestCase):
         self.assertEqual(c.at["NOTIMEUSDT", "excluded"], "no listing time")
         self.assertEqual(c.at["DEFIUSDT", "excluded"], "index")
 
+    def test_the_listing_day_is_the_first_trade(self):
+        days = [D("2023-05-10"), D("2023-06-01"), D("2023-07-01")]
+        ev = pd.DataFrame({"symbol": ["A", "B", "C"], "listing_day": days})
+        d = ld.dated(ev, {"A": D("2023-05-11"), "B": D("2023-06-01")}).set_index("symbol")
+        self.assertEqual(list(d.index), ["A", "B"])                      # C has no bar: dropped
+        self.assertEqual(d.at["A", "listing_day"], D("2023-05-11"))
+        self.assertEqual(d.at["A", "onboard_day"], D("2023-05-10"))
+        self.assertEqual(d.at["B", "listing_day"], D("2023-06-01"))
+
     def test_window_and_span(self):
         entry, exit_ = ld.window(D("2023-05-10"), 14)
         self.assertEqual((entry, exit_), (D("2023-05-11"), D("2023-05-25")))

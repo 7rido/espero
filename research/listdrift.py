@@ -158,13 +158,14 @@ def save_manifest(rows: List[dict]) -> None:
 
 
 # ------------------------------------------------------------------------------------------------ the run
-def positions(e: pd.DataFrame, hold: int, span: Tuple[pd.Timestamp, pd.Timestamp], lag: int = 1) -> pd.DataFrame:
-    """The candidate events whose whole position, at this hold and entry lag, lies inside the span."""
+def positions(ev: pd.DataFrame, hold: int, span: Tuple[pd.Timestamp, pd.Timestamp], lag: int = 1) -> pd.DataFrame:
+    """The dated events whose whole position, at this hold and entry lag, lies inside the span."""
     rows = []
-    for _, r in e[e["candidate"] & e["excluded"].eq("")].iterrows():
+    for _, r in ev.iterrows():
         entry, exit_ = ld.window(r["listing_day"], hold, lag)
         if ld.inside(entry, exit_, span):
-            rows.append({"symbol": r["symbol"], "listing_day": r["listing_day"], "entry": entry, "exit": exit_})
+            rows.append({"symbol": r["symbol"], "listing_day": r["listing_day"], "onboard_day": r["onboard_day"],
+                         "entry": entry, "exit": exit_})
     return pd.DataFrame(rows)
 
 
@@ -173,14 +174,13 @@ def run(design: bool) -> Tuple[List[str], dict]:
     last_month = ld.DESIGN_LAST_MONTH if design else ld.HOLDOUT_LAST_MONTH
     e = load_events()
     holds = ld.HOLDS if design else (ld.CHOSEN_HOLD,) + tuple(h for h in ld.HOLDS if h != ld.CHOSEN_HOLD)
-    plans = {h: positions(e, h, span) for h in holds}
-    plans["lag2"] = positions(e, holds[0], span, lag=2)
-    symbols = sorted({s for p in plans.values() if len(p) for s in p["symbol"]})
-
     with ThreadPoolExecutor(WORKERS) as ex:
         allbars = dict(zip(sorted(p.name for p in KLINES.iterdir()),
                            ex.map(lambda s: bars(s, last_month), sorted(p.name for p in KLINES.iterdir()))))
     allbars = {s: b for s, b in allbars.items() if len(b)}
+    events = ld.dated(e[e["candidate"] & e["excluded"].eq("")], {s: b.index[0] for s, b in allbars.items()})
+    plans = {h: positions(events, h, span) for h in holds}
+    plans["lag2"] = positions(events, holds[0], span, lag=2)
     btc = allbars["BTCUSDT"]
     btc_rates = btc_funding(last_month)
     volume = pd.DataFrame({s: b["quote_volume"] for s, b in allbars.items()})
@@ -277,10 +277,11 @@ def report(results: dict, design: bool, lc: float, hc: float, e: pd.DataFrame, a
     say(f"costs per side: listing {lc * 1e4:.2f} bps (fee {ld.FEE_BPS} + assumed half-spread "
         f"{ld.LISTING_HALF_SPREAD_BPS}), BTC {hc * 1e4:.4f} bps (espero.costs, measured)")
     say("")
-    if design:
-        p = results[ld.HOLDS[0]]["plan"]
-        agree = [allbars[s].index[0] == d for s, d in zip(p["symbol"], p["listing_day"]) if s in allbars]
-        say(f"listing day equals the first daily bar's day for {sum(agree)} of {len(agree)} design events")
+    p = results[next(iter(results))]["plan"]
+    if len(p):
+        gap = (p["listing_day"] - p["onboard_day"]).dt.days
+        say(f"listing day = the first daily bar's day; Binance's onboardDate fell on it for {int((gap == 0).sum())} "
+            f"of {len(p)} positions, earlier by {dict(sorted(gap[gap != 0].value_counts().items()))} days for the rest")
         say("")
     keys = [k for k in results if k != "lag2"]
     best = None
@@ -295,8 +296,8 @@ def report(results: dict, design: bool, lc: float, hc: float, e: pd.DataFrame, a
         fund = ld.totals(r["net"], "funding")
         say(f"  funding per position: mean {fund.mean() * 100:+.2f}%  median {fund.median() * 100:+.2f}%; "
             f"break-even listing cost per side {ld.break_even_bps(r['net'], lc):+.1f} bps")
-        say(f"  halves {ev['first_half'] * 1e4:+.2f} / {ev['second_half'] * 1e4:+.2f} bps a day; dropped "
-            f"{dict(pd.Series(r['dropped']).value_counts()) if r['dropped'] else {}}")
+        dropped = {k: int(v) for k, v in pd.Series(r["dropped"]).value_counts().items()} if r["dropped"] else {}
+        say(f"  halves {ev['first_half'] * 1e4:+.2f} / {ev['second_half'] * 1e4:+.2f} bps a day; dropped {dropped}")
         if best is None or (math.isfinite(ev["t"]) and ev["t"] > best[1]):
             best = (h, ev["t"])
         say("")

@@ -144,7 +144,9 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
     "66": ("A HAR volatility forecast against the books' trailing variance", ["EXPLORE_VOLF.md", "volf.py", "volf_design_run.txt",
                                                                          "PREREGISTRATION_VOLF.md", "PREREGISTRATION_VOLF.md.ots",
                                                                          "RESULTS_VOLF.md", "volf_run.txt", "volf_series.csv"]),
-    "67": ("New Binance USD-M perps after they list, short against BTC", ["EXPLORE_LISTDRIFT.md", "listdrift.py", "listdrift_events.csv"]),
+    "67": ("New Binance USD-M perps after they list, short against BTC", ["EXPLORE_LISTDRIFT.md", "listdrift.py", "listdrift_events.csv",
+                                                                            "listdrift_manifest.csv", "listdrift_design_run.txt",
+                                                                            "listdrift_design_run_onboard.txt"]),
 }
 
 # files that belong to the project as a whole, not to one test

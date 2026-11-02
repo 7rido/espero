@@ -82,6 +82,16 @@ def classify(symbols: Dict[str, dict], first_month: Dict[str, str], since: str =
     return pd.DataFrame(rows)
 
 
+def dated(events: pd.DataFrame, first_bar: Dict[str, pd.Timestamp]) -> pd.DataFrame:
+    """The events with the listing day moved to the day of the symbol's first daily bar, when trading began.
+    Binance's onboardDate, which decided which events exist, stays as `onboard_day`: it falls one to four days
+    before the first trade for about one event in seven. An event with no bar in the files read is dropped."""
+    out = events.copy()
+    out["onboard_day"] = out["listing_day"]
+    out["listing_day"] = out["symbol"].map(first_bar)
+    return out[out["listing_day"].notna()]
+
+
 def window(listing_day: pd.Timestamp, hold: int, entry_lag: int = 1) -> Tuple[pd.Timestamp, pd.Timestamp]:
     """Entry at the open of the day `entry_lag` after the listing day; exit at the open `hold` days later."""
     entry = listing_day + pd.Timedelta(days=entry_lag)

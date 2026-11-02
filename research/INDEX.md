@@ -551,6 +551,21 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `FORWARD_LADDER.md`
 
+## #61 — aggr's forward bars rebuilt from the raw streams
+
+*#61 (not in trials.csv)*
+
+- `PREREGISTRATION_RAWBARS.md`
+- `PREREGISTRATION_RAWBARS.md.ots`
+- `rawbars.py`  (rule: `espero/rawbars.py`)
+
+## #62 — The paper fills replayed on the recorded book
+
+*#62 (not in trials.csv)*
+
+- `PREREGISTRATION_REPLAYSIM.md`
+- `PREREGISTRATION_REPLAYSIM.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

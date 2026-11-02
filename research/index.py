@@ -130,6 +130,10 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
            ["FORWARD_HLP.md", "MECHANISM_LIQUIDATION.md", "RESULTS_HLABSORB.md"]),
     "59": ("Forward: #58 with a guard against failed reads", ["FORWARD_HLP2.md"]),
     "60": ("Forward: the liquidation ladder", ["FORWARD_LADDER.md"]),
+    "61": ("aggr's forward bars rebuilt from the raw streams", ["PREREGISTRATION_RAWBARS.md",
+                                                                "PREREGISTRATION_RAWBARS.md.ots", "rawbars.py"]),
+    "62": ("The paper fills replayed on the recorded book", ["PREREGISTRATION_REPLAYSIM.md",
+                                                             "PREREGISTRATION_REPLAYSIM.md.ots"]),
 }
 
 # files that belong to the project as a whole, not to one test

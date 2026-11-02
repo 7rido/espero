@@ -113,7 +113,7 @@ class TestRender(unittest.TestCase):
         real = ui.findings()                            # the repo's own files all parse
         self.assertTrue(real and all(r["verdict"] for r in real))
         self.assertIn("#44", [r["test"] for r in real])
-        self.assertEqual([r["test"] for r in real][:3], ["#66", "#57", "#52–#56"])
+        self.assertEqual([r["test"] for r in real][:3], ["#67", "#66", "#57"])
 
     def test_readout_is_on_the_menu_and_opens_the_real_file(self):
         self.assertIn(ui.act_readout, [fn for _, fn in ui.MENU])

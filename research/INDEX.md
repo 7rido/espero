@@ -606,11 +606,12 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #67 — New Binance USD-M perps after they list, short against BTC
 
-*#67 (not in trials.csv)*
+*#67 fail*
 
 - `EXPLORE_LISTDRIFT.md`
 - `PREREGISTRATION_LISTDRIFT.md`
 - `PREREGISTRATION_LISTDRIFT.md.ots`
+- `RESULTS_LISTDRIFT.md`
 - `listdrift.py`  (rule: `espero/listdrift.py`)
 - `listdrift_design_run.txt`
 - `listdrift_design_run_cover.txt`
@@ -618,6 +619,8 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `listdrift_design_run_onboard.txt`
 - `listdrift_events.csv`
 - `listdrift_manifest.csv`
+- `listdrift_run.txt`
+- `listdrift_series.csv`
 
 ## Cross-cutting
 

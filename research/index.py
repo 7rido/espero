@@ -149,7 +149,8 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
                                                                             "listdrift_design_run_onboard.txt",
                                                                             "listdrift_design_run_nocover.txt",
                                                                             "listdrift_design_run_cover.txt", "PREREGISTRATION_LISTDRIFT.md",
-                                                                            "PREREGISTRATION_LISTDRIFT.md.ots"]),
+                                                                            "PREREGISTRATION_LISTDRIFT.md.ots",
+                                                                            "RESULTS_LISTDRIFT.md", "listdrift_run.txt", "listdrift_series.csv"]),
 }
 
 # files that belong to the project as a whole, not to one test

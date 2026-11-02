@@ -1,0 +1,57 @@
+#67 listing drift: HOLDOUT, read once
+
+USDT perps first traded 2023-01 or later: 734; events: 513
+  excluded, type EQUITY: 174
+  excluded, type HK_EQUITY: 15
+  excluded, type COMMODITY: 8
+  excluded, type KR_EQUITY: 8
+  excluded, listing month differs from the first bar's: 6
+  excluded, type PREMARKET: 4
+  excluded, type CN_EQUITY: 2
+  excluded, no listing time: 1
+  excluded, index: 1
+  excluded, base listed before: 1
+  excluded, type FX: 1
+costs per side: listing 15.00 bps (fee 5.0 + assumed half-spread 10.0), BTC 5.3342 bps (espero.costs, measured)
+
+listing day = the first daily bar's day; Binance's onboardDate fell on it for 288 of 288 positions, earlier by {} days for the rest
+
+hold 7 days: short the listing, long BTC, net of funding and costs
+  net                                          positions  288  days  553  daily mean  -52.41 bps  t  -0.89  mean position   -0.54%  median  +12.73%
+  gross: no funding, no costs                  positions  288  days  553  daily mean  -12.09 bps  t  -0.21  mean position   +2.58%  median  +14.37%
+  unhedged short, net                          positions  288  days  553  daily mean  -46.79 bps  t  -0.78  mean position   -0.10%  median  +14.43%
+  abnormal: short the listing, long the basket positions  288  days  553  daily mean  -34.49 bps  t  -0.59  mean position   +0.69%  median  +13.06%
+  with the cover rule, net                     positions  288  days  536  daily mean   +9.73 bps  t  +0.22  mean position   +1.23%  median  +10.93%
+  the cover rule closes early, on a close above the listing day's high: 79 of 288
+  funding per position: mean -2.71%  median -0.09%; break-even listing cost per side -12.0 bps
+  halves -42.97 / -61.88 bps a day; dropped {}
+
+hold 14 days: short the listing, long BTC, net of funding and costs
+  net                                          positions  288  days  610  daily mean   -5.72 bps  t  -0.14  mean position   -3.52%  median  +19.44%
+  gross: no funding, no costs                  positions  288  days  610  daily mean  +29.19 bps  t  +0.70  mean position   +0.45%  median  +23.18%
+  unhedged short, net                          positions  288  days  610  daily mean   -3.34 bps  t  -0.08  mean position   -2.64%  median  +19.86%
+  abnormal: short the listing, long the basket positions  288  days  610  daily mean   +7.02 bps  t  +0.16  mean position   -3.14%  median  +18.36%
+  with the cover rule, net                     positions  288  days  598  daily mean   +9.34 bps  t  +0.29  mean position   +0.11%  median  +13.32%
+  the cover rule closes early, on a close above the listing day's high: 95 of 288
+  funding per position: mean -3.56%  median -0.22%; break-even listing cost per side -161.1 bps
+  halves -3.89 / -7.55 bps a day; dropped {}
+
+hold 30 days: short the listing, long BTC, net of funding and costs
+  net                                          positions  285  days  636  daily mean  -36.86 bps  t  -0.77  mean position  -37.62%  median  +25.04%
+  gross: no funding, no costs                  positions  285  days  636  daily mean  +28.04 bps  t  +0.82  mean position   +2.57%  median  +29.04%
+  unhedged short, net                          positions  285  days  636  daily mean  -35.26 bps  t  -0.75  mean position  -35.90%  median  +28.82%
+  abnormal: short the listing, long the basket positions  285  days  636  daily mean  +10.32 bps  t  +0.29  mean position   -4.10%  median  +24.28%
+  with the cover rule, net                     positions  285  days  631  daily mean  +13.28 bps  t  +0.59  mean position   +0.05%  median  +17.19%
+  the cover rule closes early, on a close above the listing day's high: 109 of 285
+  funding per position: mean -39.78%  median -0.60%; break-even listing cost per side -1866.0 bps
+  halves -77.55 / +3.82 bps a day; dropped {}
+
+PRIMARY, hold 7 days: daily mean -52.41 bps, t -0.89 (Newey-West, 5 lags), p 0.375, q 0.7291 over 35 judged tests including #67
+  positions 288, days 553; halves -42.97 / -61.88 bps; median position +12.73%; abnormal daily mean -34.49 bps (t -0.59)
+Outcome: FAIL  checks {'t': False, 'halves': False, 'median': True, 'abnormal': False, 'fdr': False}
+
+Information only, deciding nothing:
+  entry two days after the listing, hold 7     positions  290  days  556  daily mean   +3.51 bps  t  +0.07  mean position   -0.29%  median   +9.07%
+  by quarter of entry: 2025Q1 +14.33% (49); 2025Q2 -0.60% (65); 2025Q3 -16.32% (67); 2025Q4 +5.78% (54); 2026Q1 +12.14% (29); 2026Q2 -26.59% (16); 2026Q3 +4.50% (8)
+  by the listing day's own move (median -1.7%): above +0.95% (144), at or below -2.03% (144)
+  positions whose listing stopped trading inside the hold: 0; worst rise against the short at a daily close while it was open: +484%

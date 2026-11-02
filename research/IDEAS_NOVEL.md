@@ -267,6 +267,19 @@ Hyperliquid alone, with Binance as the signal. It needs second-by-second recordi
   same sign as #25 at 5 minutes, t at most 2.5 on 81 hours. Pre-registered as #65
   ([FORWARD_OI5M.md](FORWARD_OI5M.md)) the same day, window 2026-11-03 to 2027-03-31.
 
+### 19. Which new listings squeeze: the filter #67 lacked (added 2026-11-02)
+
+- **Mechanism.** #67 found the median new Binance USD-M perp falling 10 to 15% against BTC in its first week, in
+  2023–24 and again in 2025–26, while a few listings squeezed (one by 484% in a week) and charged their shorts
+  heavy funding. The squeeze needs a crowd of shorts and a thin float; both leave traces at the entry: funding
+  already negative, open interest large against volume, a small circulating supply.
+- **Evidence.** #67 itself: the fade in the median, the tail in the mean, funding concentrated in a few
+  positions. Nothing yet on whether the squeezes can be told apart in advance.
+- **The test it would need.** A filter fixed before any look, from the mechanism: skip a listing whose funding
+  over its first day is negative, or whose open interest over its first day is above a set multiple of its
+  volume. Listings after 2026-09 only, since #67 read 2023–2026: forward, at about 5 to 10 coin listings a month.
+- **Status.** Idea. Not pre-registered.
+
 ### Not worth trying here
 
 - **Order-book imbalance and queue games**: firms with servers next to the exchange win that race.

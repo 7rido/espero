@@ -1,0 +1,244 @@
+explored: 971 slots, 2026-10-29 15:05:00+00:00 to 2026-11-01 23:55:00+00:00, 179 coins; sealed from 2026-11-02 00:00:00+00:00
+panel rows 173630; events 7173 (3587 falls, 3586 rises); independent hours about 81
+
+== whole panel
+-- every slot, unconditional:
+  all slots, forward 15m       n=173093  slots= 967  mean=    -2.0 bps  t=-0.98  hit=0.48
+  all slots, forward 1h        n=171482  slots= 958  mean=    -8.7 bps  t=-1.15  hit=0.46
+  all slots, forward 4h        n=165038  slots= 922  mean=   -34.0 bps  t=-0.89  hit=0.46
+-- falls: 3587 events, median 5-minute move -85 bps
+ forward 15m:
+  all                          n= 3585  slots= 548  mean=   -18.3 bps  t=-0.79  hit=0.50
+  closing (d < 0)              n= 2042  slots= 384  mean=   -13.0 bps  t=-0.57  hit=0.51
+  opening (d > 0)              n= 1483  slots= 352  mean=   -26.2 bps  t=-1.06  hit=0.49
+  closing hard (d <= -1%)      n=  271  slots= 108  mean=   -14.7 bps  t=-0.70  hit=0.46
+  opening hard (d >= +1%)      n=  202  slots= 100  mean=   -58.9 bps  t=-2.27  hit=0.40
+ forward 1h:
+  all                          n= 3581  slots= 546  mean=   -23.7 bps  t=-0.83  hit=0.48
+  closing (d < 0)              n= 2038  slots= 382  mean=   -18.5 bps  t=-0.61  hit=0.49
+  opening (d > 0)              n= 1483  slots= 352  mean=   -31.5 bps  t=-1.16  hit=0.46
+  closing hard (d <= -1%)      n=  271  slots= 108  mean=   +12.5 bps  t=+0.35  hit=0.61
+  opening hard (d >= +1%)      n=  202  slots= 100  mean=   -49.7 bps  t=-2.08  hit=0.41
+ forward 4h:
+  all                          n= 3557  slots= 536  mean=  -121.5 bps  t=-0.86  hit=0.40
+  closing (d < 0)              n= 2030  slots= 378  mean=  -118.3 bps  t=-0.79  hit=0.40
+  opening (d > 0)              n= 1469  slots= 345  mean=  -127.0 bps  t=-0.96  hit=0.40
+  closing hard (d <= -1%)      n=  270  slots= 107  mean=   -49.6 bps  t=-0.27  hit=0.48
+  opening hard (d >= +1%)      n=  201  slots=  99  mean=   -83.3 bps  t=-0.54  hit=0.43
+-- rises: 3586 events, median 5-minute move +74 bps
+ forward 15m:
+  all                          n= 3585  slots= 597  mean=    +3.6 bps  t=+0.42  hit=0.50
+  closing (d < 0)              n= 1864  slots= 422  mean=    +3.7 bps  t=+0.43  hit=0.50
+  opening (d > 0)              n= 1654  slots= 422  mean=    +3.8 bps  t=+0.44  hit=0.50
+  closing hard (d <= -1%)      n=  109  slots=  78  mean=    +6.2 bps  t=+0.43  hit=0.50
+  opening hard (d >= +1%)      n=  176  slots= 122  mean=   +10.7 bps  t=+0.73  hit=0.53
+ forward 1h:
+  all                          n= 3569  slots= 594  mean=    -8.5 bps  t=-0.50  hit=0.47
+  closing (d < 0)              n= 1856  slots= 420  mean=    -8.2 bps  t=-0.49  hit=0.46
+  opening (d > 0)              n= 1646  slots= 419  mean=    -7.9 bps  t=-0.44  hit=0.47
+  closing hard (d <= -1%)      n=  108  slots=  77  mean=   -17.3 bps  t=-0.57  hit=0.43
+  opening hard (d >= +1%)      n=  175  slots= 121  mean=   -49.1 bps  t=-1.87  hit=0.41
+ forward 4h:
+  all                          n= 3556  slots= 583  mean=   -43.6 bps  t=-0.50  hit=0.44
+  closing (d < 0)              n= 1850  slots= 414  mean=   -36.2 bps  t=-0.41  hit=0.44
+  opening (d > 0)              n= 1640  slots= 414  mean=   -55.8 bps  t=-0.63  hit=0.42
+  closing hard (d <= -1%)      n=  108  slots=  77  mean=   +23.3 bps  t=+0.22  hit=0.49
+  opening hard (d >= +1%)      n=  175  slots= 121  mean=   -64.7 bps  t=-0.62  hit=0.41
+
+== BTC and ETH
+-- every slot, unconditional:
+  all slots, forward 15m       n= 1934  slots= 967  mean=    -1.2 bps  t=-1.06  hit=0.51
+  all slots, forward 1h        n= 1916  slots= 958  mean=    -5.2 bps  t=-1.23  hit=0.48
+  all slots, forward 4h        n= 1844  slots= 922  mean=   -20.0 bps  t=-1.07  hit=0.54
+-- falls: 40 events, median 5-minute move -40 bps
+ forward 15m:
+  all                          n=   40  slots=  27  mean=    -2.5 bps  t=-0.25  hit=0.55
+  closing (d < 0)              n=   22  slots=  17  mean=   -15.3 bps  t=-2.16  hit=0.32
+  opening (d > 0)              n=   18   (fewer than 20)
+  closing hard (d <= -1%)      n=    1   (fewer than 20)
+  opening hard (d >= +1%)      n=    5   (fewer than 20)
+ forward 1h:
+  all                          n=   40  slots=  27  mean=    -2.5 bps  t=-0.14  hit=0.47
+  closing (d < 0)              n=   22  slots=  17  mean=   -18.9 bps  t=-1.15  hit=0.32
+  opening (d > 0)              n=   18   (fewer than 20)
+  closing hard (d <= -1%)      n=    1   (fewer than 20)
+  opening hard (d >= +1%)      n=    5   (fewer than 20)
+ forward 4h:
+  all                          n=   40  slots=  27  mean=   -41.2 bps  t=-0.51  hit=0.45
+  closing (d < 0)              n=   22  slots=  17  mean=    -7.6 bps  t=-0.13  hit=0.45
+  opening (d > 0)              n=   18   (fewer than 20)
+  closing hard (d <= -1%)      n=    1   (fewer than 20)
+  opening hard (d >= +1%)      n=    5   (fewer than 20)
+-- rises: 40 events, median 5-minute move +35 bps
+ forward 15m:
+  all                          n=   40  slots=  27  mean=    +2.7 bps  t=+0.28  hit=0.55
+  closing (d < 0)              n=   21  slots=  17  mean=    +5.5 bps  t=+0.43  hit=0.67
+  opening (d > 0)              n=   19   (fewer than 20)
+  closing hard (d <= -1%)      n=    2   (fewer than 20)
+  opening hard (d >= +1%)      n=    1   (fewer than 20)
+ forward 1h:
+  all                          n=   40  slots=  27  mean=    -1.7 bps  t=-0.12  hit=0.50
+  closing (d < 0)              n=   21  slots=  17  mean=    -5.6 bps  t=-0.39  hit=0.52
+  opening (d > 0)              n=   19   (fewer than 20)
+  closing hard (d <= -1%)      n=    2   (fewer than 20)
+  opening hard (d >= +1%)      n=    1   (fewer than 20)
+ forward 4h:
+  all                          n=   40  slots=  27  mean=   -65.0 bps  t=-1.04  hit=0.38
+  closing (d < 0)              n=   21  slots=  17  mean=   -55.0 bps  t=-0.81  hit=0.33
+  opening (d > 0)              n=   19   (fewer than 20)
+  closing hard (d <= -1%)      n=    2   (fewer than 20)
+  opening hard (d >= +1%)      n=    1   (fewer than 20)
+
+== tier ≥$50M
+-- every slot, unconditional:
+  all slots, forward 15m       n=10140  slots= 967  mean=    -1.5 bps  t=-0.60  hit=0.49
+  all slots, forward 1h        n=10077  slots= 958  mean=    -8.0 bps  t=-0.90  hit=0.46
+  all slots, forward 4h        n= 9825  slots= 922  mean=   -34.9 bps  t=-0.82  hit=0.46
+-- falls: 270 events, median 5-minute move -90 bps
+ forward 15m:
+  all                          n=  270  slots= 110  mean=    -6.9 bps  t=-0.40  hit=0.50
+  closing (d < 0)              n=  186  slots=  87  mean=    -8.1 bps  t=-0.52  hit=0.45
+  opening (d > 0)              n=   84  slots=  46  mean=    -4.3 bps  t=-0.17  hit=0.63
+  closing hard (d <= -1%)      n=   39  slots=  29  mean=    +8.8 bps  t=+0.36  hit=0.44
+  opening hard (d >= +1%)      n=   18   (fewer than 20)
+ forward 1h:
+  all                          n=  270  slots= 110  mean=    -9.1 bps  t=-0.36  hit=0.50
+  closing (d < 0)              n=  186  slots=  87  mean=    +7.2 bps  t=+0.28  hit=0.49
+  opening (d > 0)              n=   84  slots=  46  mean=   -45.2 bps  t=-1.68  hit=0.51
+  closing hard (d <= -1%)      n=   39  slots=  29  mean=   +52.4 bps  t=+1.21  hit=0.62
+  opening hard (d >= +1%)      n=   18   (fewer than 20)
+ forward 4h:
+  all                          n=  268  slots= 108  mean=   -76.5 bps  t=-0.55  hit=0.46
+  closing (d < 0)              n=  185  slots=  86  mean=   -50.8 bps  t=-0.31  hit=0.49
+  opening (d > 0)              n=   83  slots=  45  mean=  -133.8 bps  t=-1.67  hit=0.39
+  closing hard (d <= -1%)      n=   38  slots=  28  mean=    +1.1 bps  t=+0.00  hit=0.58
+  opening hard (d >= +1%)      n=   17   (fewer than 20)
+-- rises: 280 events, median 5-minute move +87 bps
+ forward 15m:
+  all                          n=  280  slots= 111  mean=    +9.7 bps  t=+0.87  hit=0.55
+  closing (d < 0)              n=  134  slots=  77  mean=   +18.6 bps  t=+1.63  hit=0.59
+  opening (d > 0)              n=  146  slots=  70  mean=    +1.5 bps  t=+0.11  hit=0.51
+  closing hard (d <= -1%)      n=   20  slots=  18  mean=   -11.5 bps  t=-0.57  hit=0.45
+  opening hard (d >= +1%)      n=   22  slots=  16  mean=   -44.1 bps  t=-1.14  hit=0.36
+ forward 1h:
+  all                          n=  280  slots= 111  mean=    -7.2 bps  t=-0.25  hit=0.49
+  closing (d < 0)              n=  134  slots=  77  mean=    +1.2 bps  t=+0.05  hit=0.51
+  opening (d > 0)              n=  146  slots=  70  mean=   -14.8 bps  t=-0.40  hit=0.48
+  closing hard (d <= -1%)      n=   20  slots=  18  mean=   -36.6 bps  t=-0.77  hit=0.50
+  opening hard (d >= +1%)      n=   22  slots=  16  mean=  -143.8 bps  t=-2.18  hit=0.23
+ forward 4h:
+  all                          n=  280  slots= 111  mean=   -42.8 bps  t=-0.40  hit=0.42
+  closing (d < 0)              n=  134  slots=  77  mean=    +6.8 bps  t=+0.07  hit=0.46
+  opening (d > 0)              n=  146  slots=  70  mean=   -88.3 bps  t=-0.75  hit=0.38
+  closing hard (d <= -1%)      n=   20  slots=  18  mean=   +13.0 bps  t=+0.14  hit=0.50
+  opening hard (d >= +1%)      n=   22  slots=  16  mean=  -129.2 bps  t=-0.91  hit=0.36
+
+== tier $5M–$50M
+-- every slot, unconditional:
+  all slots, forward 15m       n=21300  slots= 967  mean=    -1.5 bps  t=-0.57  hit=0.49
+  all slots, forward 1h        n=21156  slots= 958  mean=    -6.9 bps  t=-0.73  hit=0.48
+  all slots, forward 4h        n=20597  slots= 922  mean=   -20.8 bps  t=-0.47  hit=0.49
+-- falls: 545 events, median 5-minute move -93 bps
+ forward 15m:
+  all                          n=  545  slots= 164  mean=   -12.3 bps  t=-0.54  hit=0.53
+  closing (d < 0)              n=  344  slots= 124  mean=    -9.6 bps  t=-0.41  hit=0.55
+  opening (d > 0)              n=  201  slots=  93  mean=   -17.0 bps  t=-0.76  hit=0.49
+  closing hard (d <= -1%)      n=   38  slots=  22  mean=   -16.6 bps  t=-0.44  hit=0.47
+  opening hard (d >= +1%)      n=   26  slots=  19  mean=   -68.7 bps  t=-1.60  hit=0.42
+ forward 1h:
+  all                          n=  544  slots= 163  mean=   -14.2 bps  t=-0.50  hit=0.49
+  closing (d < 0)              n=  343  slots= 123  mean=   -20.3 bps  t=-0.60  hit=0.48
+  opening (d > 0)              n=  201  slots=  93  mean=    -4.0 bps  t=-0.18  hit=0.51
+  closing hard (d <= -1%)      n=   38  slots=  22  mean=   +46.7 bps  t=+1.63  hit=0.71
+  opening hard (d >= +1%)      n=   26  slots=  19  mean=   -41.6 bps  t=-0.89  hit=0.35
+ forward 4h:
+  all                          n=  541  slots= 161  mean=   -68.0 bps  t=-0.45  hit=0.43
+  closing (d < 0)              n=  341  slots= 122  mean=   -92.0 bps  t=-0.56  hit=0.41
+  opening (d > 0)              n=  200  slots=  92  mean=   -27.1 bps  t=-0.20  hit=0.45
+  closing hard (d <= -1%)      n=   38  slots=  22  mean=   +10.2 bps  t=+0.08  hit=0.50
+  opening hard (d >= +1%)      n=   26  slots=  19  mean=  +114.8 bps  t=+0.57  hit=0.54
+-- rises: 577 events, median 5-minute move +79 bps
+ forward 15m:
+  all                          n=  577  slots= 188  mean=    +2.1 bps  t=+0.18  hit=0.53
+  closing (d < 0)              n=  293  slots= 119  mean=    +3.5 bps  t=+0.31  hit=0.53
+  opening (d > 0)              n=  284  slots= 128  mean=    +0.7 bps  t=+0.05  hit=0.53
+  closing hard (d <= -1%)      n=   16   (fewer than 20)
+  opening hard (d >= +1%)      n=   22  slots=  20  mean=   +24.8 bps  t=+1.18  hit=0.64
+ forward 1h:
+  all                          n=  575  slots= 186  mean=   -10.2 bps  t=-0.52  hit=0.49
+  closing (d < 0)              n=  292  slots= 118  mean=    -6.1 bps  t=-0.32  hit=0.51
+  opening (d > 0)              n=  283  slots= 127  mean=   -14.4 bps  t=-0.65  hit=0.47
+  closing hard (d <= -1%)      n=   16   (fewer than 20)
+  opening hard (d >= +1%)      n=   22  slots=  20  mean=   -93.1 bps  t=-1.61  hit=0.36
+ forward 4h:
+  all                          n=  573  slots= 184  mean=    -6.6 bps  t=-0.06  hit=0.47
+  closing (d < 0)              n=  290  slots= 116  mean=   +22.9 bps  t=+0.23  hit=0.51
+  opening (d > 0)              n=  283  slots= 127  mean=   -36.9 bps  t=-0.36  hit=0.43
+  closing hard (d <= -1%)      n=   16   (fewer than 20)
+  opening hard (d >= +1%)      n=   22  slots=  20  mean=   +26.2 bps  t=+0.13  hit=0.41
+
+== tier <$5M
+-- every slot, unconditional:
+  all slots, forward 15m       n=141653  slots= 967  mean=    -2.1 bps  t=-1.07  hit=0.47
+  all slots, forward 1h        n=140249  slots= 958  mean=    -9.0 bps  t=-1.22  hit=0.46
+  all slots, forward 4h        n=134616  slots= 922  mean=   -36.0 bps  t=-0.95  hit=0.45
+-- falls: 2772 events, median 5-minute move -84 bps
+ forward 15m:
+  all                          n= 2770  slots= 498  mean=   -20.6 bps  t=-0.84  hit=0.49
+  closing (d < 0)              n= 1512  slots= 328  mean=   -14.3 bps  t=-0.59  hit=0.51
+  opening (d > 0)              n= 1198  slots= 321  mean=   -29.2 bps  t=-1.13  hit=0.48
+  closing hard (d <= -1%)      n=  194  slots=  82  mean=   -19.1 bps  t=-0.80  hit=0.47
+  opening hard (d >= +1%)      n=  158  slots=  86  mean=   -67.3 bps  t=-2.47  hit=0.37
+ forward 1h:
+  all                          n= 2767  slots= 497  mean=   -27.0 bps  t=-0.91  hit=0.47
+  closing (d < 0)              n= 1509  slots= 327  mean=   -21.2 bps  t=-0.68  hit=0.49
+  opening (d > 0)              n= 1198  slots= 321  mean=   -35.2 bps  t=-1.20  hit=0.45
+  closing hard (d <= -1%)      n=  194  slots=  82  mean=    -2.2 bps  t=-0.05  hit=0.59
+  opening hard (d >= +1%)      n=  158  slots=  86  mean=   -49.4 bps  t=-2.02  hit=0.41
+ forward 4h:
+  all                          n= 2748  slots= 488  mean=  -136.5 bps  t=-0.97  hit=0.39
+  closing (d < 0)              n= 1504  slots= 324  mean=  -132.5 bps  t=-0.91  hit=0.38
+  opening (d > 0)              n= 1186  slots= 314  mean=  -143.3 bps  t=-1.04  hit=0.39
+  closing hard (d <= -1%)      n=  194  slots=  82  mean=   -71.3 bps  t=-0.38  hit=0.45
+  opening hard (d >= +1%)      n=  158  slots=  86  mean=  -113.9 bps  t=-0.71  hit=0.42
+-- rises: 2729 events, median 5-minute move +73 bps
+ forward 15m:
+  all                          n= 2728  slots= 553  mean=    +3.2 bps  t=+0.41  hit=0.49
+  closing (d < 0)              n= 1437  slots= 381  mean=    +2.4 bps  t=+0.27  hit=0.49
+  opening (d > 0)              n= 1224  slots= 375  mean=    +4.8 bps  t=+0.59  hit=0.50
+  closing hard (d <= -1%)      n=   73  slots=  61  mean=   +12.6 bps  t=+0.67  hit=0.49
+  opening hard (d >= +1%)      n=  132  slots= 100  mean=   +17.5 bps  t=+1.02  hit=0.55
+ forward 1h:
+  all                          n= 2714  slots= 550  mean=    -8.3 bps  t=-0.52  hit=0.46
+  closing (d < 0)              n= 1430  slots= 379  mean=    -9.5 bps  t=-0.55  hit=0.44
+  opening (d > 0)              n= 1217  slots= 372  mean=    -5.6 bps  t=-0.35  hit=0.47
+  closing hard (d <= -1%)      n=   72  slots=  60  mean=   -14.2 bps  t=-0.39  hit=0.38
+  opening hard (d >= +1%)      n=  131  slots=  99  mean=   -25.8 bps  t=-0.96  hit=0.44
+ forward 4h:
+  all                          n= 2703  slots= 541  mean=   -51.5 bps  t=-0.62  hit=0.43
+  closing (d < 0)              n= 1426  slots= 375  mean=   -52.3 bps  t=-0.61  hit=0.43
+  opening (d > 0)              n= 1211  slots= 367  mean=   -56.3 bps  t=-0.69  hit=0.43
+  closing hard (d <= -1%)      n=   72  slots=  60  mean=   +21.4 bps  t=+0.19  hit=0.49
+  opening hard (d >= +1%)      n=  131  slots=  99  mean=   -69.2 bps  t=-0.77  hit=0.42
+
+== the second look: the hour before the event (OI change over the previous 12 slots, split at the coin median)
+-- falls, forward 1h:
+  crowded hour before          n= 1674  slots= 392  mean=   -38.2 bps  t=-1.23  hit=0.45
+  thinning hour before         n= 1873  slots= 357  mean=   -12.5 bps  t=-0.46  hit=0.50
+  closing, crowded before      n=  711  slots= 217  mean=   -23.7 bps  t=-0.79  hit=0.47
+  closing, thinning before     n= 1312  slots= 282  mean=   -16.2 bps  t=-0.52  hit=0.50
+-- falls, forward 4h:
+  crowded hour before          n= 1659  slots= 386  mean=  -124.6 bps  t=-0.96  hit=0.39
+  thinning hour before         n= 1864  slots= 350  mean=  -116.5 bps  t=-0.75  hit=0.41
+  closing, crowded before      n=  708  slots= 215  mean=  -113.5 bps  t=-0.86  hit=0.38
+  closing, thinning before     n= 1307  slots= 279  mean=  -119.3 bps  t=-0.73  hit=0.41
+-- rises, forward 1h:
+  crowded hour before          n= 1727  slots= 453  mean=   -10.6 bps  t=-0.73  hit=0.48
+  thinning hour before         n= 1597  slots= 367  mean=   -15.8 bps  t=-0.72  hit=0.43
+  closing, crowded before      n=  717  slots= 262  mean=    -8.8 bps  t=-0.58  hit=0.47
+  closing, thinning before     n= 1024  slots= 293  mean=   -13.4 bps  t=-0.66  hit=0.44
+-- rises, forward 4h:
+  crowded hour before          n= 1721  slots= 447  mean=   -30.1 bps  t=-0.39  hit=0.46
+  thinning hour before         n= 1590  slots= 362  mean=   -30.2 bps  t=-0.28  hit=0.48
+  closing, crowded before      n=  714  slots= 259  mean=   -27.4 bps  t=-0.35  hit=0.45
+  closing, thinning before     n= 1021  slots= 290  mean=   -21.1 bps  t=-0.21  hit=0.48

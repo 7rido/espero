@@ -600,9 +600,12 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 **What a pass leads to, and what is still untested**
 
 - `ERRATA.md`
+- `EXPLORE_OI5M.md`
 - `FORWARD_FAMILY.md`
 - `IDEAS_NOVEL.md`
 - `OPERATOR_READOUT.md`
+- `oi5m_explore.py`
+- `oi5m_explore_run.txt`
 
 **Costs and venues**
 

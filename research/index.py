@@ -147,6 +147,7 @@ CROSS_CUTTING: Dict[str, List[str]] = {
     "The ledger of every test": ["trials.csv", "trials_dsr.csv", "trials_scored.csv", "trials_spa_series.csv",
                                  "trials_summary.json", "fdr_rescore.py", "FDR_STANDARD.md", "ROBUSTNESS_STANDARD.md"],
     "What a pass leads to, and what is still untested": ["FORWARD_FAMILY.md", "IDEAS_NOVEL.md", "ERRATA.md",
+                                                        "EXPLORE_OI5M.md", "oi5m_explore.py", "oi5m_explore_run.txt",
                                                           "OPERATOR_READOUT.md"],
     "Costs and venues": ["RECHECK_COSTS.md", "VENUE_CONFIRMATION.md", "VENUE_NONUS.md", "HL_ARCHIVE.md"],
     "This index": ["index.py"],

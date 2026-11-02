@@ -263,7 +263,9 @@ Hyperliquid alone, with Binance as the signal. It needs second-by-second recordi
 - **What it is.** A live read, not a trade: it tells the screen which kind of fall is on it. The trade
   it would inform is #26's rule, already a pass. A pre-registration would test whether the open-interest
   split improves #26's rule out of sample, nothing else.
-- **Status.** Idea. The data is recorded; no pre-registration written.
+- **Status.** Explored on 2026-11-02 on the days before it ([EXPLORE_OI5M.md](EXPLORE_OI5M.md)): the
+  same sign as #25 at 5 minutes, t at most 2.5 on 81 hours. The forward test it suggests is written there;
+  no pre-registration yet.
 
 ### Not worth trying here
 

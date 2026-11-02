@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from espero.audit import trade_weighted_nw  # noqa: E402
 from espero.liqvault import tier_of  # noqa: E402
 
 DATA = Path(__file__).resolve().parents[1] / "data" / "hlcollect" / "ctx"
@@ -65,17 +64,40 @@ def events(p: pd.DataFrame) -> pd.DataFrame:
     return p[p["kind"] != ""]
 
 
+def cluster_t(x: pd.Series, slot: pd.Series, lags: int) -> dict:
+    """Mean with a t whose variance sums the residuals within each 5-minute slot (the whole panel moves
+    at once) and lets neighbouring slots' sums correlate over `lags` slots (Bartlett weights), because a
+    forward window of `lags` slots overlaps the next events' windows. Added after the first run replaced
+    `espero.audit.trade_weighted_nw`, whose clusters are days."""
+    n = int(x.size)
+    m = float(x.mean())
+    s = (x - m).groupby(slot).sum().sort_index()
+    grid = pd.RangeIndex(int(s.index.min()), int(s.index.max()) + SLOT, SLOT)
+    v = s.reindex(grid, fill_value=0.0).to_numpy()
+    var = float(v @ v)
+    for k in range(1, lags + 1):
+        if k < v.size:
+            var += 2.0 * (1 - k / (lags + 1)) * float(v[k:] @ v[:-k])
+    se = np.sqrt(max(var, 0.0)) / n
+    return {"mean": m, "t": m / se if se > 0 else np.nan, "slots": int(s.size)}
+
+
 def line(label: str, x: pd.DataFrame, col: str) -> str:
     v = x[col].dropna()
     if len(v) < MIN_EVENTS:
         return f"  {label:<28} n={len(v):5d}   (fewer than {MIN_EVENTS})"
-    s = trade_weighted_nw(v, x.loc[v.index, "slot"], lags=1)
-    return (f"  {label:<28} n={len(v):5d}  slots={s['days']:4d}  mean={s['mean']:+8.1f} bps  t={s['t']:+5.2f}  "
+    s = cluster_t(v, x.loc[v.index, "slot"], HORIZONS[col.split("_")[1]])
+    return (f"  {label:<28} n={len(v):5d}  slots={s['slots']:4d}  mean={s['mean']:+8.1f} bps  t={s['t']:+5.2f}  "
             f"hit={(v > 0).mean():.2f}")
 
 
-def report(ev: pd.DataFrame, title: str) -> None:
+def report(ev: pd.DataFrame, title: str, base: pd.DataFrame) -> None:
+    """`base` is every slot of the group, event or not: the unconditional forward return the events are
+    read against. Added after the first run, in which every 4-hour figure carried the period's fall."""
     print(f"\n== {title}")
+    print("-- every slot, unconditional:")
+    for h in HORIZONS:
+        print(line(f"all slots, forward {h}", base, f"fwd_{h}"))
     for kind in ("fall", "rise"):
         e = ev[ev["kind"] == kind]
         print(f"-- {kind}s: {len(e)} events, median 5-minute move {e['r'].median() * 1e4:+.0f} bps")
@@ -97,10 +119,11 @@ def main() -> int:
     ev = events(p)
     print(f"panel rows {len(p)}; events {len(ev)} ({(ev['kind'] == 'fall').sum()} falls, {(ev['kind'] == 'rise').sum()} rises); "
           f"independent hours about {len(slots) / 12:.0f}")
-    report(ev, "whole panel")
-    report(ev[ev["coin"].isin(["BTC", "ETH"])], "BTC and ETH")
+    report(ev, "whole panel", p)
+    big = p["coin"].isin(["BTC", "ETH"])
+    report(ev[ev["coin"].isin(["BTC", "ETH"])], "BTC and ETH", p[big])
     for tier in ("≥$50M", "$5M–$50M", "<$5M"):
-        report(ev[ev["tier"] == tier], f"tier {tier}")
+        report(ev[ev["tier"] == tier], f"tier {tier}", p[p["tier"] == tier])
     print("\n== the second look: the hour before the event (OI change over the previous 12 slots, split at the coin median)")
     e = ev[np.isfinite(ev["d1h"])].copy()
     med = e.groupby("coin")["d1h"].transform("median")

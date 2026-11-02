@@ -196,9 +196,9 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlbook-lau
 
 ## The raw stream recorder
 
-`espero rawrec --loop` keeps every websocket frame from Bybit, OKX and Hyperliquid (mainnet and testnet) on
-the forward coins and the paper books' holdings, into the folder named by `ESPERO_RAW_DIR` (docs/DATA.md,
-section 5). Public data only; it never signs or trades. It needs `pip install -e ".[raw]"` (zstandard,
+`espero rawrec --loop` keeps every websocket frame from Binance, Bybit, OKX, Hyperliquid (mainnet and testnet)
+and Coinbase spot on the forward coins and the paper books' holdings, into the folder named by `ESPERO_RAW_DIR`
+(docs/DATA.md, section 5). Public data only; it never signs or trades. It needs `pip install -e ".[raw]"` (zstandard,
 websockets). It refuses to start without `ESPERO_RAW_DIR`, and refuses a folder under the repo's `data/`,
 where `hlcollect` and `hlbook` already write.
 
@@ -215,9 +215,9 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp
   words for what the book and flow show with a net lean; it is untested, outside the registry, and written
   nowhere. A rule anyone wants to act on is a numbered pre-registration first.
 - Gaps: `espero rawrec --gaps YYYY-MM-DD` shows where the recorder itself was silent (asleep or down). A venue that dropped the connection while the recorder ran shows as `connected: false` heartbeats on the tape, not as a gap. Frames missed either way are gone.
-- Disk: about 4 GB a day with every book channel (Binance is over half), 0.3 GB without. Under 30 GB free the
-  book channels stop and the trades continue. Point `ESPERO_RAW_DIR` at a disk with room (the Mac's own holds
-  about a month); the folder is not in the weekly release.
+- Disk: about 6 GB a day with every book channel (Binance and Coinbase are most of it), 0.3 GB without. Under
+  30 GB free the book channels stop and the trades continue. Point `ESPERO_RAW_DIR` at a disk with room (the
+  Mac's own holds about three weeks); the folder is not in the weekly release.
 - Binance streams through its combined websocket endpoint; its REST answers 451 here, so the top-20 partial
   book is the snapshot and `espero.binance_archive` backfills the public archive for gaps. Don't study the
   tape casually: every look uses up a future holdout. Pre-register first.

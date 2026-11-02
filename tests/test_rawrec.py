@@ -67,6 +67,10 @@ class TestLine(unittest.TestCase):
             ("binance", b'{"stream":"btcusdt@depth@100ms","data":{}}', ("depth@100ms", "BTCUSDT")),
             ("binance", b'{"result":null,"id":1}', ("_ctrl", "")),
             ("okx", b"pong", ("_ctrl", "")),
+            ("coinbase", b'{"type":"match","product_id":"BTC-USD","side":"sell"}', ("match", "BTC-USD")),
+            ("coinbase", b'{"type":"l2update","product_id":"HYPE-USD","changes":[]}', ("l2update", "HYPE-USD")),
+            ("coinbase", b'{"type":"heartbeat","product_id":"BTC-USD"}', ("_ctrl", "")),
+            ("coinbase", b'{"type":"subscriptions","channels":[]}', ("_ctrl", "")),
         ]
         self.assertEqual(json.loads(rr.line(T0, "_ctrl", "", b"pong"))["d"], "pong", "a text frame stays valid JSON")
         self.assertEqual(rr.listed_only("hyperliquid_testnet", ["HYPE", "UNI"], ["HYPE", "BTC"]), (["HYPE"], ["UNI"]))
@@ -202,10 +206,10 @@ class TestCoins(unittest.TestCase):
     def test_plan_puts_each_coin_on_the_venues_that_list_it(self):
         coins = {"BTC": {"price": [], "all": ["BINANCE_FUTURES:btcusdt", "BYBIT:BTCUSDT", "OKEX:BTC-USDT-SWAP"]},
                  "SHIB": {"price": [], "all": ["OKEX:SHIB-USDT-SWAP"]}}
-        p = rr.plan(coins, hl_extra=["HYPE"], testnet=["HYPE"])
+        p = rr.plan(coins, hl_extra=["HYPE"], testnet=["HYPE"], coinbase=["HYPE"])
         self.assertEqual(p, {"bybit": ["BTCUSDT"], "okx": ["BTC-USDT-SWAP", "SHIB-USDT-SWAP"],
                              "hyperliquid": ["BTC", "HYPE", "kSHIB"], "hyperliquid_testnet": ["HYPE"],
-                             "binance": ["BTCUSDT"]})
+                             "binance": ["BTCUSDT"], "coinbase": ["BTC-USD", "ETH-USD", "HYPE-USD"]})
 
     def test_book_coins_read_the_journals_read_only(self):
         state = self.raw / "state"
@@ -254,6 +258,11 @@ class TestSubscriptions(unittest.TestCase):
                          ("depth20@100ms", "BTCUSDT"))
         self.assertNotIn("depth", rr.binance_url(["BTCUSDT"], books=False))
         self.assertNotIn("orderbook", "".join(rr.bybit_subscribe(["BTCUSDT"], books=False)))
+        cb = json.loads(rr.coinbase_subscribe(["BTC-USD", "HYPE-USD"])[0])
+        self.assertEqual(cb, {"type": "subscribe", "product_ids": ["BTC-USD", "HYPE-USD"],
+                              "channels": ["matches", "heartbeat", "level2_batch"]})
+        self.assertNotIn("level2", "".join(rr.coinbase_subscribe(["BTC-USD"], books=False)))
+        self.assertEqual(rr.Feed("coinbase", ["BTC-USD"], None).url(), rr.COINBASE_WS)
 
 
 class FakeSocket:

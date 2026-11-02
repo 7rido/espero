@@ -93,6 +93,27 @@ class TestBooks(unittest.TestCase):
         self.assertEqual(r["lag_ms"], 10)
 
 
+class TestCoinbase(unittest.TestCase):
+    def test_snapshot_changes_and_the_makers_side(self):
+        v = tw.VenueState("coinbase", "BTC-USD")
+        v.feed(rec(T, "snapshot", "BTC-USD", {"type": "snapshot", "product_id": "BTC-USD",
+                                               "bids": [["100.00", "1"], ["99.99", "2"]], "asks": [["100.01", "1"]]}))
+        v.feed(rec(T + 60, "l2update", "BTC-USD", {"type": "l2update", "product_id": "BTC-USD",
+                                                    "changes": [["buy", "100.00", "0.00000000"], ["sell", "100.02", "3"]],
+                                                    "time": "2026-11-03T00:00:00.010000Z"}))
+        self.assertEqual(v.book.top(), (99.99, 100.01))
+        self.assertEqual(v.lags[-1], 50)
+        v.feed(rec(T + 70, "match", "BTC-USD", {"type": "match", "product_id": "BTC-USD", "side": "sell", "price": "100.01",
+                                                 "size": "2", "time": "2026-11-03T00:00:00.020000Z"}))
+        v.feed(rec(T + 70, "match", "ETH-USD", {"type": "match", "product_id": "ETH-USD", "side": "buy", "price": "1",
+                                                 "size": "1", "time": "2026-11-03T00:00:00.020000Z"}))
+        r = v.row(T + 100)
+        self.assertEqual((r["trades_1m"], r["usd_1m"], r["buy_share"]), (1, 200.02, 1.0), "a sell maker means the taker bought")
+        v.feed(rec(T + 80, "rest.book", "BTC-USD", {"bids": [["100.00", "5", 1]], "asks": [["100.01", "1", 1]]}))
+        self.assertEqual(v.book.top(), (100.0, 100.01))
+        self.assertEqual(tw._iso_ms("2026-11-03T00:00:00Z"), T)
+
+
 class TestFlow(unittest.TestCase):
     def test_flow_and_liquidations_fall_out_of_their_windows(self):
         v = tw.VenueState("bybit", "ETHUSDT")

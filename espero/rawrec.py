@@ -41,6 +41,10 @@ says so (`truncated`), and reads on from the next frame. Nothing is ever rewritt
   Hyperliquid publishes no liquidation stream; its liquidations are trades like any other.
 * Hyperliquid testnet: the same two channels, for the coins #12's maker mirror rests orders on, so #62 can
   replay those fills on the book they rested in.
+* Coinbase Exchange spot (added 2026-11-02 at the account holder's request): `matches` (every trade; `side` is
+  the maker's, so a `sell` maker means the taker bought), `level2_batch` (a 50-level snapshot, then changes
+  every 50 ms, absolute sizes; the venue serves it as `level2_50`), `heartbeat`, and a REST level-2 book every
+  `SNAPSHOT_EVERY_S`. BTC-USD, ETH-USD and the carry books' coins, whose spot leg #12 prices there.
 * Binance USDⓈ-M: `trade` (every print, what aggr-server itself reads), `aggTrade`, `depth@100ms` (diffs,
   absolute size per level), `depth20@100ms` (the top 20 levels whole, every 100 ms: the snapshot the diffs
   are anchored to), `forceOrder`, `markPrice@1s`, `bookTicker`, and a REST `depth?limit=1000` snapshot where
@@ -65,7 +69,7 @@ it was added, never removed. The watch reads the books' journals read-only, ever
 
 **What stays weak.** The recorder of record is a laptop that sleeps. Every gap is on the tape and in
 `--gaps`; none is patched from another source. Disk: the first 17 minutes on 2026-11-02 put the five feeds
-together near 4 GB a day (docs/DATA.md, section 5); `FREE_FLOOR_GB` stops the book channels, trades continue,
+together near 4 GB a day, 6 with Coinbase (docs/DATA.md, section 5); `FREE_FLOOR_GB` stops the book channels, trades continue,
 when the volume holding `ESPERO_RAW_DIR` falls under it.
 """
 from __future__ import annotations
@@ -90,7 +94,7 @@ log = logging.getLogger("espero.rawrec")
 
 ENV = "ESPERO_RAW_DIR"
 SUFFIX = ".ndjson.zst"
-VENUES = ("bybit", "okx", "hyperliquid", "hyperliquid_testnet", "binance")
+VENUES = ("bybit", "okx", "hyperliquid", "hyperliquid_testnet", "binance", "coinbase")
 HEARTBEAT_S = 60
 SNAPSHOT_EVERY_S = 300
 WATCH_EVERY_S = 900
@@ -105,10 +109,13 @@ BYBIT_WS = "wss://stream.bybit.com/v5/public/linear"
 OKX_WS = "wss://ws.okx.com/ws/v5/public"
 OKX_REST = "https://www.okx.com/api/v5"
 BINANCE_WS = "wss://fstream.binance.com/stream?streams="
+COINBASE_WS = "wss://ws-feed.exchange.coinbase.com"
+COINBASE_REST = "https://api.exchange.coinbase.com"
 BINANCE_REST = "https://fapi.binance.com/fapi/v1"
 BINANCE_STREAMS = ("trade", "aggTrade", "depth@100ms", "depth20@100ms", "forceOrder", "markPrice@1s", "bookTicker")
 BOOK_CHANNELS = {"bybit": ("orderbook.50",), "okx": ("books", "rest.books"), "hyperliquid": ("l2Book",),
-                 "hyperliquid_testnet": ("l2Book",), "binance": ("depth@100ms", "depth20@100ms", "rest.depth")}
+                 "hyperliquid_testnet": ("l2Book",), "binance": ("depth@100ms", "depth20@100ms", "rest.depth"),
+                 "coinbase": ("snapshot", "l2update", "rest.book")}
 PROJECT = Path(__file__).resolve().parents[1]
 
 
@@ -182,6 +189,10 @@ def classify(venue: str, frame: bytes) -> Tuple[str, str]:
         if stream and "data" in d:
             sym, _, ch = stream.partition("@")
             return ch, sym.upper()
+    elif venue == "coinbase":
+        t = d.get("type")
+        if t in ("match", "last_match", "snapshot", "l2update") and d.get("product_id"):
+            return t, str(d["product_id"])
     return "_ctrl", ""
 
 
@@ -365,14 +376,16 @@ def read_day(raw: Path, venue: str, day: str) -> Iterator[dict]:
 
 # ------------------------------------------------------------------ what gets recorded
 def plan(coins: Dict[str, Dict[str, List[str]]] = COINS, hl_extra: Iterable[str] = (),
-         testnet: Iterable[str] = ()) -> Dict[str, List[str]]:
-    """Symbols per venue: aggr's coins on each venue that lists them; Hyperliquid also gets `hl_extra`."""
+         testnet: Iterable[str] = (), coinbase: Iterable[str] = ()) -> Dict[str, List[str]]:
+    """Symbols per venue: aggr's coins on each venue that lists them; Hyperliquid also gets `hl_extra`;
+    Coinbase spot gets BTC and ETH and the carry books' coins (their spot leg is priced there)."""
     bybit = [f"{c}USDT" for c, m in coins.items() if any(x.startswith("BYBIT:") for x in m["all"])]
     okx = [f"{c}-USDT-SWAP" for c, m in coins.items() if any(x.startswith("OKEX:") for x in m["all"])]
     binance = [f"{c}USDT" for c, m in coins.items() if any(x.startswith("BINANCE_FUTURES:") for x in m["all"])]
     hl = sorted({HL_NAME.get(c, c) for c in coins} | set(hl_extra))
+    cb = sorted({f"{c}-USD" for c in ("BTC", "ETH")} | {f"{c}-USD" for c in coinbase})
     return {"bybit": bybit, "okx": okx, "hyperliquid": hl, "hyperliquid_testnet": sorted(set(testnet)),
-            "binance": binance}
+            "binance": binance, "coinbase": cb}
 
 
 def hlbook_coins(project: Path = PROJECT) -> List[str]:
@@ -538,6 +551,11 @@ def hl_subscribe(coins: List[str], books: bool = True) -> List[str]:
     return out
 
 
+def coinbase_subscribe(symbols: List[str], books: bool = True) -> List[str]:
+    channels = ["matches", "heartbeat"] + (["level2_batch"] if books else [])
+    return [json.dumps({"type": "subscribe", "product_ids": list(symbols), "channels": channels})]
+
+
 def binance_url(symbols: List[str], books: bool = True) -> str:
     skip = () if books else BOOK_CHANNELS["binance"] + ("bookTicker",)
     streams = [f"{s.lower()}@{st}" for s in symbols for st in BINANCE_STREAMS if st not in skip]
@@ -550,8 +568,9 @@ class Feed:
 
     KEEPALIVE = {"bybit": (json.dumps({"op": "ping"}), 20), "okx": ("ping", 25),
                  "hyperliquid": (json.dumps({"method": "ping"}), 50),
-                 "hyperliquid_testnet": (json.dumps({"method": "ping"}), 50), "binance": (None, 0)}
-    URLS = {"bybit": BYBIT_WS, "okx": OKX_WS, "hyperliquid": HL_MAINNET_WS, "hyperliquid_testnet": HL_TESTNET_WS}
+                 "hyperliquid_testnet": (json.dumps({"method": "ping"}), 50), "binance": (None, 0), "coinbase": (None, 0)}
+    URLS = {"bybit": BYBIT_WS, "okx": OKX_WS, "hyperliquid": HL_MAINNET_WS, "hyperliquid_testnet": HL_TESTNET_WS,
+            "coinbase": COINBASE_WS}
 
     def __init__(self, venue: str, symbols: List[str], writer: HourWriter, books: bool = True,
                  connect=None, clock: Callable[[], int] = lambda: int(time.time() * 1000),
@@ -572,6 +591,8 @@ class Feed:
             return bybit_subscribe(symbols, self.books)
         if self.venue == "okx":
             return okx_subscribe(symbols, self.books)
+        if self.venue == "coinbase":
+            return coinbase_subscribe(symbols, self.books)
         return hl_subscribe(symbols, self.books)
 
     def url(self) -> str:
@@ -715,6 +736,10 @@ def binance_snapshot(symbol: str, get=_get) -> bytes:
     return get(f"{BINANCE_REST}/depth?symbol={symbol}&limit=1000")
 
 
+def coinbase_snapshot(symbol: str, get=_get) -> bytes:
+    return get(f"{COINBASE_REST}/products/{symbol}/book?level=2")
+
+
 class Recorder:
     """The whole loop: five feeds, their snapshots, the watch on the paper books, the hourly manifests."""
 
@@ -731,7 +756,7 @@ class Recorder:
 
     def lists(self) -> Dict[str, List[str]]:
         held = book_coins(self.state)
-        base = plan(hl_extra=hlbook_coins() + held["carry"] + held["paper"], testnet=held["carry"])
+        base = plan(hl_extra=hlbook_coins() + held["carry"] + held["paper"], testnet=held["carry"], coinbase=held["carry"])
         doc = coins_file(self.raw, base, self.clock() // 1000)
         self.doc = doc
         return {v: list(doc["venues"].get(v, [])) for v in VENUES}
@@ -741,7 +766,8 @@ class Recorder:
         while True:
             await asyncio.sleep(WATCH_EVERY_S)
             held = book_coins(self.state)
-            for venue, coins in (("hyperliquid", held["carry"] + held["paper"]), ("hyperliquid_testnet", held["carry"])):
+            for venue, coins in (("hyperliquid", held["carry"] + held["paper"]), ("hyperliquid_testnet", held["carry"]),
+                                 ("coinbase", [f"{c}-USD" for c in held["carry"]])):
                 new = add_coins(self.raw, self.doc, venue, coins, self.clock() // 1000)
                 keep, _ = listed_only(venue, new, self.listed.get(venue))
                 if keep and venue in self.feeds:
@@ -759,14 +785,14 @@ class Recorder:
             except Exception as exc:  # noqa: BLE001
                 self.writers["bybit"].write(meta(self.clock(), "error", venue="bybit", where="snapshot",
                                                  error=f"{type(exc).__name__}: {exc}"[:300]))
-            for venue, fn in (("okx", okx_snapshot), ("binance", binance_snapshot)):
+            for venue, fn in (("okx", okx_snapshot), ("binance", binance_snapshot), ("coinbase", coinbase_snapshot)):
                 if venue == "binance" and self.clock() - self._binance_rest_refused < BINANCE_RETRY_S * 1000:
                     continue                    # REST said 451 within the hour; the depth20 stream is the snapshot
                 for s in lst[venue]:
                     try:
                         frame = await asyncio.to_thread(fn, s, self.get)
-                        self.writers[venue].write(line(self.clock(), "rest." + ("books" if venue == "okx" else "depth"),
-                                                       s, frame))
+                        self.writers[venue].write(line(self.clock(), "rest." + {"okx": "books", "binance": "depth",
+                                                                                "coinbase": "book"}[venue], s, frame))
                     except Exception as exc:  # noqa: BLE001
                         self.writers[venue].write(meta(self.clock(), "error", venue=venue, where="snapshot", symbol=s,
                                                        error=f"{type(exc).__name__}: {exc}"[:300]))

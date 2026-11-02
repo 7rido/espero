@@ -107,7 +107,9 @@ Hyperliquid's API serves the current state, not history. A snapshot not taken is
 
 `espero rawrec --loop` keeps every websocket frame from Binance USDⓈ-M (below), Bybit (USDT perps:
 `publicTrade`, `orderbook.50`, `allLiquidation`), OKX (USDT swaps: `trades`, `books`, `liquidation-orders`,
-plus a REST book snapshot every 5 minutes) and Hyperliquid mainnet and testnet (`trades`, `l2Book`), on the 14 coins aggr's forward
+plus a REST book snapshot every 5 minutes), Hyperliquid mainnet and testnet (`trades`, `l2Book`) and, since
+2026-11-02, Coinbase Exchange spot (`matches`, the 50-level `level2_batch` book, a REST book every 5 minutes, on
+BTC-USD, ETH-USD and the carry books' coins, whose spot leg #12 prices there), on the 14 coins aggr's forward
 bars cover, the ten `hlbook` records, and every coin a paper book holds. It writes **only** the folder named by
 `ESPERO_RAW_DIR`, never `data/`, as `<venue>/<YYYY-MM-DD>/<HH>.ndjson.zst`: one line per frame with the
 receive time and the frame verbatim (`espero/rawrec.py` says the format). The recorder writes
@@ -119,7 +121,7 @@ receive time and the frame verbatim (`espero/rawrec.py` says the format). The re
 | what is on disk | `espero rawrec --status` (files, bytes, last receive time; never a value) |
 | where the recorder was silent | `espero rawrec --gaps 2026-11-03`, from the tape itself (a venue's own outage shows as `connected: false` heartbeats instead) |
 | check a day later | `python -m espero.manifest check $ESPERO_RAW_DIR/okx/2026-11-03` |
-| size | about 4 GB a day with every book channel on, measured over the first 17 minutes on 2026-11-02 (zstd level 9: Binance's diffs, partial books and bookTicker about 2.5 GB, Bybit's 20 ms deltas 0.6, OKX's 400-level books 0.8, Hyperliquid 0.1), about 0.3 GB without. Under `FREE_FLOOR_GB` (30 GB) free, the book channels stop and the trades and liquidations continue; the tape says when. On this Mac's 150 GB free that is about a month of books: point `ESPERO_RAW_DIR` at a larger disk for the full window |
+| size | about 6 GB a day with every book channel on, measured on 2026-11-02 (zstd level 9: Binance's diffs, partial books and bookTicker about 2.5 GB, Coinbase's batched 50-level book about 2, Bybit's 20 ms deltas 0.6, OKX's 400-level books 0.8, Hyperliquid 0.1), about 0.3 GB without. Under `FREE_FLOOR_GB` (30 GB) free, the book channels stop and the trades and liquidations continue; the tape says when. On this Mac's 150 GB free that is about three weeks of books: point `ESPERO_RAW_DIR` at a larger disk for the full window |
 
 **What it is not.** It is not in `publish-data.sh`'s weekly release: a day is larger than a GitHub release
 asset allows, so the only copy is the disk named by `ESPERO_RAW_DIR` and its manifests. It is not a second

@@ -37,14 +37,23 @@ DEPTH_BPS = 10.0
 LAG_FRAMES = 200
 DELTA_BUFFER = 2000
 BYBIT_WINDOW = 50
+COINBASE_WINDOW = 50
 OKX_WINDOW = 400
 HL_NAME = rr.HL_NAME
+
+
+def _iso_ms(text: str) -> int:
+    """Coinbase's ISO-8601 time with microseconds and a Z, as ms."""
+    t = text.rstrip("Z")
+    head, _, frac = t.partition(".")
+    base = dt.datetime.fromisoformat(head).replace(tzinfo=dt.timezone.utc)
+    return int(base.timestamp() * 1000) + (int(frac[:3].ljust(3, "0")) if frac else 0)
 
 
 def symbols_for(coin: str) -> Dict[str, str]:
     """The symbol each venue uses for a coin, as the recorder subscribes to it."""
     return {"binance": f"{coin}USDT", "bybit": f"{coin}USDT", "okx": f"{coin}-USDT-SWAP",
-            "hyperliquid": HL_NAME.get(coin, coin)}
+            "hyperliquid": HL_NAME.get(coin, coin), "coinbase": f"{coin}-USD"}
 
 
 # ------------------------------------------------------------------ books
@@ -149,6 +158,7 @@ class VenueState:
         self.venue, self.symbol = venue, symbol
         self.book = Book(ct_val)
         self.book.whole = venue in ("binance", "hyperliquid")
+        self.cb_seq: Optional[int] = None
         self.trades: collections.deque = collections.deque()               # (t_ms, usd, buy)
         self.liqs: collections.deque = collections.deque()                 # (t_ms, usd, side)
         self.lags: collections.deque = collections.deque(maxlen=LAG_FRAMES)
@@ -231,6 +241,21 @@ class VenueState:
                 for t in d.get("data", []):
                     self.trades.append((int(t["ts"]), float(t["px"]) * float(t["sz"]) * self.ct_val, t["side"] == "buy"))
                     self.lags.append(rt - int(t["ts"]))
+        elif v == "coinbase":
+            if ch == "snapshot":
+                self.book.set(d["bids"], d["asks"])
+            elif ch == "l2update":
+                self.lags.append(rt - _iso_ms(d["time"]))
+                if self.book.ok:
+                    bids = [(p, sz) for side, p, sz in d["changes"] if side == "buy"]
+                    asks = [(p, sz) for side, p, sz in d["changes"] if side == "sell"]
+                    self.book.apply(bids, asks, COINBASE_WINDOW)
+            elif ch == "rest.book":
+                self.book.set([(x[0], x[1]) for x in d["bids"]], [(x[0], x[1]) for x in d["asks"]])
+            elif ch in ("match", "last_match"):
+                t_ms = _iso_ms(d["time"])
+                self.trades.append((t_ms, float(d["price"]) * float(d["size"]), d["side"] == "sell"))   # the maker sold: the taker bought
+                self.lags.append(rt - t_ms)
         elif v == "hyperliquid":
             if ch == "l2Book":
                 lv = d["data"]["levels"]
@@ -360,7 +385,7 @@ def render(coin: str, rows: List[Dict[str, object]], now_ms: int, reads: Optiona
 def watch(raw: Path, coins: List[str], refresh_s: float = REFRESH_S, out=sys.stdout, clock=lambda: int(time.time() * 1000),
           max_rounds: Optional[int] = None, sleep=time.sleep, read: bool = False) -> int:
     ct = okx_ct_vals(raw)
-    venues = ("binance", "bybit", "okx", "hyperliquid")
+    venues = ("binance", "bybit", "okx", "hyperliquid", "coinbase")
     states = {(c, v): VenueState(v, symbols_for(c)[v], ct.get(symbols_for(c)["okx"], 1.0) if v == "okx" else 1.0)
               for c in coins for v in venues}
     try:
@@ -381,7 +406,7 @@ def watch(raw: Path, coins: List[str], refresh_s: float = REFRESH_S, out=sys.std
         screen = "\n\n".join(render(c, [states[(c, v)].row(now) for v in venues], now,
                                      [read_of(states[(c, v)].row(now), states[(c, v)].book) for v in venues] if read else None)
                               for c in coins)
-        out.write("\x1b[2J\x1b[H" + screen + "\n\nBinance depth: top 20 levels only. OKX book: dash after a sequence gap until the next snapshot.\n")
+        out.write("\x1b[2J\x1b[H" + screen + "\n\nBinance depth: top 20 levels only; Coinbase and Bybit 50. OKX book: dash after a sequence gap until the next snapshot.\n")
         out.flush()
         rounds += 1
         sleep(refresh_s)

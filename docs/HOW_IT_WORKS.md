@@ -9,15 +9,15 @@ the checklist for adding a new test, signal or finding without breaking the shap
 flowchart LR
     A[exchanges and aggr<br/>public endpoints] -->|hlcollect, hlbook<br/>every minute| R[data/hlcollect, data/hlbook<br/>cannot be fetched again]
     A -->|espero daily, 07:30<br/>one UTC day at a time| F[data/aggr/forward*<br/>data/lows/forward]
-    R --> S[daily steps<br/>espero/liqfwd.py … liqhold.py]
-    F --> S
+    F --> S[daily steps<br/>espero/liqfwd.py … liqhold.py]
     S -->|rebuild| L[state/*_trades.csv<br/>running numbers, decide nothing]
     S -->|every run| H[state/health.json<br/>docs/STATUS.md]
     R -.->|paper books, information only| B[state/hlp-book.db, carry-*.db, paper-*.db]
     L ==>|once, after 2027-03-31<br/>criteria frozen in research/FORWARD_*.md| V[verdict: PASS / FAIL / INCONCLUSIVE]
+    R ==>|#58, #59, #60: espero hlp / ladder --verdict<br/>once, from the recordings themselves| V
     V --> T[research/trials.csv<br/>FDR and t ≥ 3 from #61 on]
     T --> N[research/FORWARD_FAMILY.md<br/>what a pass leads to]
-    P[scripts/publish-data.sh<br/>Mondays, with MANIFEST.sha256] -.-> R
+    R -.->|Mondays, with MANIFEST.sha256| P[scripts/publish-data.sh<br/>the weekly release]
 ```
 
 ## The path, step by step

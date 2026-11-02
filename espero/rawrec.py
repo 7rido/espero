@@ -759,6 +759,9 @@ class Recorder:
         base = plan(hl_extra=hlbook_coins() + held["carry"] + held["paper"], testnet=held["carry"], coinbase=held["carry"])
         doc = coins_file(self.raw, base, self.clock() // 1000)
         self.doc = doc
+        for venue in VENUES:
+            if venue not in doc["venues"] and base.get(venue):      # a venue added after the file was frozen
+                add_coins(self.raw, doc, venue, base[venue], self.clock() // 1000)
         return {v: list(doc["venues"].get(v, [])) for v in VENUES}
 
     async def watch(self) -> None:

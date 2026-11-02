@@ -238,6 +238,15 @@ class TestCoins(unittest.TestCase):
         self.assertEqual(again["added"], {"hyperliquid:HYPE": 300})
         self.assertEqual(rr.add_coins(self.raw, doc, "hyperliquid", ["HYPE"], now=400), [])
 
+    def test_a_venue_added_after_the_file_was_frozen_joins_from_the_plan(self):
+        rr.coins_file(self.raw, {"hyperliquid": ["BTC"]}, now=100)              # frozen before coinbase existed
+        rec = rr.Recorder(self.raw, state=self.raw / "nostate")
+        lists = rec.lists()
+        self.assertIn("BTC-USD", lists["coinbase"])
+        again = json.loads((self.raw / "coins.json").read_text())
+        self.assertIn("coinbase:BTC-USD", again["added"])
+        self.assertEqual(again["venues"]["hyperliquid"], ["BTC"], "the frozen lists stay frozen")
+
 
 class TestSubscriptions(unittest.TestCase):
     def test_each_venue_asks_for_trades_books_and_liquidations(self):

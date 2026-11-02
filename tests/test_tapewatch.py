@@ -214,10 +214,36 @@ class TestFollow(unittest.TestCase):
             text = out.getvalue()
             self.assertIn("untested and outside the registry", text)
             self.assertIn("no lean", text)
-            self.assertIn("flow by window", text)
-            for name in ("5m", "30m", "1h"):
+            self.assertIn("flow", text)
+            for name in ("1m", "5m", "30m", "1h"):
                 self.assertIn(name, text)
+            self.assertIn("read (untested, outside the registry)", text)
             w.close()
+
+    def test_the_rich_screen_fits_eighty_columns_and_carries_no_forecast(self):
+        from rich.console import Console
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = Path(tmp)
+            w = rr.HourWriter(raw, "hyperliquid")
+            w.write(rr.line(T, "l2Book", "BTC", json.dumps({"data": {"time": T - 300, "levels": [[{"px": "78400", "sz": "1"}], [{"px": "78401", "sz": "1"}]]}}).encode()))
+            w.write(rr.line(T, "trades", "BTC", json.dumps({"data": [{"time": T - 10, "px": "78401", "sz": "0.5", "side": "B"}]}).encode()))
+            w.close()
+            out = io.StringIO()
+            tw.watch(raw, ["BTC"], out=out, clock=lambda: T + 1000, max_rounds=1, sleep=lambda s: None, read=True)
+            text = out.getvalue()
+            self.assertIn("hyperliquid", text)
+            self.assertIn("78,400", text)
+            self.assertIn("39k (100%)", text, "the minute's $ traded with the taker buy share")
+            self.assertIn("untested", text)
+            self.assertLessEqual(max(len(line) for line in text.splitlines()), 80, "nothing wider than the pane")
+            for word in ("forecast", "buy signal", "sell signal"):
+                self.assertNotIn(word, text.lower())
+        self.assertEqual(tw._fmt_usd(2_600_000), "2.6M")
+        self.assertEqual(tw._fmt_usd(35_000_000), "35M")
+        self.assertEqual(tw._fmt_usd(26_000), "26k")
+        self.assertEqual(tw._fmt_usd(430), "430")
+        self.assertEqual(tw._fmt_px(78400.12), "78,400.1")
+        self.assertEqual(tw._fmt_px(2302.456), "2,302.46")
 
     def test_the_read_is_words_for_book_flow_and_liquidations(self):
         book = tw.Book()

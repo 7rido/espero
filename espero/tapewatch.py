@@ -7,7 +7,8 @@ Under each coin a second block gives trades, dollars, buy share and liquidations
 30 minutes and an hour; the screen starts from the previous hour's file so the hour window is full.
 
 It reads what `espero rawrec --loop` wrote in the last second, so it needs no second connection to any
-venue and shows exactly what the tape holds, lag included. It shows no return and no rule. With `--read`
+venue and shows exactly what the tape holds, lag included. It draws two tables a coin on `rich`, sized for an 80-column pane: the book, then
+flow by window. It shows no return and no rule. With `--read`
 it adds, at the account holder's request, a column of words for what the book and the last minute's flow
 show, with a net lean; that column is untested, outside the registry, written to no book or ledger, and
 nothing in it was ever checked against what came next. A rule anyone wants to act on is a numbered
@@ -419,6 +420,88 @@ def render(coin: str, rows: List[Dict[str, object]], now_ms: int, reads: Optiona
     return "\n".join(lines)
 
 
+# ------------------------------------------------------------------ the screen, on rich
+def _fmt_px(x: Optional[float]) -> str:
+    """A price with the decimals its size needs: 78,400.1, 2,302.46, 88.120, 0.08106."""
+    if x is None:
+        return "-"
+    decimals = 1 if x >= 10_000 else 2 if x >= 1_000 else 3 if x >= 10 else 5 if x >= 0.1 else 6
+    return f"{x:,.{decimals}f}"
+
+
+def _fmt_usd(x: float) -> str:
+    """Dollars as a short word: 0.4k, 26k, 2.6M, 35M."""
+    if x >= 1e6:
+        return f"{x / 1e6:.1f}M" if x < 1e7 else f"{x / 1e6:.0f}M"
+    if x >= 1e3:
+        return f"{x / 1e3:.0f}k" if x >= 1e4 else f"{x / 1e3:.1f}k"
+    return f"{x:.0f}" if x else "0"
+
+
+def _pct(x: Optional[float]) -> str:
+    return "-" if x is None else f"{x * 100:.0f}%"
+
+
+def tables(coin: str, rows: List[Dict[str, object]], now_ms: int, reads: Optional[List[str]] = None):
+    """Rich tables for one coin, sized for an 80-column pane: the book, flow by window, and with `reads` a
+    third of words per venue."""
+    from rich import box
+    from rich.table import Table
+    from rich.text import Text
+    stamp = dt.datetime.fromtimestamp(now_ms / 1000, dt.timezone.utc).strftime("%H:%M:%S")
+    book = Table(title=f"{coin}  {stamp} UTC", title_justify="left", box=box.SIMPLE_HEAD, pad_edge=False,
+                 show_edge=False, expand=False)
+    for name, just in (("venue", "left"), ("bid", "right"), ("ask", "right"), ("sprd bps", "right"), ("depth ±10", "right"),
+                       ("lag ms", "right"), ("age", "right")):
+        book.add_column(name, justify=just, no_wrap=True)
+    for r in rows:
+        cells = [r["venue"], _fmt_px(r["bid"]), _fmt_px(r["ask"]),
+                 "-" if r["spread_bps"] is None else f"{r['spread_bps']:.2f}",
+                 "-" if r["depth_usd"] is None else _fmt_usd(r["depth_usd"]),
+                 "-" if r["lag_ms"] is None else f"{r['lag_ms']:.0f}",
+                 "-" if r["age_s"] is None else f"{r['age_s']:.0f}s"]
+        book.add_row(*cells, style="dim" if r["bid"] is None else "")
+    flow = Table(box=box.SIMPLE_HEAD, pad_edge=False, show_edge=False, expand=False,
+                 caption="$ traded (taker buy %) · liq: $ liquidated, buys/sells", caption_justify="left")
+    flow.add_column("flow", justify="left", no_wrap=True)
+    for name in ("1m",) + tuple(n for n, _ in WINDOWS):
+        flow.add_column(name, justify="right", no_wrap=True)
+    for r in rows:
+        w = {"1m": {"usd": r["usd_1m"], "buy_share": r["buy_share"], "liq_buy": 0.0, "liq_sell": 0.0}, **r["windows"]}
+        cells = [r["venue"]]
+        for name in ("1m",) + tuple(n for n, _ in WINDOWS):
+            x = w[name]
+            line = f"{_fmt_usd(x['usd'])} ({_pct(x['buy_share'])})"
+            if name != "1m" and (x["liq_buy"] or x["liq_sell"]):
+                line += f"\nliq {_fmt_usd(x['liq_buy'])}/{_fmt_usd(x['liq_sell'])}"
+            cells.append(line)
+        flow.add_row(*cells)
+    if not reads:
+        return book, flow
+    read = Table(box=box.SIMPLE_HEAD, pad_edge=False, show_edge=False, expand=False)
+    read.add_column("venue", justify="left", no_wrap=True)
+    read.add_column("read (untested, outside the registry)", justify="left", overflow="fold", max_width=60, style="dim")
+    for r, words in zip(rows, reads):
+        read.add_row(r["venue"], words)
+    return book, flow, read
+
+
+def screen(coins: List[str], states: Dict[Tuple[str, str], "VenueState"], venues: Tuple[str, ...], now_ms: int,
+           read: bool):
+    """The whole screen as one rich renderable."""
+    from rich.console import Group
+    from rich.text import Text
+    parts = []
+    for c in coins:
+        rows = [states[(c, v)].row(now_ms) for v in venues]
+        reads = [read_of(rows[i], states[(c, v)].book) for i, v in enumerate(venues)] if read else None
+        parts += list(tables(c, rows, now_ms, reads)) + [Text("")]
+    note = "information, not a signal" + ("; the read column is untested and outside the registry" if read else "")
+    parts.append(Text(note + "\nBinance depth: top 20 levels; Coinbase and Bybit 50; OKX 400. A dash: the rebuilt book "
+                      "is not trustworthy until the next snapshot.", style="dim"))
+    return Group(*parts)
+
+
 def watch(raw: Path, coins: List[str], refresh_s: float = REFRESH_S, out=sys.stdout, clock=lambda: int(time.time() * 1000),
           max_rounds: Optional[int] = None, sleep=time.sleep, read: bool = False) -> int:
     ct = okx_ct_vals(raw)
@@ -433,19 +516,38 @@ def watch(raw: Path, coins: List[str], refresh_s: float = REFRESH_S, out=sys.std
     start = clock() - KEEP_S * 1000                 # from the previous hour's file, so the hour window is full
     feeds = {v: follow(raw, v, clock, start_ms=start, symbols=[symbols_for(c)[v] for c in coins]) for v in venues}
     rounds = 0
-    while max_rounds is None or rounds < max_rounds:
+    try:
+        from rich.console import Console
+        from rich.live import Live
+        console = Console(file=out, force_terminal=out is sys.stdout)
+    except ImportError:                             # the tui extra is missing: the plain layout
+        console = None
+
+    def catch_up() -> int:
         for v, gen in feeds.items():
             for rec in gen:
                 if rec is None:
                     break
                 for c in coins:
                     states[(c, v)].feed(rec)
-        now = clock()
-        screen = "\n\n".join(render(c, [states[(c, v)].row(now) for v in venues], now,
-                                     [read_of(states[(c, v)].row(now), states[(c, v)].book) for v in venues] if read else None)
-                              for c in coins)
-        out.write("\x1b[2J\x1b[H" + screen + "\n\nBinance depth: top 20 levels only; Coinbase and Bybit 50. OKX book: dash after a sequence gap until the next snapshot.\n")
-        out.flush()
-        rounds += 1
-        sleep(refresh_s)
+        return clock()                              # after the read, so an age is never negative
+
+    if console is None:
+        while max_rounds is None or rounds < max_rounds:
+            now = catch_up()
+            text = "\n\n".join(render(c, [states[(c, v)].row(now) for v in venues], now,
+                                       [read_of(states[(c, v)].row(now), states[(c, v)].book) for v in venues] if read else None)
+                                for c in coins)
+            out.write("\x1b[2J\x1b[H" + text + "\n")
+            out.flush()
+            rounds += 1
+            sleep(refresh_s)
+        return 0
+    with Live(screen(coins, states, venues, clock(), read), console=console, screen=out is sys.stdout,
+              auto_refresh=False, transient=False) as live:
+        while max_rounds is None or rounds < max_rounds:
+            now = catch_up()
+            live.update(screen(coins, states, venues, now, read), refresh=True)
+            rounds += 1
+            sleep(refresh_s)
     return 0

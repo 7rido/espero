@@ -290,6 +290,39 @@ class TestFeed(unittest.TestCase):
         self.assertEqual(recs[0]["d"]["ev"], "open")
         self.assertEqual(recs[2]["d"]["data"], [{"p": "1"}])
 
+    def test_under_the_floor_book_frames_are_dropped_and_trades_kept(self):
+        flag = {"books": True}
+        w = rr.HourWriter(self.raw, "okx")
+        feed = rr.Feed("okx", ["BTC-USDT-SWAP"], w, clock=lambda: T0, books_on=lambda: flag["books"])
+        feed.record(b'{"arg":{"channel":"books","instId":"BTC-USDT-SWAP"},"data":[]}')
+        flag["books"] = False
+        feed.record(b'{"arg":{"channel":"books","instId":"BTC-USDT-SWAP"},"data":[]}')
+        feed.record(b'{"arg":{"channel":"trades","instId":"BTC-USDT-SWAP"},"data":[]}')
+        w.close()
+        self.assertEqual([r["ch"] for r in rr.read_day(self.raw, "okx", "2026-11-02")], ["books", "trades"])
+        self.assertEqual(feed.dropped, 1)
+        bn = rr.Feed("binance", ["BTCUSDT"], w, books_on=lambda: False)
+        for ch in ("bookTicker", "depth@100ms", "depth20@100ms"):
+            bn.record(('{"stream":"btcusdt@%s","data":{}}' % ch).encode())
+        self.assertEqual(bn.dropped, 3)
+
+    def test_a_second_recorder_on_the_same_tape_is_refused(self):
+        from espero.lock import JournalBusy, JournalLock
+        ran = []
+
+        async def fake_run(self_):
+            ran.append(True)
+        rec = rr.Recorder(self.raw, state=self.raw / "nostate")
+        rec._run = fake_run.__get__(rec)
+        with JournalLock(self.raw / "rawrec"):
+            with self.assertRaises(JournalBusy):
+                asyncio.run(rec.run())
+        self.assertEqual(ran, [], "nothing ran while the lock was held")
+        asyncio.run(rec.run())
+        self.assertEqual(ran, [True], "the lock freed, the recorder runs")
+        with open(self.raw / "rawrec.lock") as f:
+            self.assertTrue(f.read().strip().isdigit())
+
     def test_bybit_snapshot_keeps_only_the_snapshot_frame_per_symbol(self):
         sent = []
         frames = ['{"success":true}', '{"topic":"orderbook.50.BTCUSDT","type":"delta","data":{}}',
@@ -321,6 +354,8 @@ class TestInstaller(unittest.TestCase):
         self.assertEqual(p["EnvironmentVariables"][rr.ENV], "/somewhere/raw")
         self.assertEqual(p["WorkingDirectory"], str(root))
         self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
+        self.assertNotIn("pgrep", (root / "scripts" / "install-rawrec-launchd.sh").read_text(),
+                         "the lock in the module, not a process name, keeps the tape to one writer")
         r = subprocess.run(["bash", str(root / "scripts" / "install-rawrec-launchd.sh"), "--print"],
                            capture_output=True, text=True, env={k: v for k, v in env.items() if k != rr.ENV})
         self.assertNotEqual(r.returncode, 0, "no ESPERO_RAW_DIR, no agent")

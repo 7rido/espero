@@ -117,7 +117,7 @@ receive time and the frame verbatim (`espero/rawrec.py` says the format). The re
 |---|---|
 | install | `ESPERO_RAW_DIR=<folder outside data/> ./scripts/install-rawrec-launchd.sh` (docs/RUNBOOK.md) |
 | what is on disk | `espero rawrec --status` (files, bytes, last receive time; never a value) |
-| where it was silent | `espero rawrec --gaps 2026-11-03`, from the tape itself |
+| where the recorder was silent | `espero rawrec --gaps 2026-11-03`, from the tape itself (a venue's own outage shows as `connected: false` heartbeats instead) |
 | check a day later | `python -m espero.manifest check $ESPERO_RAW_DIR/okx/2026-11-03` |
 | size | about 4 GB a day with every book channel on, measured over the first 17 minutes on 2026-11-02 (zstd level 9: Binance's diffs, partial books and bookTicker about 2.5 GB, Bybit's 20 ms deltas 0.6, OKX's 400-level books 0.8, Hyperliquid 0.1), about 0.3 GB without. Under `FREE_FLOOR_GB` (30 GB) free, the book channels stop and the trades and liquidations continue; the tape says when. On this Mac's 150 GB free that is about a month of books: point `ESPERO_RAW_DIR` at a larger disk for the full window |
 

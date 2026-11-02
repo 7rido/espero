@@ -134,15 +134,46 @@ class TestCompare(unittest.TestCase):
         self.assertEqual((s["comparable"], s["matched"], s["excluded"], s["day_matches"]), (2, 1, 0, False))
         self.assertEqual(s["worst_field"], "missing_ours")
 
-    def test_verdict_needs_thirty_days_then_95_percent(self):
-        days = pd.DataFrame({"day": [f"d{i}" for i in range(40)], "bar": "1h", "comparable": 10,
-                             "day_matches": [i != 0 for i in range(40)]})
+    def test_a_market_aggr_never_has_is_not_a_miss(self):
+        ours, theirs = self.rows()
+        extra = ours.copy()
+        extra["market"] = "OKEX:PEPE-USDT-SWAP"           # OKX pushes every swap's liquidations; aggr has 14 coins
+        table = rb.compare_day(pd.DataFrame([ours, extra]), pd.DataFrame([theirs.to_dict()]), {}, markets={"BYBIT:BTCUSDT"})
+        self.assertEqual(list(table["market"]), ["BYBIT:BTCUSDT"])
+
+    def test_archive_replaces_only_the_binance_bars_inside_a_gap(self):
+        base = {"open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "vbuy": 1.0, "vsell": 1.0, "cbuy": 1, "csell": 1}
+        m = "BINANCE_FUTURES:btcusdt"
+        tape = pd.DataFrame([{"time": T // 1000, "market": m, **base, "lbuy": 5e4, "lsell": 0.0},
+                             {"time": T // 1000 + 3600, "market": m, **base, "lbuy": 7e4, "lsell": 0.0}])
+        arch = pd.DataFrame([{"time": T // 1000, "market": m, **base, "vbuy": 2.0, "lbuy": 0.0, "lsell": 0.0},
+                             {"time": T // 1000 + 3600, "market": m, **base, "vbuy": 3.0, "lbuy": 0.0, "lsell": 0.0}])
+        gaps = [(T + 3_600_000 + 1000, T + 3_600_000 + 60_000)]        # the Mac slept inside the second hour only
+        merged, taken = rb.merge_archive(tape, arch, gaps)
+        self.assertEqual(taken, {(T // 1000 + 3600, m)})
+        got = merged.set_index("time")
+        self.assertEqual(got.at[T // 1000, "vbuy"], 1.0, "the first hour stays the tape's")
+        self.assertEqual(got.at[T // 1000 + 3600, "vbuy"], 3.0, "the gapped hour is the archive's")
+        theirs = pd.DataFrame([{"time": T // 1000, "market": m, **base, "lbuy": 5e4, "lsell": 0.0},
+                               {"time": T // 1000 + 3600, "market": m, **base, "vbuy": 3.0, "lbuy": 7e4, "lsell": 0.0}])
+        table = rb.compare_day(merged, theirs, {"binance": gaps}, rb.HOUR_MS, taken)
+        self.assertEqual(list(table["comparable"]), [True, True], "an archive bar is compared, not excluded")
+        self.assertEqual(list(table["match"]), [True, True], "and its liquidations are not held against it")
+        self.assertEqual(rb.merge_archive(tape, pd.DataFrame(columns=rb.COLUMNS), gaps)[1], set())
+
+    def test_verdict_needs_thirty_days_then_95_percent_on_the_all_rows(self):
+        rows = []
+        for i in range(40):
+            for venue in ("binance", "bybit", "okx", "all"):
+                rows.append({"day": f"d{i}", "bar": "1h", "venue": venue, "comparable": 10,
+                             "day_matches": not (venue == "bybit" or (venue == "all" and i == 0))})
+        days = pd.DataFrame(rows)
         v = rb.verdict(days)
         self.assertEqual(v["days"], 40)
-        self.assertTrue(v["a"])
-        days.loc[1:2, "day_matches"] = False
+        self.assertTrue(v["a"], "one venue missing its 95% does not fail the day: the registered row is `all`")
+        days.loc[(days["venue"] == "all") & (days["day"].isin(["d1", "d2"])), "day_matches"] = False
         self.assertFalse(rb.verdict(days)["a"])
-        self.assertIsNone(rb.verdict(days.head(10))["a"])
+        self.assertIsNone(rb.verdict(days.head(40))["a"])
 
 
 if __name__ == "__main__":

@@ -553,7 +553,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #61 — aggr's forward bars rebuilt from the raw streams
 
-*#61 (not in trials.csv)*
+*#61 forward_pending*
 
 - `PREREGISTRATION_RAWBARS.md`
 - `PREREGISTRATION_RAWBARS.md.ots`
@@ -562,7 +562,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #62 — The paper fills replayed on the recorded book
 
-*#62 (not in trials.csv)*
+*#62 forward_pending*
 
 - `PREREGISTRATION_REPLAYSIM.md`
 - `PREREGISTRATION_REPLAYSIM.md.ots`
@@ -571,7 +571,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #63 — The portfolio layer: how passes combine, fixed before any two exist
 
-*#63 (not in trials.csv)*
+*#63 forward_pending*
 
 - `PREREGISTRATION_SLEEVES.md`
 - `PREREGISTRATION_SLEEVES.md.ots`

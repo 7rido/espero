@@ -82,26 +82,25 @@ def day_ms(day: str) -> int:
     return int(dt.datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=dt.timezone.utc).timestamp() * 1000)
 
 
+MARKETS = set(m for v in COINS.values() for m in v["all"])
+
+
 def one_day(raw: Path, day: str, ct_val: Dict[str, float]) -> List[dict]:
     events, gaps = tape_events(raw, day, ct_val)
-    binance_symbols = rr.plan()["binance"]
-    archive_markets: List[str] = []
-    if gaps.get("binance"):
-        arch, archive_markets = archive_events(raw, day, binance_symbols)
-        if len(arch):
-            events = pd.concat([events[~events["market"].isin(archive_markets)], arch], ignore_index=True)
+    arch_events, _ = archive_events(raw, day, rr.plan()["binance"]) if gaps.get("binance") else (pd.DataFrame(columns=rb.EVENT_COLS), [])
     rows = []
     for kind, bar_ms in (("1h", rb.HOUR_MS), ("5m", rb.FIVE_MS)):
         theirs = read_forward(kind, day)
         if theirs is None:
             continue
-        ours = rb.build_bars(events, bar_ms)
-        table = rb.compare_day(ours, theirs, gaps, bar_ms, archive_markets)
+        ours, archive_bars = rb.merge_archive(rb.build_bars(events, bar_ms), rb.build_bars(arch_events, bar_ms),
+                                              gaps.get("binance", []), bar_ms)
+        table = rb.compare_day(ours, theirs, gaps, bar_ms, archive_bars, MARKETS)
         for venue, prefix in (("binance", "BINANCE_FUTURES:"), ("bybit", "BYBIT:"), ("okx", "OKEX:"), ("all", "")):
             part = table[table["market"].str.startswith(prefix)] if prefix else table
             s = rb.day_summary(part)
             rows.append({"day": day, "bar": kind, "venue": venue, **s,
-                         "archive_markets": len(archive_markets) if venue in ("binance", "all") else 0,
+                         "archive_bars": len(archive_bars) if venue in ("binance", "all") else 0,
                          "gap_minutes": round(sum(b - a for a, b in gaps.get(venue, [])) / 60000, 1)
                          if venue != "all" else round(sum(b - a for g in gaps.values() for a, b in g) / 60000, 1)})
     return rows
@@ -112,8 +111,15 @@ def main(argv=None) -> int:
     ap.add_argument("--since", default="2026-11-03", help="first UTC day (the first the tape can hold in full)")
     ap.add_argument("--until", default=None)
     ap.add_argument("--raw-dir", default=None)
+    ap.add_argument("--backfill", nargs=2, metavar=("SINCE", "UNTIL"),
+                    help="fetch Binance's archived aggTrades for the 13 symbols over these days, then exit")
     args = ap.parse_args(argv)
     raw = rr.raw_dir({**__import__("os").environ, rr.ENV: args.raw_dir} if args.raw_dir else None)
+    if args.backfill:
+        doc = ba.record_listing(raw)
+        print(f"archive datasets: {doc['datasets']['daily']}; liquidation dataset: {doc['liquidation_dataset']}")
+        print(ba.backfill(raw, rr.plan()["binance"], ba.days_between(*args.backfill), ["aggTrades"]))
+        return 0
     inst = raw / "okx" / "instruments.json"
     ct_val = rb.ct_values(inst.read_text()) if inst.exists() else {}
     if not ct_val:
@@ -128,7 +134,7 @@ def main(argv=None) -> int:
         print(f"forward days on disk: {forward_days()[-3:]}; tape days: "
               f"{sorted(p.name for v in ('binance', 'bybit', 'okx') for p in rr.day_folders(raw, v))[-3:]}")
         pd.DataFrame(columns=["day", "bar", "venue", "bars", "comparable", "excluded", "matched", "fraction",
-                              "day_matches", "worst_field", "archive_markets", "gap_minutes"]).to_csv(OUT, index=False)
+                              "day_matches", "worst_field", "archive_bars", "gap_minutes"]).to_csv(OUT, index=False)
         return 0
     out.to_csv(OUT, index=False)
     print(f"wrote {OUT} ({len(days)} days)\n")
@@ -137,7 +143,7 @@ def main(argv=None) -> int:
     for r in rows:
         print(f"| {r['day']} | {r['bar']} | {r['venue']} | {r['bars']} | {r['comparable']} | {r['excluded']} | "
               f"{r['matched']} | {r['fraction']:.3f} | {'yes' if r['day_matches'] else 'no'} | {r['worst_field']} | "
-              f"{r['archive_markets']} | {r['gap_minutes']} |")
+              f"{r['archive_bars']} | {r['gap_minutes']} |")
     v = rb.verdict(out)
     print(f"\ncriterion (a): {v['days']} comparable days, fraction matching "
           f"{v['fraction'] if v['fraction'] == v['fraction'] else 'n/a'}; "

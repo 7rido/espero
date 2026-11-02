@@ -209,7 +209,7 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp
 - Check it: `./scripts/install-rawrec-launchd.sh --status`, and `espero rawrec --status` for what is on disk
   (files, bytes, last receive time; never a value). Its log is `~/Library/Logs/espero/rawrec.log`.
 - Stop and remove it: `./scripts/install-rawrec-launchd.sh --uninstall`. The recordings stay.
-- Gaps: `espero rawrec --gaps YYYY-MM-DD`. Frames missed while the Mac slept are gone; the tape shows where.
+- Gaps: `espero rawrec --gaps YYYY-MM-DD` shows where the recorder itself was silent (asleep or down). A venue that dropped the connection while the recorder ran shows as `connected: false` heartbeats on the tape, not as a gap. Frames missed either way are gone.
 - Disk: about 4 GB a day with every book channel (Binance is over half), 0.3 GB without. Under 30 GB free the
   book channels stop and the trades continue. Point `ESPERO_RAW_DIR` at a disk with room (the Mac's own holds
   about a month); the folder is not in the weekly release.

@@ -1,10 +1,10 @@
-# Status — generated 2026-11-02 00:53 UTC by `scripts/status.py`
+# Status — generated 2026-11-02 02:30 UTC by `scripts/status.py`
 
 Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `state/health.json`.
 
 ## The ledger
 
-59 tests: 25 fail, 14 forward_pending, 12 measurement, 6 pass, 1 exploratory, 1 provisional.
+62 tests: 25 fail, 17 forward_pending, 12 measurement, 6 pass, 1 exploratory, 1 provisional.
 
 | # | status | what | document |
 |---|---|---|---|
@@ -16,7 +16,7 @@ Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `
 | 42 | pass | Dress rehearsal of real-fill test on testnet | `research/RESULTS_REHEARSAL.md` |
 | 43 | pass | At which holding period do real signals pay? | `research/RESULTS_HORIZONS.md` |
 
-**Forward, judged once after 2027-03-31:** #22, #23, #24, #27, #29, #31, #32, #34, #38, #45, #49, #58, #59, #60. Their running numbers decide nothing and are not shown here.
+**Forward, judged once after 2027-03-31:** #22, #23, #24, #27, #29, #31, #32, #34, #38, #45, #49, #58, #59, #60, #61, #62, #63. Their running numbers decide nothing and are not shown here.
 
 ## The last daily run
 
@@ -44,8 +44,8 @@ Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `
 
 | folder | files |
 |---|---|
-| `data/hlcollect` | 1472 |
-| `data/hlbook` | 533 |
+| `data/hlcollect` | 1508 |
+| `data/hlbook` | 553 |
 | `data/aggr/forward` | 2 |
 | `data/aggr/forward5m` | 2 |
 | `data/lows/forward` | 123 |

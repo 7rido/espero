@@ -8,7 +8,9 @@
 #   ./scripts/install-rawrec-launchd.sh --print       # render the plist to stdout, change nothing
 #
 # ESPERO_RAW_DIR is required and must not be under the repo's data/ (launchd's hlcollect and hlbook
-# own that folder). The log goes to ~/Library/Logs/espero/rawrec.log.
+# own that folder). The log goes to ~/Library/Logs/espero/rawrec.log. The recorder holds a lock on the
+# folder (<raw>/rawrec.lock), so while another recorder writes the same tape the agent refuses to start
+# and launchd retries every minute until that one is gone.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -62,10 +64,6 @@ fi
 
 if ! "$PYTHON" -c "import espero.rawrec, zstandard, websockets" >/dev/null 2>&1; then
     echo "$PYTHON cannot import espero.rawrec with zstandard and websockets; pip install -e '.[raw]' first" >&2
-    exit 1
-fi
-if pgrep -f "espero rawrec --loop" >/dev/null 2>&1; then
-    echo "a rawrec loop is already running (pid $(pgrep -f 'espero rawrec --loop' | head -1)); two writers on one tape is refused. Stop it first" >&2
     exit 1
 fi
 mkdir -p "$LOG_DIR" "$RAW_DIR" "$HOME/Library/LaunchAgents"

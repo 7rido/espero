@@ -21,6 +21,9 @@ downstream reader argues with the venue, not with this module. Control frames (s
 kept under channel `_ctrl`; the recorder's own events (open, reconnect, heartbeat every minute, errors,
 snapshot requests) under `_meta`. A gap is therefore visible on the tape: `gaps()` reads nothing else.
 
+**One writer.** `Recorder.run` holds an `flock` on `<raw>/rawrec.lock` (`espero.lock`); a second recorder
+on the same folder refuses to start, and launchd's KeepAlive simply retries until the first one is gone.
+
 **Append-only.** A file is opened for appending and each session writes one zstd frame into it; zstd frames
 concatenate, so a restart adds a frame rather than rewriting the hour. A crash leaves the last frame without
 its end, and `read_lines()` returns what was decodable and says so (`truncated`). Nothing is ever rewritten.
@@ -470,11 +473,14 @@ class Feed:
     URLS = {"bybit": BYBIT_WS, "okx": OKX_WS, "hyperliquid": HL_MAINNET_WS, "hyperliquid_testnet": HL_TESTNET_WS}
 
     def __init__(self, venue: str, symbols: List[str], writer: HourWriter, books: bool = True,
-                 connect=None, clock: Callable[[], int] = lambda: int(time.time() * 1000)):
+                 connect=None, clock: Callable[[], int] = lambda: int(time.time() * 1000),
+                 books_on: Optional[Callable[[], bool]] = None):
         self.venue, self.symbols, self.writer, self.books = venue, list(symbols), writer, books
         self.connect, self.clock = connect, clock
+        self.books_on = books_on or (lambda: True)      # the recorder's free-space flag, read per frame
         self.ws = None
         self.since_heartbeat = 0
+        self.dropped = 0
         self.reconnects = 0
 
     def subscriptions(self, symbols: Optional[List[str]] = None) -> List[str]:
@@ -492,6 +498,9 @@ class Feed:
 
     def record(self, frame: bytes) -> None:
         ch, sym = classify(self.venue, frame)
+        if not self.books_on() and ch in BOOK_CHANNELS.get(self.venue, ()) + ("bookTicker",):
+            self.dropped += 1                   # under the free-space floor: books are dropped, trades kept
+            return
         self.writer.write(line(self.clock(), ch, sym, frame))
         self.since_heartbeat += 1
 
@@ -554,7 +563,7 @@ class Feed:
         while True:
             await asyncio.sleep(HEARTBEAT_S)
             self.note("heartbeat", frames=self.since_heartbeat, connected=self.ws is not None,
-                      lines=self.writer.lines, bytes=self.writer.bytes)
+                      lines=self.writer.lines, bytes=self.writer.bytes, dropped=self.dropped)
             self.since_heartbeat = 0
 
 
@@ -709,6 +718,11 @@ class Recorder:
                 log.warning("free space %.1f GB: book channels %s", free, "on" if want_books else "off")
 
     async def run(self) -> None:
+        from .lock import JournalLock
+        with JournalLock(self.raw / "rawrec"):      # one writer per tape; the kernel frees it on any exit
+            await self._run()
+
+    async def _run(self) -> None:
         lists = self.lists()
         try:
             inst = await asyncio.to_thread(okx_instruments, self.get)
@@ -726,7 +740,8 @@ class Recorder:
                 self.writers[venue].write(meta(self.clock(), "unlisted", venue=venue, symbols=dropped))
             if not coins:
                 continue
-            feed = Feed(venue, coins, self.writers[venue], self.books, self.connect, self.clock)
+            feed = Feed(venue, coins, self.writers[venue], self.books, self.connect, self.clock,
+                        books_on=lambda: self.books)
             self.feeds[venue] = feed
             tasks += [asyncio.create_task(feed.run()), asyncio.create_task(feed.keepalive()),
                       asyncio.create_task(feed.heartbeat())]

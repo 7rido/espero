@@ -8,7 +8,8 @@ the daily and monthly listings were checked on 2026-11-01 and again by this modu
 liquidations, and that stream cannot be reached from here, so for Binance markets the liquidation columns
 of a rebuilt bar (#61) are "cannot be rebuilt", not zero.
 
-    espero.binance_archive.backfill(raw, symbols, days, datasets)   # research/rawbars.py calls this
+    .venv/bin/python research/rawbars.py --backfill 2026-10-30 2026-11-02     # aggTrades, the 13 symbols
+    espero.binance_archive.backfill(raw, symbols, days, datasets)              # any dataset, from Python
 
 Files go to `<raw>/binance_archive/<dataset>/<symbol>/<file>.zip`, written whole then renamed, each verified
 against its published SHA-256 before it is kept. A day the archive does not have (HTTP 404: not published

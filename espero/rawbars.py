@@ -146,25 +146,54 @@ def compare_bar(ours: Optional[pd.Series], theirs: Optional[pd.Series], liq_comp
     return {"match": not failed, "failed": ",".join(failed)}
 
 
+def in_gap(time_s: int, bar_ms: int, gaps: List[Tuple[int, int]]) -> bool:
+    start, end = int(time_s) * 1000, int(time_s) * 1000 + bar_ms
+    return any(a < end and b > start for a, b in gaps)
+
+
+def merge_archive(tape: pd.DataFrame, archive: pd.DataFrame, binance_gaps: List[Tuple[int, int]],
+                  bar_ms: int = HOUR_MS) -> Tuple[pd.DataFrame, set]:
+    """Per Binance market-bar: the tape's bar where no recorded gap overlaps it, the archive's bar where one
+    does (and the archive has it). Returns the merged bars and the set of (time, market) taken from the
+    archive, whose liquidation columns are then not comparable."""
+    if archive is None or not len(archive):
+        return tape, set()
+    keep, taken = [], set()
+    arch = archive.set_index(["time", "market"])
+    for _, row in tape.iterrows():
+        key = (int(row["time"]), row["market"])
+        if row["market"].startswith("BINANCE_FUTURES:") and in_gap(key[0], bar_ms, binance_gaps) and key in arch.index:
+            continue                            # the archive's bar replaces it below
+        keep.append(row)
+    for key, row in arch.iterrows():
+        if in_gap(key[0], bar_ms, binance_gaps):
+            keep.append(pd.Series({"time": int(key[0]), "market": key[1], **row.to_dict()}))
+            taken.add((int(key[0]), key[1]))
+    out = pd.DataFrame(keep, columns=COLUMNS) if keep else pd.DataFrame(columns=COLUMNS)
+    return out.drop_duplicates(["time", "market"], keep="last").sort_values(["market", "time"]).reset_index(drop=True), taken
+
+
 def compare_day(ours: pd.DataFrame, theirs: pd.DataFrame, gaps_ms: Dict[str, List[Tuple[int, int]]],
-                bar_ms: int = HOUR_MS, archive_markets: Iterable[str] = ()) -> pd.DataFrame:
-    """Every market-bar of a day on either side: excluded when the bar overlaps a recorded gap of its venue,
+                bar_ms: int = HOUR_MS, archive_bars: Iterable[Tuple[int, str]] = (),
+                markets: Optional[Iterable[str]] = None) -> pd.DataFrame:
+    """Every market-bar of a day on either side, over aggr's `markets` only (a market aggr never has is not
+    a miss): excluded when the bar overlaps a recorded gap of its venue and did not come from the archive,
     else compared. Columns: time, market, comparable, match, failed."""
-    archive = set(archive_markets)
+    archive = set(archive_bars)
+    allowed = set(markets) if markets is not None else None
     o = ours.set_index(["time", "market"]) if len(ours) else pd.DataFrame(columns=COLUMNS).set_index(["time", "market"])
     t = theirs.set_index(["time", "market"]) if len(theirs) else pd.DataFrame(columns=COLUMNS).set_index(["time", "market"])
-    keys = sorted(set(o.index) | set(t.index))
+    keys = sorted(k for k in set(o.index) | set(t.index) if allowed is None or k[1] in allowed)
     rows = []
     for time, market in keys:
         venue = {"BINANCE_FUTURES": "binance", "BYBIT": "bybit", "OKEX": "okx"}.get(market.split(":")[0])
-        start, end = int(time) * 1000, int(time) * 1000 + bar_ms
-        in_gap = any(a < end and b > start for a, b in gaps_ms.get(venue, [])) if market not in archive else False
-        if in_gap:
+        from_archive = (int(time), market) in archive
+        if not from_archive and in_gap(int(time), bar_ms, gaps_ms.get(venue, [])):
             rows.append({"time": int(time), "market": market, "comparable": False, "match": False, "failed": "gap"})
             continue
         r = compare_bar(o.loc[(time, market)] if (time, market) in o.index else None,
                         t.loc[(time, market)] if (time, market) in t.index else None,
-                        liq_comparable=market not in archive)
+                        liq_comparable=not from_archive)
         rows.append({"time": int(time), "market": market, "comparable": True, **r})
     return pd.DataFrame(rows, columns=["time", "market", "comparable", "match", "failed"])
 
@@ -180,8 +209,11 @@ def day_summary(table: pd.DataFrame) -> Dict[str, object]:
 
 
 def verdict(days: pd.DataFrame, min_days: int = 30) -> Dict[str, object]:
-    """Criterion (a) on the hourly table: the share of comparable days that match, and the call."""
+    """Criterion (a) on the hourly table's `all` rows (all three venues' bars together, as registered): the
+    share of comparable days that match, and the call."""
     d = days[(days["bar"] == "1h") & (days["comparable"] > 0)]
+    if "venue" in d.columns:
+        d = d[d["venue"] == "all"]
     n = int(d["day"].nunique()) if len(d) else 0
     if n < min_days:
         return {"days": n, "fraction": float("nan"), "a": None, "note": f"fewer than {min_days} comparable days"}

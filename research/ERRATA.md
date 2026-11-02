@@ -5,6 +5,18 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
+## 2026-11-02: #62's replay walks the recorded frame itself, and rests orders on hftbacktest's no-partial-fill exchange
+
+**No tolerance, latency, queue model or criterion changes; written before any fill existed on the tape (0 at
+registration).** `PREREGISTRATION_REPLAYSIM.md` says a market order "fills against the levels on the tape at
+arrival, walking the book; hftbacktest's partial-fill exchange model". `espero/replaysim.py` walks the last
+whole `l2Book` frame before arrival directly (Hyperliquid's frames are whole books, so the walk is the same
+sweep with no engine between), and runs the mirror's resting orders through hftbacktest's
+`NoPartialFillExchange`, because 2.4.4's `PartialFillExchange` stops with error 14 at the first print on a
+tape of whole-book frames, the library's own Hyperliquid converter's output included (checked 2026-11-02, the
+two event arrays being identical). A resting order therefore fills whole once the queue ahead clears, or not
+at all; the registered question, filled or not, is unchanged. Recorded here, dated, before the first comparison.
+
 ## 2026-10-31: #27's forward ledger crashed on its first day with data
 
 **No rule, cost, criterion or verdict changes.** The daily job's `liqbreak` step failed at 07:31 EDT on 2026-10-31,

@@ -10,8 +10,9 @@ What it says:
 - **The typical new listing still falls.** The median position made +12.7% net in its week (+14.4% gross), more
   than on the design window (+10.0%). That is the one criterion that held.
 - **A few squeezes and their funding erase it.** The worst listing rose 484% against the short within its week, at
-  a daily close. Funding cost a mean of −2.7% a position against a median of −0.1%: the coins that squeeze are the
-  ones whose shorts pay. The mean position lost 0.5%, and the trade loses even before costs once funding is counted.
+  a daily close. Funding cost a mean of −2.7% a position against a median of −0.1%: both the price's tail and the funding bill
+  sit in a few positions, likely the same ones, though their overlap was not measured. The mean position lost 0.5%,
+  and the trade loses even with no listing cost at all.
 - **As the pre-registration said,** a FAIL is weak evidence against the drift and strong evidence that the trade,
   as specified, is not tradable. Its power made a pass unlikely; the holdout came in below even that, negative.
 
@@ -62,5 +63,5 @@ Printed beside the verdict as registered; none of it is a claim.
 - The trade closes at this specification. A variant, with sizing, another tail control or a filter at entry, takes a
   new number and cannot use the 2025–2026 listings: they are read now.
 - The fact worth keeping is in both windows: the median new listing falls 10 to 15% against BTC in its first week,
-  and a few squeezes, which carry the funding bill too, take the mean away. Telling the squeeze candidates apart at
+  and a few positions, carrying both the price's tail and the funding bill, take the mean away. Telling the squeeze candidates apart at
   entry, from funding or open interest, is a new idea, and it would need listings after 2026-09 to test.

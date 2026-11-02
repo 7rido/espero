@@ -126,3 +126,25 @@ and written here before the third run reads anything.
 - **Everything else stands:** the events, the split, the entry, the hedge, funding and costs, the series, its t,
   the bar, the conditions, and the hold chosen as the largest design t among 7, 14 and 30. The comparison against
   the basket is closed by the same rule. The trade without the rule is printed as information.
+
+## The third design run, with the cover rule
+
+Files through 2024-12 only; the holdout is unread. Output [listdrift_design_run.txt](listdrift_design_run.txt); the
+second run's is kept as [listdrift_design_run_nocover.txt](listdrift_design_run_nocover.txt).
+
+| hold | covered early | t, net | mean position | median position | t without the rule |
+|---|---|---|---|---|---|
+| 7 days | 88 of 222 | 0.12 | +0.3% | +6.1% | 1.65 |
+| 14 days | 101 of 214 | 0.39 | +0.9% | +1.0% | 1.17 |
+| 30 days | 111 of 199 | 0.49 | +2.9% | −0.7% | 0.95 |
+
+- **The rule closes 40 to 56% of positions early, and the trade loses most of what it had.** A listing that closes
+  above its first day's high often falls afterwards, so the cover takes the loss and misses the fade. Funding per
+  position halves, to −0.6%, but the price lost by covering outweighs it. The later half of the design is
+  negative at every hold.
+- **The abandon clause applies to the trade as now specified:** no hold shows drift; the best t is 0.49. Reading the
+  holdout with this rule would spend it on a trade the design window says has nothing.
+- Choosing another cover level now would fit it to the design window, which this document ruled out. Going back
+  to the trade without the rule is the account holder's call, asked on 2026-11-02; its projected holdout t is
+  about 1.8, against a bar of 3.
+- Until then `listdrift.CHOSEN_HOLD` stays unset, and `--holdout` refuses.

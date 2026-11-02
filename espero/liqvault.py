@@ -6,6 +6,7 @@ The rule reads `data/hlcollect/`: HLP's accounts every 15 minutes, their read re
 used only from `ts` + 120 s. There is no paper book. The verdict comes from `ledger`, rebuilt once after
 the window has closed, and it refuses to read the recordings before then.
 """
+
 from __future__ import annotations
 
 import json
@@ -22,12 +23,14 @@ from . import hyperliquid as hl
 from .audit import trade_weighted_nw
 from .hlcollect import DATA, stamp
 
-VAULTS = ("0x2e3d94f0562703b25c83308a05046ddaf9a8dd14",      # HLP Liquidator
-          "0xb0a55f13d22f66e6d495ac98113841b2326e9540",      # HLP Liquidator 2
-          "0x5e177e5e39c0f4e421f5865a6d8beed8d921cb70",      # HLP Liquidator 3
-          "0x2ed5c4484ea3ff8b57d5f2fb152a40d9f2b68308")      # HLP Liquidator 4
+VAULTS = (
+    "0x2e3d94f0562703b25c83308a05046ddaf9a8dd14",  # HLP Liquidator
+    "0xb0a55f13d22f66e6d495ac98113841b2326e9540",  # HLP Liquidator 2
+    "0x5e177e5e39c0f4e421f5865a6d8beed8d921cb70",  # HLP Liquidator 3
+    "0x2ed5c4484ea3ff8b57d5f2fb152a40d9f2b68308",
+)  # HLP Liquidator 4
 WINDOW_START = hb._utc(2026, 11, 4)
-WINDOW_END = hb.WINDOW_END                                   # exclusive: signals through 2027-03-31 23:59 UTC
+WINDOW_END = hb.WINDOW_END  # exclusive: signals through 2027-03-31 23:59 UTC
 SECOND_HALF = hb.SECOND_HALF
 SLOT_S = 900
 KNOWN_AFTER_S = 120
@@ -40,16 +43,16 @@ TIERS = ((50e6, "≥$50M"), (5e6, "$5M–$50M"), (0.0, "<$5M"))
 
 
 class Slot(NamedTuple):
-    slot: int                                       # the 15-minute slot, from the file's path
-    ts: int                                         # when the read started: the rule's t
-    positions: Dict[Tuple[str, str], Tuple[float, float]]   # (address, coin) -> (szi, value), vaults only
-    clean: Optional[bool] = None                    # True: no vault failed; False: one did; None: no record
+    slot: int  # the 15-minute slot, from the file's path
+    ts: int  # when the read started: the rule's t
+    positions: Dict[Tuple[str, str], Tuple[float, float]]  # (address, coin) -> (szi, value), vaults only
+    clean: Optional[bool] = None  # True: no vault failed; False: one did; None: no record
 
 
 class Signal(NamedTuple):
     coin: str
-    ts: int                                         # A = ts + 120 s
-    side: int                                       # +1 the vault is long, -1 short
+    ts: int  # A = ts + 120 s
+    side: int  # +1 the vault is long, -1 short
     address: str
     value: float
     slot: int
@@ -104,8 +107,14 @@ def slots_not_asking_a_vault(data: Path = DATA) -> int:
     return n
 
 
-def fetch_recent(prices: hb.Prices, coins: Iterable[str], now: int, fetch: Optional[hb.Fetch] = None,
-                 pace: float = 0.5, sleep=time.sleep) -> int:
+def fetch_recent(
+    prices: hb.Prices,
+    coins: Iterable[str],
+    now: int,
+    fetch: Optional[hb.Fetch] = None,
+    pace: float = 0.5,
+    sleep=time.sleep,
+) -> int:
     """Candles the daily files don't hold yet, for these coins, from the public API. Returns rows."""
     rows = 0
     for coin in sorted(set(coins)):
@@ -225,8 +234,14 @@ def closed_trades(rows: List[dict], fetch: Optional[hb.Fetch] = None) -> pd.Data
     for r in rows:
         if r["status"] == "closed":
             funding = hb.funding_bps(r["coin"], r["entry_ts"], r["exit_ts"], fetch)
-            out.append({**r, "funding_bps": funding, "gross_bps": r["side"] * 1e4 * (r["exit_px"] / r["entry_px"] - 1),
-                        "net_bps": net_bps(r["side"], r["entry_px"], r["exit_px"], funding)})
+            out.append(
+                {
+                    **r,
+                    "funding_bps": funding,
+                    "gross_bps": r["side"] * 1e4 * (r["exit_px"] / r["entry_px"] - 1),
+                    "net_bps": net_bps(r["side"], r["entry_px"], r["exit_px"], funding),
+                }
+            )
     return pd.DataFrame(out) if out else pd.DataFrame(columns=["coin", "entry_ts", "side", "net_bps"])
 
 
@@ -247,18 +262,28 @@ def evaluate(closed: pd.DataFrame) -> Dict:
         "coins": bool(len(coins) > 1 and min(without) > 0),
         "median": bool(float(x.median()) > 0),
     }
-    return {"verdict": "PASS" if all(checks.values()) else "FAIL", "n": n, "mean": head["mean"], "t": head["t"],
-            "checks": checks}
+    return {
+        "verdict": "PASS" if all(checks.values()) else "FAIL",
+        "n": n,
+        "mean": head["mean"],
+        "t": head["t"],
+        "checks": checks,
+    }
 
 
 def information(closed: pd.DataFrame, later: pd.DataFrame, unwind: Dict, data: Path) -> Dict:
     """The information-only table: by side, vault and liquidity tier, gross and funding apart, the unwind."""
-    out: Dict[str, object] = {"later_n": len(later), "later_mean": float(later["net_bps"].mean()) if len(later) else math.nan}
+    out: Dict[str, object] = {
+        "later_n": len(later),
+        "later_mean": float(later["net_bps"].mean()) if len(later) else math.nan,
+    }
     if len(closed):
         tiers = [tier_of(day_volume(data, int(r.slot), r.coin)) for r in closed.itertuples()]
         c = closed.assign(tier=tiers)
         out["by_side"] = {int(k): {"n": int(len(g)), "mean": float(g["net_bps"].mean())} for k, g in c.groupby("side")}
-        out["by_vault"] = {k[:10]: {"n": int(len(g)), "mean": float(g["net_bps"].mean())} for k, g in c.groupby("address")}
+        out["by_vault"] = {
+            k[:10]: {"n": int(len(g)), "mean": float(g["net_bps"].mean())} for k, g in c.groupby("address")
+        }
         out["by_tier"] = {k: {"n": int(len(g)), "mean": float(g["net_bps"].mean())} for k, g in c.groupby("tier")}
         out["gross_mean"] = float(c["gross_bps"].mean())
         out["funding_mean"] = float(c["funding_bps"].mean())
@@ -275,10 +300,12 @@ def status(data: Path = DATA, now: Optional[int] = None) -> List[str]:
     data = Path(data)
     opens, closes = pd.Timestamp(WINDOW_START, unit="s").date(), pd.Timestamp(WINDOW_END - 1, unit="s").date()
     where = "not open yet" if now < WINDOW_START else "open" if now < WINDOW_END else "closed"
-    return [f"#64 liqvault: window {opens} to {closes}; {where}. No paper book; the verdict is computed once, "
-            f"after {closes}, with `espero liqvault --verdict`",
-            f"HLP slots on disk: {len(slot_paths(data))}",
-            f"candle files on disk: {len(list(data.glob('candles/*.csv.gz')))}"]
+    return [
+        f"#64 liqvault: window {opens} to {closes}; {where}. No paper book; the verdict is computed once, "
+        f"after {closes}, with `espero liqvault --verdict`",
+        f"HLP slots on disk: {len(slot_paths(data))}",
+        f"candle files on disk: {len(list(data.glob('candles/*.csv.gz')))}",
+    ]
 
 
 def ledger(data: Path = DATA, fetch: Optional[hb.Fetch] = None, now: Optional[int] = None) -> Dict:
@@ -299,9 +326,16 @@ def ledger(data: Path = DATA, fetch: Optional[hb.Fetch] = None, now: Optional[in
     closed, later = closed_trades(rows, fetch), closed_trades(later_rows, fetch)
     info = information(closed, later, found["unwind"], data)
     info["slots_not_asking_a_vault"] = slots_not_asking_a_vault(data)
-    return {"verdict": evaluate(closed), "information": info,
-            "slots": len(paths), "candles_from_api": api_rows, "counts": dict(found["counts"]),
-            "statuses": dict(Counter(r["status"] for r in rows)), "rows": rows, "later_rows": later_rows}
+    return {
+        "verdict": evaluate(closed),
+        "information": info,
+        "slots": len(paths),
+        "candles_from_api": api_rows,
+        "counts": dict(found["counts"]),
+        "statuses": dict(Counter(r["status"] for r in rows)),
+        "rows": rows,
+        "later_rows": later_rows,
+    }
 
 
 if __name__ == "__main__":

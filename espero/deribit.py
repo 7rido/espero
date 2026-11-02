@@ -8,6 +8,7 @@ linear ones on SOL, XRP, BNB, DOGE, LINK and the rest, named `SOL_USDC-27NOV26-1
 when its read started. Public data only: nothing signs or trades. Nothing here computes a signal; the
 Black-76 gamma helper is a measurement for the idea's pre-registration to fix a convention around.
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -31,10 +32,29 @@ CURRENCIES = ("BTC", "ETH", "USDC")
 KINDS = ("option", "future")
 EVERY_S = 300
 EXPIRY_HOUR_UTC = 8
-COLS = ["ts", "currency", "kind", "instrument", "base", "expiry_ts", "strike", "type", "open_interest", "mark_iv",
-        "mark_price", "underlying_price", "estimated_delivery_price", "bid", "ask", "volume", "volume_usd",
-        "interest_rate"]
-MONTHS = {m: i + 1 for i, m in enumerate(("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"))}
+COLS = [
+    "ts",
+    "currency",
+    "kind",
+    "instrument",
+    "base",
+    "expiry_ts",
+    "strike",
+    "type",
+    "open_interest",
+    "mark_iv",
+    "mark_price",
+    "underlying_price",
+    "estimated_delivery_price",
+    "bid",
+    "ask",
+    "volume",
+    "volume_usd",
+    "interest_rate",
+]
+MONTHS = {
+    m: i + 1 for i, m in enumerate(("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"))
+}
 Get = Callable[[str], bytes]
 
 
@@ -78,13 +98,28 @@ def summary(currency: str, kind: str, get: Get, ts: int) -> pd.DataFrame:
     rows = []
     for r in raw["result"]:
         base, expiry, strike, typ = parse_name(r["instrument_name"])
-        rows.append({"ts": ts, "currency": currency, "kind": kind, "instrument": r["instrument_name"], "base": base,
-                     "expiry_ts": expiry, "strike": strike, "type": typ, "open_interest": _f(r.get("open_interest")),
-                     "mark_iv": _f(r.get("mark_iv")), "mark_price": _f(r.get("mark_price")),
-                     "underlying_price": _f(r.get("underlying_price")),
-                     "estimated_delivery_price": _f(r.get("estimated_delivery_price")), "bid": _f(r.get("bid_price")),
-                     "ask": _f(r.get("ask_price")), "volume": _f(r.get("volume")), "volume_usd": _f(r.get("volume_usd")),
-                     "interest_rate": _f(r.get("interest_rate"))})
+        rows.append(
+            {
+                "ts": ts,
+                "currency": currency,
+                "kind": kind,
+                "instrument": r["instrument_name"],
+                "base": base,
+                "expiry_ts": expiry,
+                "strike": strike,
+                "type": typ,
+                "open_interest": _f(r.get("open_interest")),
+                "mark_iv": _f(r.get("mark_iv")),
+                "mark_price": _f(r.get("mark_price")),
+                "underlying_price": _f(r.get("underlying_price")),
+                "estimated_delivery_price": _f(r.get("estimated_delivery_price")),
+                "bid": _f(r.get("bid_price")),
+                "ask": _f(r.get("ask_price")),
+                "volume": _f(r.get("volume")),
+                "volume_usd": _f(r.get("volume_usd")),
+                "interest_rate": _f(r.get("interest_rate")),
+            }
+        )
     return pd.DataFrame(rows, columns=COLS)
 
 
@@ -92,8 +127,9 @@ def summary(currency: str, kind: str, get: Get, ts: int) -> pd.DataFrame:
 class Recorder:
     """Which currency slots are due, and the file that holds each. `get` reads a URL; injected in tests."""
 
-    def __init__(self, data: Path = DATA, get: Optional[Get] = None, sleep=time.sleep,
-                 currencies: Tuple[str, ...] = CURRENCIES):
+    def __init__(
+        self, data: Path = DATA, get: Optional[Get] = None, sleep=time.sleep, currencies: Tuple[str, ...] = CURRENCIES
+    ):
         self.data, self.get, self.sleep, self.currencies = Path(data), get or _get, sleep, currencies
 
     def path(self, currency: str, ts: int) -> Path:
@@ -134,8 +170,11 @@ def status(data: Path = DATA) -> Dict[str, Dict[str, object]]:
     out: Dict[str, Dict[str, object]] = {}
     for c in CURRENCIES:
         files = sorted((Path(data) / c).rglob("*.csv.gz"))
-        out[c] = {"files": len(files), "latest": str(files[-1].relative_to(data)) if files else None,
-                  "bytes": sum(f.stat().st_size for f in files)}
+        out[c] = {
+            "files": len(files),
+            "latest": str(files[-1].relative_to(data)) if files else None,
+            "bytes": sum(f.stat().st_size for f in files),
+        }
     return out
 
 
@@ -155,7 +194,9 @@ def gamma_by_strike(options: pd.DataFrame, now: int) -> pd.DataFrame:
     a 1% move would force on whoever holds the other side. Which side that is, the pre-registration must fix."""
     df = options[options["kind"] == "option"].copy()
     years = (df["expiry_ts"] - now) / (365.25 * 86400)
-    g = [black76_gamma(f, k, iv / 100, t, r if r == r else 0.0)
-         for f, k, iv, t, r in zip(df["underlying_price"], df["strike"], df["mark_iv"], years, df["interest_rate"])]
+    g = [
+        black76_gamma(f, k, iv / 100, t, r if r == r else 0.0)
+        for f, k, iv, t, r in zip(df["underlying_price"], df["strike"], df["mark_iv"], years, df["interest_rate"])
+    ]
     df["gamma_usd_per_pct"] = df["open_interest"] * pd.Series(g, index=df.index) * df["underlying_price"] ** 2 * 0.01
     return df.groupby(["base", "expiry_ts", "strike", "type"], as_index=False)["gamma_usd_per_pct"].sum()

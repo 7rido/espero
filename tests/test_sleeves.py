@@ -1,6 +1,7 @@
 """#63's combination rule on made-up sleeves only: clusters count once, a pair above the one-source
 correlation shares one weight, each sleeve lands on its vol target under the sleeve and gross caps, the
 drawdown throttle halves, goes flat and stays flat, and the book's return is the weighted sum."""
+
 from __future__ import annotations
 
 import unittest
@@ -24,7 +25,7 @@ class TestSleeves(unittest.TestCase):
         rng = np.random.default_rng(63)
         n = 400
         a = series(rng, n, 0.01)
-        b = a * 0.9 + series(rng, n, 0.003)            # the same source of return as a
+        b = a * 0.9 + series(rng, n, 0.003)  # the same source of return as a
         c = series(rng, n, 0.02)
         r = pd.DataFrame({"a": a, "b": b, "c": c})
         corr = sl.correlations(r)
@@ -41,7 +42,7 @@ class TestSleeves(unittest.TestCase):
 
     def test_the_gross_cap_scales_everyone_down_pro_rata(self):
         rng = np.random.default_rng(7)
-        r = pd.DataFrame({k: series(rng, 300, 0.0005) for k in "abcd"})       # tiny vol: every sleeve wants 1.0
+        r = pd.DataFrame({k: series(rng, 300, 0.0005) for k in "abcd"})  # tiny vol: every sleeve wants 1.0
         w = sl.vol_target_weights(r, {k: 3.0 for k in "abcd"})
         self.assertAlmostEqual(float(w.sum()), 1.0, msg="this repo does not borrow: gross is capped at 100%")
         self.assertTrue(np.allclose(w.to_numpy(), w.iloc[0]))
@@ -54,10 +55,10 @@ class TestSleeves(unittest.TestCase):
         self.assertLess(sl.sleeve_vol(long), 0.5, "the trailing window, not the noisy past")
 
     def test_drawdown_throttle_halves_recovers_and_goes_flat_for_good(self):
-        self.assertEqual(sl.drawdown_state([100, 101, 95, 92])["state"], "full")           # -8.9% from the peak: not yet
-        self.assertEqual(sl.drawdown_state([100, 110, 98])["state"], "half")                # -10.9%
-        self.assertEqual(sl.drawdown_state([100, 110, 98, 108])["state"], "full")           # back within 5%
-        self.assertEqual(sl.drawdown_state([100, 110, 98, 102])["state"], "half")           # not yet
+        self.assertEqual(sl.drawdown_state([100, 101, 95, 92])["state"], "full")  # -8.9% from the peak: not yet
+        self.assertEqual(sl.drawdown_state([100, 110, 98])["state"], "half")  # -10.9%
+        self.assertEqual(sl.drawdown_state([100, 110, 98, 108])["state"], "full")  # back within 5%
+        self.assertEqual(sl.drawdown_state([100, 110, 98, 102])["state"], "half")  # not yet
         s = sl.drawdown_state([100, 110, 85, 120, 130])
         self.assertEqual(s["state"], "flat", "flat is absorbing, however high it climbs later")
         self.assertAlmostEqual(s["max_drawdown"], 85 / 110 - 1)

@@ -1,4 +1,5 @@
 """#64's rule, trades and verdict, on made-up data only."""
+
 import json
 import tempfile
 import unittest
@@ -12,7 +13,7 @@ from espero import hlpbook as hb
 from espero import liqvault as lv
 
 V1, V2 = lv.VAULTS[0], lv.VAULTS[1]
-SLOT = lv.WINDOW_START + 40 * lv.SLOT_S          # a slot inside the window
+SLOT = lv.WINDOW_START + 40 * lv.SLOT_S  # a slot inside the window
 PREV = SLOT - lv.SLOT_S
 COIN = "XPL"
 
@@ -34,8 +35,10 @@ def market(coin=COIN, start=SLOT - 2 * 3600, end=SLOT + 8 * 3600, px=100.0, late
 
 class TheRegisteredNumbers(unittest.TestCase):
     def test_numbers(self):
-        self.assertEqual((lv.SLOT_S, lv.KNOWN_AFTER_S, lv.MIN_VALUE_USD, lv.MIN_TRADES, lv.PASS_T, lv.COST_BPS,
-                          lv.LATER_FRACTION), (900, 120, 50_000.0, 30, 3.0, 18.0, 0.25))
+        self.assertEqual(
+            (lv.SLOT_S, lv.KNOWN_AFTER_S, lv.MIN_VALUE_USD, lv.MIN_TRADES, lv.PASS_T, lv.COST_BPS, lv.LATER_FRACTION),
+            (900, 120, 50_000.0, 30, 3.0, 18.0, 0.25),
+        )
         self.assertEqual(len(lv.VAULTS), 4)
         self.assertEqual(lv.WINDOW_START, hb._utc(2026, 11, 4))
         self.assertEqual(lv.WINDOW_END, hb._utc(2027, 4, 1))
@@ -81,7 +84,9 @@ class TheReadRecord(unittest.TestCase):
     def test_candles_load_for_the_wanted_coins_only(self):
         root = Path(self.tmp.name)
         path = root / "day.csv.gz"
-        pd.DataFrame({"ts": [0, 0], "coin": ["A", "B"], "open": [1.0, 2.0], "close": [1.0, 2.0]}).to_csv(path, index=False)
+        pd.DataFrame({"ts": [0, 0], "coin": ["A", "B"], "open": [1.0, 2.0], "close": [1.0, 2.0]}).to_csv(
+            path, index=False
+        )
         p = hb.Prices()
         lv.load_candles(path, p, {"B"})
         self.assertEqual((p.last_end("A"), p.last_end("B")), (0, 60))
@@ -89,10 +94,13 @@ class TheReadRecord(unittest.TestCase):
         self.assertEqual(p.last_end("A"), 60)
 
     def test_read_slot_keeps_vault_rows_only(self):
-        root = Path(self.tmp.name)
         path = self.write([])
-        pd.DataFrame([{"ts": 123, "address": V1.upper(), "coin": COIN, "szi": 5.0, "value": 60_000.0},
-                      {"ts": 123, "address": "0x0104", "coin": COIN, "szi": 9.0, "value": 1e6}]).to_csv(path, index=False)
+        pd.DataFrame(
+            [
+                {"ts": 123, "address": V1.upper(), "coin": COIN, "szi": 5.0, "value": 60_000.0},
+                {"ts": 123, "address": "0x0104", "coin": COIN, "szi": 9.0, "value": 1e6},
+            ]
+        ).to_csv(path, index=False)
         s = lv.read_slot(path)
         self.assertEqual((s.slot, s.ts, s.clean), (hb.slot_of(path), 123, True))
         self.assertEqual(s.positions, {(V1, COIN): (5.0, 60_000.0)})
@@ -104,8 +112,9 @@ class NewInventory(unittest.TestCase):
         self.assertEqual(got, [lv.Signal(COIN, SLOT + 120, 1, V1, 60_000.0, SLOT)])
 
     def test_persisting_position_is_not_new(self):
-        self.assertEqual(lv.new_positions(slot(PREV, {(V1, COIN): (5.0, 60_000.0)}),
-                                          slot(SLOT, {(V1, COIN): (9.0, 90_000.0)})), [])
+        self.assertEqual(
+            lv.new_positions(slot(PREV, {(V1, COIN): (5.0, 60_000.0)}), slot(SLOT, {(V1, COIN): (9.0, 90_000.0)})), []
+        )
 
     def test_a_flip_is_new_and_short_has_its_sign(self):
         got = lv.new_positions(slot(PREV, {(V1, COIN): (5.0, 60_000.0)}), slot(SLOT, {(V1, COIN): (-7.0, 80_000.0)}))
@@ -136,17 +145,22 @@ class TheWalk(unittest.TestCase):
         before = lv.WINDOW_START - 100 * lv.SLOT_S
         found = lv.walk([slot(before - lv.SLOT_S), slot(before, {(V1, COIN): (5.0, 60_000.0)})])
         self.assertEqual((len(found["signals"]), found["counts"]["outside_window"]), (0, 2))
-        last = lv.WINDOW_END - 60                        # ts + 120 falls past the window's end
+        last = lv.WINDOW_END - 60  # ts + 120 falls past the window's end
         found = lv.walk([slot(last - lv.SLOT_S), slot(last, {(V1, COIN): (5.0, 60_000.0)})])
         self.assertEqual(len(found["signals"]), 0)
-        first = lv.WINDOW_START - 100                    # ts + 120 is 20 s into the window
+        first = lv.WINDOW_START - 100  # ts + 120 is 20 s into the window
         found = lv.walk([slot(first - lv.SLOT_S), slot(first, {(V1, COIN): (5.0, 60_000.0)})])
         self.assertEqual(len(found["signals"]), 1)
 
     def test_later_entry_and_unwind(self):
-        slots = [slot(PREV), slot(SLOT, {(V1, COIN): (100.0, 60_000.0)}),
-                 slot(SLOT + 900, {(V1, COIN): (60.0, 36_000.0)}), slot(SLOT + 1800, {(V1, COIN): (25.0, 15_000.0)}),
-                 slot(SLOT + 2700, {(V1, COIN): (25.0, 15_000.0)}), slot(SLOT + 3600)]
+        slots = [
+            slot(PREV),
+            slot(SLOT, {(V1, COIN): (100.0, 60_000.0)}),
+            slot(SLOT + 900, {(V1, COIN): (60.0, 36_000.0)}),
+            slot(SLOT + 1800, {(V1, COIN): (25.0, 15_000.0)}),
+            slot(SLOT + 2700, {(V1, COIN): (25.0, 15_000.0)}),
+            slot(SLOT + 3600),
+        ]
         found = lv.walk(slots)
         self.assertEqual(found["later"], [lv.Signal(COIN, SLOT + 1800 + 120, 1, V1, 60_000.0, SLOT + 1800)])
         self.assertEqual(found["unwind"], {(COIN, SLOT + 120): 4})
@@ -178,10 +192,32 @@ class TheNet(unittest.TestCase):
         self.assertAlmostEqual(lv.net_bps(-1, 100.0, 99.0, -3.0), 100 - 18 - 3)
 
     def test_closed_trades_use_the_side(self):
-        rows = [{"status": "closed", "coin": COIN, "entry_ts": 1, "exit_ts": 2, "entry_px": 100.0, "exit_px": 98.0,
-                 "side": -1, "address": V1, "value": 1.0, "slot": 0},
-                {"status": "dropped_entry", "coin": COIN, "entry_ts": None, "exit_ts": None, "entry_px": None,
-                 "exit_px": None, "side": 1, "address": V1, "value": 1.0, "slot": 0}]
+        rows = [
+            {
+                "status": "closed",
+                "coin": COIN,
+                "entry_ts": 1,
+                "exit_ts": 2,
+                "entry_px": 100.0,
+                "exit_px": 98.0,
+                "side": -1,
+                "address": V1,
+                "value": 1.0,
+                "slot": 0,
+            },
+            {
+                "status": "dropped_entry",
+                "coin": COIN,
+                "entry_ts": None,
+                "exit_ts": None,
+                "entry_px": None,
+                "exit_px": None,
+                "side": 1,
+                "address": V1,
+                "value": 1.0,
+                "slot": 0,
+            },
+        ]
         with mock.patch.object(hb, "funding_bps", return_value=5.0):
             closed = lv.closed_trades(rows)
         self.assertEqual(len(closed), 1)
@@ -232,7 +268,7 @@ class TheVerdict(unittest.TestCase):
         self.assertEqual(out["verdict"], "FAIL")
 
     def test_one_half_fails(self):
-        days = [lv.WINDOW_START + 86400 * (i % 30) for i in range(40)]          # all before 2027-01-17
+        days = [lv.WINDOW_START + 86400 * (i % 30) for i in range(40)]  # all before 2027-01-17
         out = lv.evaluate(frame([60.0] * 40, days=days))
         self.assertFalse(out["checks"]["both_halves"])
 
@@ -249,16 +285,28 @@ class TheLedger(unittest.TestCase):
             for sub in ("hlp", "hlp_reads", "ctx"):
                 (root / sub / day).mkdir(parents=True)
             (root / "candles").mkdir()
-            for at, rows in ((PREV, []), (SLOT, [{"ts": SLOT + 3, "address": V1, "coin": COIN, "szi": 5.0, "value": 60_000.0}]),
-                             (SLOT + 900, [])):
+            for at, rows in (
+                (PREV, []),
+                (SLOT, [{"ts": SLOT + 3, "address": V1, "coin": COIN, "szi": 5.0, "value": 60_000.0}]),
+                (SLOT + 900, []),
+            ):
                 hhmm = pd.Timestamp(at, unit="s").strftime("%H%M")
-                pd.DataFrame(rows, columns=["ts", "address", "coin", "szi", "value"]).to_csv(root / "hlp" / day / f"{hhmm}.csv.gz", index=False)
+                pd.DataFrame(rows, columns=["ts", "address", "coin", "szi", "value"]).to_csv(
+                    root / "hlp" / day / f"{hhmm}.csv.gz", index=False
+                )
                 (root / "hlp_reads" / day / f"{hhmm}.json").write_text(json.dumps({"ts": at, "failed": []}))
-                pd.DataFrame([{"coin": COIN, "day_volume": 7e6}]).to_csv(root / "ctx" / day / f"{hhmm}.csv.gz", index=False)
+                pd.DataFrame([{"coin": COIN, "day_volume": 7e6}]).to_csv(
+                    root / "ctx" / day / f"{hhmm}.csv.gz", index=False
+                )
             p = market()
             starts, opens, closes = p._arrays(COIN)
-            pd.DataFrame({"ts": starts, "coin": COIN, "open": opens, "close": closes}).to_csv(root / "candles" / f"{day}.csv.gz", index=False)
-            with mock.patch.object(lv, "fetch_recent", return_value=0), mock.patch.object(hb, "funding_bps", return_value=1.0):
+            pd.DataFrame({"ts": starts, "coin": COIN, "open": opens, "close": closes}).to_csv(
+                root / "candles" / f"{day}.csv.gz", index=False
+            )
+            with (
+                mock.patch.object(lv, "fetch_recent", return_value=0),
+                mock.patch.object(hb, "funding_bps", return_value=1.0),
+            ):
                 out = lv.ledger(root, now=lv.WINDOW_END + 10)
         self.assertEqual(out["verdict"]["verdict"], "INCONCLUSIVE")
         self.assertEqual(out["statuses"], {"closed": 1})

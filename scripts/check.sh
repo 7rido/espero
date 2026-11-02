@@ -31,6 +31,14 @@ if [ "${1:-}" = "--install" ]; then
     "$PY" -m pip install -e ".[chart]"
 fi
 
+echo "== lint =="
+if "$PY" -m ruff --version >/dev/null 2>&1; then
+    "$PY" -m ruff check espero tests research   # the same line CI runs; research/ is exempt from line length by config
+else
+    echo "ruff not installed (pip install -e '.[dev]'); CI will run it" >&2
+fi
+
+echo
 echo "== tests =="
 "$PY" -m unittest discover -s tests -t . -v
 

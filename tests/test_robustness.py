@@ -2,6 +2,7 @@
 one for a configuration picked by luck and near zero for a real one, purged folds that drop overlapping
 and embargoed observations, the half-life of an AR(1), one-way turnover, capacity bounded by the
 recorded depth, and a block that says "not applicable" where an input is missing."""
+
 from __future__ import annotations
 
 import unittest
@@ -52,7 +53,7 @@ class TestPBO(unittest.TestCase):
 
 class TestPurgedKFold(unittest.TestCase):
     def test_overlapping_and_embargoed_observations_leave_the_training_set(self):
-        t0 = np.arange(0, 100, 2)                 # 50 observations, each spanning 4 bars
+        t0 = np.arange(0, 100, 2)  # 50 observations, each spanning 4 bars
         t1 = t0 + 3
         folds = ro.purged_kfold(t0, t1, k=5, embargo=0.05)
         self.assertEqual(len(folds), 5)
@@ -61,7 +62,9 @@ class TestPurgedKFold(unittest.TestCase):
         self.assertEqual(set(train) & set(test), set())
         test_start, test_end = t0[test].min(), t1[test].max()
         for i in train:
-            self.assertTrue(t1[i] < test_start or t0[i] > test_end + 6, f"observation {i} overlaps or sits in the embargo")
+            self.assertTrue(
+                t1[i] < test_start or t0[i] > test_end + 6, f"observation {i} overlaps or sits in the embargo"
+            )
         self.assertLess(len(train), 40, "purging and the embargo drop more than the test fold alone")
         plain = ro.purged_kfold(t0, t1, k=5, embargo=0.0)
         self.assertGreater(len(plain[2][0]), len(train), "no embargo keeps more")
@@ -78,8 +81,9 @@ class TestSeries(unittest.TestCase):
         h = ro.half_life(x)
         self.assertAlmostEqual(h["phi"], 0.9, delta=0.03)
         self.assertAlmostEqual(h["half_life"], -np.log(2) / np.log(0.9), delta=1.5)
-        self.assertTrue(np.isnan(ro.half_life(rng.normal(size=500) * np.where(np.arange(500) % 2 == 0, 1, -1))["half_life"])
-                        or True)
+        self.assertTrue(
+            np.isnan(ro.half_life(rng.normal(size=500) * np.where(np.arange(500) % 2 == 0, 1, -1))["half_life"]) or True
+        )
         self.assertTrue(np.isnan(ro.half_life([1.0] * 5)["half_life"]))
 
     def test_turnover_counts_a_full_switch_as_one(self):
@@ -106,10 +110,23 @@ class TestCapacity(unittest.TestCase):
         self.assertEqual(ro.capacity([], mid, 10.0)["capacity_usd"], 0.0)
 
     def test_capacity_from_an_hlbook_slot(self):
-        slot = pd.DataFrame({"ts": 1, "valid_ms": 1, "coin": ["X"] * 4, "side": ["bid", "bid", "ask", "ask"],
-                             "level": [0, 1, 0, 1], "px": [99.0, 98.0, 101.0, 103.0], "sz": [1.0, 5.0, 1.0, 5.0], "n": 1})
-        self.assertEqual(ro.capacity_from_hlbook(slot, "X", "buy", edge_bps=60.0)["capacity_usd"], 0.0,
-                         "the first ask already sits 100 bps from the mid")
+        slot = pd.DataFrame(
+            {
+                "ts": 1,
+                "valid_ms": 1,
+                "coin": ["X"] * 4,
+                "side": ["bid", "bid", "ask", "ask"],
+                "level": [0, 1, 0, 1],
+                "px": [99.0, 98.0, 101.0, 103.0],
+                "sz": [1.0, 5.0, 1.0, 5.0],
+                "n": 1,
+            }
+        )
+        self.assertEqual(
+            ro.capacity_from_hlbook(slot, "X", "buy", edge_bps=60.0)["capacity_usd"],
+            0.0,
+            "the first ask already sits 100 bps from the mid",
+        )
         buy = ro.capacity_from_hlbook(slot, "X", "buy", edge_bps=120.0)
         self.assertAlmostEqual(buy["depth_usd"], 101 + 515)
         self.assertGreaterEqual(buy["capacity_usd"], 101.0)
@@ -127,9 +144,16 @@ class TestBlock(unittest.TestCase):
 
     def test_a_strategy_block_fills_what_it_can(self):
         rng = np.random.default_rng(5)
-        b = ro.block(returns=rng.normal(0.1, 1, 300), n_trials=60, var_sharpe=0.02, signal=np.cumsum(rng.normal(size=300)) * 0 + rng.normal(size=300),
-                     weights=pd.DataFrame({"a": [1, 0, 1], "b": [0, 1, 0]}), periods_per_year=365,
-                     book=([(101.0, 2.0)], 100.5), edge_bps=80.0)
+        b = ro.block(
+            returns=rng.normal(0.1, 1, 300),
+            n_trials=60,
+            var_sharpe=0.02,
+            signal=np.cumsum(rng.normal(size=300)) * 0 + rng.normal(size=300),
+            weights=pd.DataFrame({"a": [1, 0, 1], "b": [0, 1, 0]}),
+            periods_per_year=365,
+            book=([(101.0, 2.0)], 100.5),
+            edge_bps=80.0,
+        )
         self.assertIn("DSR", ro.render(b))
         self.assertIn("Capacity", ro.render(b))
         self.assertFalse(b["pbo"]["applicable"])

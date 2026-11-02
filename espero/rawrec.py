@@ -71,14 +71,14 @@ it was added, never removed. The watch reads the books' journals read-only, ever
 
 **What stays weak.** The recorder of record is a laptop that sleeps. Every gap is on the tape and in
 `--gaps`; none is patched from another source. Disk: the first 17 minutes on 2026-11-02 put the five feeds
-together near 4 GB a day, 6 with Coinbase (docs/DATA.md, section 5); `FREE_FLOOR_GB` stops the book channels, trades continue,
-when the volume holding `ESPERO_RAW_DIR` falls under it.
+together near 4 GB a day, 6 with Coinbase (docs/DATA.md, section 5); `FREE_FLOOR_GB` stops the book
+channels, trades continue, when the volume holding `ESPERO_RAW_DIR` falls under it.
 """
+
 from __future__ import annotations
 
 import asyncio
 import datetime as dt
-import io
 import json
 import logging
 import os
@@ -104,7 +104,7 @@ MANIFEST_EVERY_S = 3600
 FLUSH_EVERY_S = 1.0
 BINANCE_RETRY_S = 3600
 FREE_FLOOR_GB = 30.0
-HL_NAME = {"SHIB": "kSHIB"}             # Hyperliquid lists some coins in thousands
+HL_NAME = {"SHIB": "kSHIB"}  # Hyperliquid lists some coins in thousands
 HL_MAINNET_WS = "wss://api.hyperliquid.xyz/ws"
 HL_TESTNET_WS = "wss://api.hyperliquid-testnet.xyz/ws"
 BYBIT_WS = "wss://stream.bybit.com/v5/public/linear"
@@ -115,9 +115,14 @@ COINBASE_WS = "wss://ws-feed.exchange.coinbase.com"
 COINBASE_REST = "https://api.exchange.coinbase.com"
 BINANCE_REST = "https://fapi.binance.com/fapi/v1"
 BINANCE_STREAMS = ("trade", "aggTrade", "depth@100ms", "depth20@100ms", "forceOrder", "markPrice@1s", "bookTicker")
-BOOK_CHANNELS = {"bybit": ("orderbook.50",), "okx": ("books", "rest.books"), "hyperliquid": ("l2Book",),
-                 "hyperliquid_testnet": ("l2Book",), "binance": ("depth@100ms", "depth20@100ms", "rest.depth"),
-                 "coinbase": ("snapshot", "l2update", "rest.book")}
+BOOK_CHANNELS = {
+    "bybit": ("orderbook.50",),
+    "okx": ("books", "rest.books"),
+    "hyperliquid": ("l2Book",),
+    "hyperliquid_testnet": ("l2Book",),
+    "binance": ("depth@100ms", "depth20@100ms", "rest.depth"),
+    "coinbase": ("snapshot", "l2update", "rest.book"),
+}
 PROJECT = Path(__file__).resolve().parents[1]
 
 
@@ -154,7 +159,7 @@ def line(rt_ms: int, channel: str, symbol: str, frame: bytes) -> bytes:
     """One NDJSON line; `frame` is the venue's JSON text, embedded verbatim."""
     head = json.dumps({"rt": int(rt_ms), "ch": channel, "s": symbol}, separators=(",", ":"))
     frame = frame.strip()
-    if not frame[:1] in (b"{", b"["):           # a text frame such as OKX's "pong": kept as a JSON string
+    if frame[:1] not in (b"{", b"["):  # a text frame such as OKX's "pong": kept as a JSON string
         frame = json.dumps(frame.decode("utf-8", "replace")).encode()
     return head[:-1].encode() + b',"d":' + frame + b"}\n"
 
@@ -212,6 +217,7 @@ class HourWriter:
 
     def _open(self, rt_ms: int) -> None:
         import zstandard
+
         self.close()
         path = hour_path(self.raw, self.venue, rt_ms)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -231,6 +237,7 @@ class HourWriter:
     def flush(self) -> None:
         if self._zw is not None:
             import zstandard
+
             self._zw.flush(zstandard.FLUSH_BLOCK)
             self._fh.flush()
 
@@ -258,12 +265,13 @@ def _next_frame(data: bytes, start: int) -> int:
     """Offset of the next frame start in `data` at or after `start`: the magic followed by a header zstd
     accepts, so four random bytes inside a frame are not mistaken for one. -1 when there is none."""
     import zstandard
+
     k = data.find(ZSTD_MAGIC, start)
     while k >= 0:
         if len(data) - k < FRAME_HEADER_MAX:
-            return k                            # maybe: the caller keeps these bytes for the next piece
+            return k  # maybe: the caller keeps these bytes for the next piece
         try:
-            zstandard.get_frame_parameters(data[k:k + FRAME_HEADER_MAX])
+            zstandard.get_frame_parameters(data[k : k + FRAME_HEADER_MAX])
             return k
         except zstandard.ZstdError:
             k = data.find(ZSTD_MAGIC, k + 1)
@@ -279,6 +287,7 @@ class FrameDecoder:
 
     def __init__(self):
         import zstandard
+
         self._dctx = zstandard.ZstdDecompressor()
         self._dobj = None
         self._rest = b""
@@ -298,6 +307,7 @@ class FrameDecoder:
     def feed(self, chunk: bytes, final: bool = False, only=None) -> Iterator[dict]:
         """`only`: byte strings; a line is parsed only when it contains one of them (a cheap pre-filter)."""
         import zstandard
+
         self._only = only
         data = self._pending + chunk
         self._pending = b""
@@ -305,11 +315,11 @@ class FrameDecoder:
             if self._dobj is None:
                 self._dobj = self._dctx.decompressobj()
                 self.open_frame = True
-                cut_at = _next_frame(data, 1)       # this piece starts a frame; a second start inside it is a cut
+                cut_at = _next_frame(data, 1)  # this piece starts a frame; a second start inside it is a cut
             else:
-                cut_at = _next_frame(data, 0)       # a frame start while one is open: the open one was cut
+                cut_at = _next_frame(data, 0)  # a frame start while one is open: the open one was cut
             if cut_at >= 0 and len(data) - cut_at < FRAME_HEADER_MAX and not final:
-                self._pending = data[cut_at:]       # not enough bytes to judge the header yet
+                self._pending = data[cut_at:]  # not enough bytes to judge the header yet
                 data = data[:cut_at]
                 if not data:
                     break
@@ -321,7 +331,7 @@ class FrameDecoder:
                         yield from self._emit(self._dobj.decompress(head))
                     except zstandard.ZstdError:
                         pass
-                if not self._dobj.eof:              # the open frame never got its end before the next began
+                if not self._dobj.eof:  # the open frame never got its end before the next began
                     yield {"truncated": True}
                     self._rest = b""
                 self._dobj, self.open_frame = None, False
@@ -342,7 +352,7 @@ class FrameDecoder:
                 continue
             self._resyncing = False
             yield from self._emit(out)
-            if self._dobj.eof:                      # the frame ended: the next session's frame may follow
+            if self._dobj.eof:  # the frame ended: the next session's frame may follow
                 data = self._dobj.unused_data
                 self._dobj, self.open_frame = None, False
             else:
@@ -377,8 +387,12 @@ def read_day(raw: Path, venue: str, day: str) -> Iterator[dict]:
 
 
 # ------------------------------------------------------------------ what gets recorded
-def plan(coins: Dict[str, Dict[str, List[str]]] = COINS, hl_extra: Iterable[str] = (),
-         testnet: Iterable[str] = (), coinbase: Iterable[str] = ()) -> Dict[str, List[str]]:
+def plan(
+    coins: Dict[str, Dict[str, List[str]]] = COINS,
+    hl_extra: Iterable[str] = (),
+    testnet: Iterable[str] = (),
+    coinbase: Iterable[str] = (),
+) -> Dict[str, List[str]]:
     """Symbols per venue: aggr's coins on each venue that lists them; Hyperliquid also gets `hl_extra`;
     Coinbase spot gets BTC and ETH and the carry books' coins (their spot leg is priced there)."""
     bybit = [f"{c}USDT" for c, m in coins.items() if any(x.startswith("BYBIT:") for x in m["all"])]
@@ -386,8 +400,14 @@ def plan(coins: Dict[str, Dict[str, List[str]]] = COINS, hl_extra: Iterable[str]
     binance = [f"{c}USDT" for c, m in coins.items() if any(x.startswith("BINANCE_FUTURES:") for x in m["all"])]
     hl = sorted({HL_NAME.get(c, c) for c in coins} | set(hl_extra))
     cb = sorted({f"{c}-USD" for c in ("BTC", "ETH")} | {f"{c}-USD" for c in coinbase})
-    return {"bybit": bybit, "okx": okx, "hyperliquid": hl, "hyperliquid_testnet": sorted(set(testnet)),
-            "binance": binance, "coinbase": cb}
+    return {
+        "bybit": bybit,
+        "okx": okx,
+        "hyperliquid": hl,
+        "hyperliquid_testnet": sorted(set(testnet)),
+        "binance": binance,
+        "coinbase": cb,
+    }
 
 
 def hlbook_coins(project: Path = PROJECT) -> List[str]:
@@ -429,9 +449,13 @@ def coins_file(raw: Path, base: Dict[str, List[str]], now: int) -> Dict[str, obj
     path = Path(raw) / "coins.json"
     if path.exists():
         return json.loads(path.read_text())
-    doc = {"chosen_ts": now, "rule": "aggr's 14 forward coins on every venue listing them; on Hyperliquid also "
-                                     "hlbook's 10 and the paper books' holdings; added coins are appended, never removed",
-           "venues": base, "added": {}}
+    doc = {
+        "chosen_ts": now,
+        "rule": "aggr's 14 forward coins on every venue listing them; on Hyperliquid also "
+        "hlbook's 10 and the paper books' holdings; added coins are appended, never removed",
+        "venues": base,
+        "added": {},
+    }
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(doc, indent=1))
@@ -455,8 +479,9 @@ def add_coins(raw: Path, doc: Dict[str, object], venue: str, coins: Iterable[str
 
 
 # ------------------------------------------------------------------ reading the tape back
-def gaps(raw: Path, venue: str, day: str, max_silence_s: float = 2 * HEARTBEAT_S,
-         now_ms: Optional[int] = None) -> List[Tuple[int, int]]:
+def gaps(
+    raw: Path, venue: str, day: str, max_silence_s: float = 2 * HEARTBEAT_S, now_ms: Optional[int] = None
+) -> List[Tuple[int, int]]:
     """Silences longer than `max_silence_s` in a venue's day, from every line's receive time: from
     00:00 to the first line, between lines, and from the last line to 24:00 (or to now, today)."""
     start = int(dt.datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=dt.timezone.utc).timestamp() * 1000)
@@ -490,8 +515,11 @@ def status(raw: Path, venues: Iterable[str] = VENUES) -> Dict[str, Dict[str, dic
                 for rec in read_lines(files[-1]):
                     if rec.get("rt"):
                         last = rec["rt"]
-            out[venue][folder.name] = {"files": len(files), "bytes": sum(f.stat().st_size for f in files),
-                                       "last_rt": last}
+            out[venue][folder.name] = {
+                "files": len(files),
+                "bytes": sum(f.stat().st_size for f in files),
+                "last_rt": last,
+            }
     return out
 
 
@@ -525,7 +553,7 @@ def _get(url: str, timeout: int = 20) -> bytes:
 
 
 def chunks(items: List[str], n: int) -> List[List[str]]:
-    return [items[i:i + n] for i in range(0, len(items), n)]
+    return [items[i : i + n] for i in range(0, len(items), n)]
 
 
 def bybit_subscribe(symbols: List[str], books: bool = True) -> List[str]:
@@ -568,18 +596,35 @@ class Feed:
     """One venue's connection, written to one HourWriter. `connect` is websockets.connect unless a test
     injects something else; `clock` returns ms."""
 
-    KEEPALIVE = {"bybit": (json.dumps({"op": "ping"}), 20), "okx": ("ping", 25),
-                 "hyperliquid": (json.dumps({"method": "ping"}), 50),
-                 "hyperliquid_testnet": (json.dumps({"method": "ping"}), 50), "binance": (None, 0), "coinbase": (None, 0)}
-    URLS = {"bybit": BYBIT_WS, "okx": OKX_WS, "hyperliquid": HL_MAINNET_WS, "hyperliquid_testnet": HL_TESTNET_WS,
-            "coinbase": COINBASE_WS}
+    KEEPALIVE = {
+        "bybit": (json.dumps({"op": "ping"}), 20),
+        "okx": ("ping", 25),
+        "hyperliquid": (json.dumps({"method": "ping"}), 50),
+        "hyperliquid_testnet": (json.dumps({"method": "ping"}), 50),
+        "binance": (None, 0),
+        "coinbase": (None, 0),
+    }
+    URLS = {
+        "bybit": BYBIT_WS,
+        "okx": OKX_WS,
+        "hyperliquid": HL_MAINNET_WS,
+        "hyperliquid_testnet": HL_TESTNET_WS,
+        "coinbase": COINBASE_WS,
+    }
 
-    def __init__(self, venue: str, symbols: List[str], writer: HourWriter, books: bool = True,
-                 connect=None, clock: Callable[[], int] = lambda: int(time.time() * 1000),
-                 books_on: Optional[Callable[[], bool]] = None):
+    def __init__(
+        self,
+        venue: str,
+        symbols: List[str],
+        writer: HourWriter,
+        books: bool = True,
+        connect=None,
+        clock: Callable[[], int] = lambda: int(time.time() * 1000),
+        books_on: Optional[Callable[[], bool]] = None,
+    ):
         self.venue, self.symbols, self.writer, self.books = venue, list(symbols), writer, books
         self.connect, self.clock = connect, clock
-        self.books_on = books_on or (lambda: True)      # the recorder's free-space flag, read per frame
+        self.books_on = books_on or (lambda: True)  # the recorder's free-space flag, read per frame
         self.ws = None
         self.since_heartbeat = 0
         self.dropped = 0
@@ -588,7 +633,7 @@ class Feed:
     def subscriptions(self, symbols: Optional[List[str]] = None) -> List[str]:
         symbols = self.symbols if symbols is None else symbols
         if self.venue == "binance":
-            return []                           # the streams are in the URL; a subscribe message is refused
+            return []  # the streams are in the URL; a subscribe message is refused
         if self.venue == "bybit":
             return bybit_subscribe(symbols, self.books)
         if self.venue == "okx":
@@ -603,7 +648,7 @@ class Feed:
     def record(self, frame: bytes) -> None:
         ch, sym = classify(self.venue, frame)
         if not self.books_on() and ch in BOOK_CHANNELS.get(self.venue, ()) + ("bookTicker",):
-            self.dropped += 1                   # under the free-space floor: books are dropped, trades kept
+            self.dropped += 1  # under the free-space floor: books are dropped, trades kept
             return
         self.writer.write(line(self.clock(), ch, sym, frame))
         self.since_heartbeat += 1
@@ -624,15 +669,19 @@ class Feed:
 
     async def run(self) -> None:
         import websockets
+
         connect = self.connect or websockets.connect
         retry = 1.0
         while True:
             try:
-                async with connect(self.url(), open_timeout=15, ping_interval=20, ping_timeout=20,
-                                   max_size=None) as ws:
+                async with connect(self.url(), open_timeout=15, ping_interval=20, ping_timeout=20, max_size=None) as ws:
                     self.ws = ws
-                    self.note("open" if not self.reconnects else "reconnect", url=self.url(), n=self.reconnects,
-                              symbols=self.symbols)
+                    self.note(
+                        "open" if not self.reconnects else "reconnect",
+                        url=self.url(),
+                        n=self.reconnects,
+                        symbols=self.symbols,
+                    )
                     retry = 1.0
                     for msg in self.subscriptions():
                         await ws.send(msg)
@@ -666,15 +715,23 @@ class Feed:
     async def heartbeat(self) -> None:
         while True:
             await asyncio.sleep(HEARTBEAT_S)
-            self.note("heartbeat", frames=self.since_heartbeat, connected=self.ws is not None,
-                      lines=self.writer.lines, bytes=self.writer.bytes, dropped=self.dropped)
+            self.note(
+                "heartbeat",
+                frames=self.since_heartbeat,
+                connected=self.ws is not None,
+                lines=self.writer.lines,
+                bytes=self.writer.bytes,
+                dropped=self.dropped,
+            )
             self.since_heartbeat = 0
 
 
-async def bybit_snapshots(symbols: List[str], writer: HourWriter, connect=None, clock=None,
-                          timeout: float = 20.0) -> int:
+async def bybit_snapshots(
+    symbols: List[str], writer: HourWriter, connect=None, clock=None, timeout: float = 20.0
+) -> int:
     """A second, short subscription: the first `orderbook.50` frame per symbol is a full book."""
     import websockets
+
     connect = connect or websockets.connect
     clock = clock or (lambda: int(time.time() * 1000))
     want = {f"orderbook.50.{s}" for s in symbols}
@@ -706,8 +763,12 @@ def hl_listed(testnet: bool, get=_get) -> Optional[List[str]]:
     subscription to a coin the network does not list makes it drop the whole socket."""
     url = ("https://api.hyperliquid-testnet.xyz" if testnet else "https://api.hyperliquid.xyz") + "/info"
     try:
-        req = urllib.request.Request(url, data=b'{"type":"meta"}', method="POST",
-                                     headers={"User-Agent": "espero raw recorder", "Content-Type": "application/json"})
+        req = urllib.request.Request(
+            url,
+            data=b'{"type":"meta"}',
+            method="POST",
+            headers={"User-Agent": "espero raw recorder", "Content-Type": "application/json"},
+        )
         with urllib.request.urlopen(req, timeout=20) as r:
             meta_ = json.loads(r.read())
         return [u["name"] for u in meta_.get("universe", []) if not u.get("isDelisted")]
@@ -745,8 +806,15 @@ def coinbase_snapshot(symbol: str, get=_get) -> bytes:
 class Recorder:
     """The whole loop: five feeds, their snapshots, the watch on the paper books, the hourly manifests."""
 
-    def __init__(self, raw: Path, state: Optional[Path] = None, connect=None, get=_get,
-                 clock: Callable[[], int] = lambda: int(time.time() * 1000), free: Callable[[Path], float] = free_gb):
+    def __init__(
+        self,
+        raw: Path,
+        state: Optional[Path] = None,
+        connect=None,
+        get=_get,
+        clock: Callable[[], int] = lambda: int(time.time() * 1000),
+        free: Callable[[Path], float] = free_gb,
+    ):
         self.raw = Path(raw)
         self.state = Path(state) if state else PROJECT / "state"
         self.connect, self.get, self.clock, self.free = connect, get, clock, free
@@ -758,11 +826,13 @@ class Recorder:
 
     def lists(self) -> Dict[str, List[str]]:
         held = book_coins(self.state)
-        base = plan(hl_extra=hlbook_coins() + held["carry"] + held["paper"], testnet=held["carry"], coinbase=held["carry"])
+        base = plan(
+            hl_extra=hlbook_coins() + held["carry"] + held["paper"], testnet=held["carry"], coinbase=held["carry"]
+        )
         doc = coins_file(self.raw, base, self.clock() // 1000)
         self.doc = doc
         for venue in VENUES:
-            if venue not in doc["venues"] and base.get(venue):      # a venue added after the file was frozen
+            if venue not in doc["venues"] and base.get(venue):  # a venue added after the file was frozen
                 add_coins(self.raw, doc, venue, base[venue], self.clock() // 1000)
         return {v: list(doc["venues"].get(v, [])) for v in VENUES}
 
@@ -771,8 +841,11 @@ class Recorder:
         while True:
             await asyncio.sleep(WATCH_EVERY_S)
             held = book_coins(self.state)
-            for venue, coins in (("hyperliquid", held["carry"] + held["paper"]), ("hyperliquid_testnet", held["carry"]),
-                                 ("coinbase", [f"{c}-USD" for c in held["carry"]])):
+            for venue, coins in (
+                ("hyperliquid", held["carry"] + held["paper"]),
+                ("hyperliquid_testnet", held["carry"]),
+                ("coinbase", [f"{c}-USD" for c in held["carry"]]),
+            ):
                 new = add_coins(self.raw, self.doc, venue, coins, self.clock() // 1000)
                 keep, _ = listed_only(venue, new, self.listed.get(venue))
                 if keep and venue in self.feeds:
@@ -788,22 +861,43 @@ class Recorder:
             try:
                 await bybit_snapshots(lst["bybit"], self.writers["bybit"], self.connect, self.clock)
             except Exception as exc:  # noqa: BLE001
-                self.writers["bybit"].write(meta(self.clock(), "error", venue="bybit", where="snapshot",
-                                                 error=f"{type(exc).__name__}: {exc}"[:300]))
+                self.writers["bybit"].write(
+                    meta(
+                        self.clock(),
+                        "error",
+                        venue="bybit",
+                        where="snapshot",
+                        error=f"{type(exc).__name__}: {exc}"[:300],
+                    )
+                )
             for venue, fn in (("okx", okx_snapshot), ("binance", binance_snapshot), ("coinbase", coinbase_snapshot)):
                 if venue == "binance" and self.clock() - self._binance_rest_refused < BINANCE_RETRY_S * 1000:
-                    continue                    # REST said 451 within the hour; the depth20 stream is the snapshot
+                    continue  # REST said 451 within the hour; the depth20 stream is the snapshot
                 for s in lst[venue]:
                     try:
                         frame = await asyncio.to_thread(fn, s, self.get)
-                        self.writers[venue].write(line(self.clock(), "rest." + {"okx": "books", "binance": "depth",
-                                                                                "coinbase": "book"}[venue], s, frame))
+                        self.writers[venue].write(
+                            line(
+                                self.clock(),
+                                "rest." + {"okx": "books", "binance": "depth", "coinbase": "book"}[venue],
+                                s,
+                                frame,
+                            )
+                        )
                     except Exception as exc:  # noqa: BLE001
-                        self.writers[venue].write(meta(self.clock(), "error", venue=venue, where="snapshot", symbol=s,
-                                                       error=f"{type(exc).__name__}: {exc}"[:300]))
+                        self.writers[venue].write(
+                            meta(
+                                self.clock(),
+                                "error",
+                                venue=venue,
+                                where="snapshot",
+                                symbol=s,
+                                error=f"{type(exc).__name__}: {exc}"[:300],
+                            )
+                        )
                         if venue == "binance":
                             self._binance_rest_refused = self.clock()
-                            break           # one refusal says it for every symbol, for an hour
+                            break  # one refusal says it for every symbol, for an hour
                     await asyncio.sleep(0.2)
 
     async def housekeeping(self) -> None:
@@ -831,12 +925,13 @@ class Recorder:
 
     async def run(self) -> None:
         from .lock import JournalLock
-        with JournalLock(self.raw / "rawrec"):      # one writer per tape; the kernel frees it on any exit
+
+        with JournalLock(self.raw / "rawrec"):  # one writer per tape; the kernel frees it on any exit
             try:
                 await self._run()
             finally:
                 for w in self.writers.values():
-                    w.close()                       # every frame gets its end, whichever way the loop stopped
+                    w.close()  # every frame gets its end, whichever way the loop stopped
 
     async def _run(self) -> None:
         lists = self.lists()
@@ -847,8 +942,10 @@ class Recorder:
         except Exception as exc:  # noqa: BLE001
             log.warning("okx instruments: %s", exc)
         self.books = self.free(self.raw) > FREE_FLOOR_GB
-        self.listed: Dict[str, Optional[List[str]]] = {"hyperliquid": await asyncio.to_thread(hl_listed, False),
-                       "hyperliquid_testnet": await asyncio.to_thread(hl_listed, True)}
+        self.listed: Dict[str, Optional[List[str]]] = {
+            "hyperliquid": await asyncio.to_thread(hl_listed, False),
+            "hyperliquid_testnet": await asyncio.to_thread(hl_listed, True),
+        }
         tasks = []
         for venue in VENUES:
             coins, dropped = listed_only(venue, lists[venue], self.listed.get(venue))
@@ -856,13 +953,21 @@ class Recorder:
                 self.writers[venue].write(meta(self.clock(), "unlisted", venue=venue, symbols=dropped))
             if not coins:
                 continue
-            feed = Feed(venue, coins, self.writers[venue], self.books, self.connect, self.clock,
-                        books_on=lambda: self.books)
+            feed = Feed(
+                venue, coins, self.writers[venue], self.books, self.connect, self.clock, books_on=lambda: self.books
+            )
             self.feeds[venue] = feed
-            tasks += [asyncio.create_task(feed.run()), asyncio.create_task(feed.keepalive()),
-                      asyncio.create_task(feed.heartbeat())]
-        tasks += [asyncio.create_task(self.snapshots()), asyncio.create_task(self.watch()),
-                  asyncio.create_task(self.housekeeping()), asyncio.create_task(self.hourly())]
+            tasks += [
+                asyncio.create_task(feed.run()),
+                asyncio.create_task(feed.keepalive()),
+                asyncio.create_task(feed.heartbeat()),
+            ]
+        tasks += [
+            asyncio.create_task(self.snapshots()),
+            asyncio.create_task(self.watch()),
+            asyncio.create_task(self.housekeeping()),
+            asyncio.create_task(self.hourly()),
+        ]
         try:
             await asyncio.gather(*tasks)
         finally:
@@ -873,6 +978,7 @@ class Recorder:
 def main_loop(raw: Path, state: Optional[Path] = None) -> int:
     """Run until SIGINT or SIGTERM (launchd's stop); either closes the hour files so their frames get an end."""
     import signal
+
     rec = Recorder(raw, state)
 
     async def run() -> None:
@@ -884,5 +990,6 @@ def main_loop(raw: Path, state: Optional[Path] = None) -> int:
             await task
         except asyncio.CancelledError:
             pass
+
     asyncio.run(run())
     return 0

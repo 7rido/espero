@@ -1,6 +1,7 @@
 """#61's rebuild and comparison, on made-up frames only: aggr's arithmetic (dollars by taker side, counts,
 liquidations by order side with Bybit's flip), the registered tolerance per field, a bar inside a recorded
 gap excluded, a bar aggr lacks counted as a miss, and the day and family calls."""
+
 from __future__ import annotations
 
 import unittest
@@ -10,7 +11,7 @@ import pandas as pd
 
 from espero import rawbars as rb
 
-T = 1_793_664_000_000       # 2026-11-03 00:00:00 UTC, ms
+T = 1_793_664_000_000  # 2026-11-03 00:00:00 UTC, ms
 
 
 def frame(ch, d):
@@ -19,23 +20,45 @@ def frame(ch, d):
 
 class TestEvents(unittest.TestCase):
     def test_bybit_trades_and_the_liquidation_flip(self):
-        frames = [frame("publicTrade", {"data": [{"T": T + 5, "s": "BTCUSDT", "p": "100", "v": "2", "S": "Buy"},
-                                                 {"T": T + 6, "s": "BTCUSDT", "p": "99", "v": "1", "S": "Sell"}]}),
-                  frame("allLiquidation", {"data": [{"T": T + 7, "s": "BTCUSDT", "p": "98", "v": "3", "S": "Buy"}]})]
+        frames = [
+            frame(
+                "publicTrade",
+                {
+                    "data": [
+                        {"T": T + 5, "s": "BTCUSDT", "p": "100", "v": "2", "S": "Buy"},
+                        {"T": T + 6, "s": "BTCUSDT", "p": "99", "v": "1", "S": "Sell"},
+                    ]
+                },
+            ),
+            frame("allLiquidation", {"data": [{"T": T + 7, "s": "BTCUSDT", "p": "98", "v": "3", "S": "Buy"}]}),
+        ]
         e = rb.events_from_frames("bybit", frames)
         self.assertEqual(list(e["side"]), ["buy", "sell", "sell"], "a long liquidated (S=Buy) is a sell order")
         self.assertEqual(list(e["liquidation"]), [False, False, True])
         self.assertEqual(e["market"].iloc[0], "BYBIT:BTCUSDT")
 
     def test_okx_sizes_are_contracts_times_ct_val(self):
-        frames = [frame("trades", {"data": [{"instId": "BTC-USDT-SWAP", "ts": str(T + 1), "px": "100", "sz": "5",
-                                             "side": "sell"}]}),
-                  frame("liquidation-orders", {"data": [{"instId": "BTC-USDT-SWAP",
-                                                         "details": [{"ts": str(T + 2), "bkPx": "99", "sz": "2",
-                                                                      "side": "buy"}]},
-                                                        {"instId": "OTHER-USDT-SWAP",
-                                                         "details": [{"ts": str(T + 2), "bkPx": "1", "sz": "2",
-                                                                      "side": "buy"}]}]})]
+        frames = [
+            frame(
+                "trades",
+                {"data": [{"instId": "BTC-USDT-SWAP", "ts": str(T + 1), "px": "100", "sz": "5", "side": "sell"}]},
+            ),
+            frame(
+                "liquidation-orders",
+                {
+                    "data": [
+                        {
+                            "instId": "BTC-USDT-SWAP",
+                            "details": [{"ts": str(T + 2), "bkPx": "99", "sz": "2", "side": "buy"}],
+                        },
+                        {
+                            "instId": "OTHER-USDT-SWAP",
+                            "details": [{"ts": str(T + 2), "bkPx": "1", "sz": "2", "side": "buy"}],
+                        },
+                    ]
+                },
+            ),
+        ]
         e = rb.events_from_frames("okx", frames, ct_val={"BTC-USDT-SWAP": 0.01})
         self.assertEqual(len(e), 2, "an instrument without a contract value is not ours")
         self.assertAlmostEqual(e["size"].iloc[0], 0.05)
@@ -43,33 +66,53 @@ class TestEvents(unittest.TestCase):
         self.assertEqual(e["market"].iloc[1], "OKEX:BTC-USDT-SWAP")
 
     def test_binance_agg_trade_counts_its_trades_and_maker_flag_is_the_side(self):
-        frames = [frame("aggTrade", {"data": {"s": "BTCUSDT", "T": T + 1, "p": "100", "q": "1", "f": 10, "l": 14,
-                                              "m": True}}),
-                  frame("forceOrder", {"data": {"o": {"s": "BTCUSDT", "T": T + 2, "p": "90", "q": "2", "S": "BUY"}}})]
+        frames = [
+            frame(
+                "aggTrade", {"data": {"s": "BTCUSDT", "T": T + 1, "p": "100", "q": "1", "f": 10, "l": 14, "m": True}}
+            ),
+            frame("forceOrder", {"data": {"o": {"s": "BTCUSDT", "T": T + 2, "p": "90", "q": "2", "S": "BUY"}}}),
+        ]
         e = rb.events_from_frames("binance", frames)
         self.assertEqual(list(e["count"]), [5, 1])
         self.assertEqual(list(e["side"]), ["sell", "buy"])
         self.assertEqual(e["market"].iloc[0], "BINANCE_FUTURES:btcusdt")
-        raw = rb.events_from_frames("binance", [frame("trade", {"data": {"s": "ETHUSDT", "T": T + 3, "p": "10", "q": "2",
-                                                                          "m": False}})])
-        self.assertEqual((raw["count"].iloc[0], raw["side"].iloc[0], raw["market"].iloc[0]), (1, "buy", "BINANCE_FUTURES:ethusdt"))
+        raw = rb.events_from_frames(
+            "binance", [frame("trade", {"data": {"s": "ETHUSDT", "T": T + 3, "p": "10", "q": "2", "m": False}})]
+        )
+        self.assertEqual(
+            (raw["count"].iloc[0], raw["side"].iloc[0], raw["market"].iloc[0]), (1, "buy", "BINANCE_FUTURES:ethusdt")
+        )
 
     def test_archive_rows_become_the_same_events(self):
-        agg = pd.DataFrame({"agg_trade_id": [1], "price": [100.0], "quantity": [2.0], "first_trade_id": [7],
-                            "last_trade_id": [9], "transact_time": [T + 1], "is_buyer_maker": ["false"]})
+        agg = pd.DataFrame(
+            {
+                "agg_trade_id": [1],
+                "price": [100.0],
+                "quantity": [2.0],
+                "first_trade_id": [7],
+                "last_trade_id": [9],
+                "transact_time": [T + 1],
+                "is_buyer_maker": ["false"],
+            }
+        )
         e = rb.events_from_archive("BTCUSDT", agg)
-        self.assertEqual((e["side"].iloc[0], int(e["count"].iloc[0]), bool(e["liquidation"].iloc[0])), ("buy", 3, False))
+        self.assertEqual(
+            (e["side"].iloc[0], int(e["count"].iloc[0]), bool(e["liquidation"].iloc[0])), ("buy", 3, False)
+        )
 
 
 class TestBars(unittest.TestCase):
     def events(self):
-        return pd.DataFrame([
-            (T + 1_000, "BYBIT:BTCUSDT", 100.0, 1.0, "buy", False, 1),
-            (T + 2_000, "BYBIT:BTCUSDT", 101.0, 2.0, "sell", False, 1),
-            (T + 3_000, "BYBIT:BTCUSDT", 99.0, 1.0, "buy", False, 3),
-            (T + 4_000, "BYBIT:BTCUSDT", 98.0, 4.0, "sell", True, 1),       # a liquidation: dollars only
-            (T + rb.HOUR_MS + 1, "BYBIT:BTCUSDT", 105.0, 1.0, "buy", False, 1),
-        ], columns=rb.EVENT_COLS)
+        return pd.DataFrame(
+            [
+                (T + 1_000, "BYBIT:BTCUSDT", 100.0, 1.0, "buy", False, 1),
+                (T + 2_000, "BYBIT:BTCUSDT", 101.0, 2.0, "sell", False, 1),
+                (T + 3_000, "BYBIT:BTCUSDT", 99.0, 1.0, "buy", False, 3),
+                (T + 4_000, "BYBIT:BTCUSDT", 98.0, 4.0, "sell", True, 1),  # a liquidation: dollars only
+                (T + rb.HOUR_MS + 1, "BYBIT:BTCUSDT", 105.0, 1.0, "buy", False, 1),
+            ],
+            columns=rb.EVENT_COLS,
+        )
 
     def test_aggrs_arithmetic(self):
         bars = rb.build_bars(self.events())
@@ -97,8 +140,20 @@ class TestBars(unittest.TestCase):
 
 class TestCompare(unittest.TestCase):
     def rows(self, **over):
-        base = {"time": T // 1000, "market": "BYBIT:BTCUSDT", "open": 100.0, "high": 101.0, "low": 99.0, "close": 100.5,
-                "vbuy": 1e6, "vsell": 9e5, "cbuy": 1000, "csell": 900, "lbuy": 0.0, "lsell": 5e4}
+        base = {
+            "time": T // 1000,
+            "market": "BYBIT:BTCUSDT",
+            "open": 100.0,
+            "high": 101.0,
+            "low": 99.0,
+            "close": 100.5,
+            "vbuy": 1e6,
+            "vsell": 9e5,
+            "cbuy": 1000,
+            "csell": 900,
+            "lbuy": 0.0,
+            "lsell": 5e4,
+        }
         ours = pd.Series(base)
         theirs = pd.Series({**base, **over})
         return ours, theirs
@@ -114,8 +169,11 @@ class TestCompare(unittest.TestCase):
         self.assertEqual(rb.compare_bar(*self.rows(cbuy=1100))["failed"], "count")
         self.assertTrue(rb.compare_bar(*self.rows(lsell=5e4 * 1.04))["match"])
         self.assertEqual(rb.compare_bar(*self.rows(lsell=5e4 * 1.1))["failed"], "lsell")
-        self.assertEqual(rb.compare_bar(*self.rows(lsell=5e4 * 1.1), liq_comparable=False)["match"], True,
-                         "an archive bar is not compared on liquidations")
+        self.assertEqual(
+            rb.compare_bar(*self.rows(lsell=5e4 * 1.1), liq_comparable=False)["match"],
+            True,
+            "an archive bar is not compared on liquidations",
+        )
 
     def test_aggrs_empty_liquidation_means_zero(self):
         ours, theirs = self.rows(lbuy=np.nan, lsell=np.nan)
@@ -140,31 +198,47 @@ class TestCompare(unittest.TestCase):
     def test_a_market_aggr_never_has_is_not_a_miss(self):
         ours, theirs = self.rows()
         extra = ours.copy()
-        extra["market"] = "OKEX:PEPE-USDT-SWAP"           # OKX pushes every swap's liquidations; aggr has 14 coins
-        table = rb.compare_day(pd.DataFrame([ours, extra]), pd.DataFrame([theirs.to_dict()]), {}, markets={"BYBIT:BTCUSDT"})
+        extra["market"] = "OKEX:PEPE-USDT-SWAP"  # OKX pushes every swap's liquidations; aggr has 14 coins
+        table = rb.compare_day(
+            pd.DataFrame([ours, extra]), pd.DataFrame([theirs.to_dict()]), {}, markets={"BYBIT:BTCUSDT"}
+        )
         self.assertEqual(list(table["market"]), ["BYBIT:BTCUSDT"])
 
     def test_archive_replaces_only_the_binance_bars_inside_a_gap(self):
         base = {"open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "vbuy": 1.0, "vsell": 1.0, "cbuy": 1, "csell": 1}
         m = "BINANCE_FUTURES:btcusdt"
-        tape = pd.DataFrame([{"time": T // 1000, "market": m, **base, "lbuy": 5e4, "lsell": 0.0},
-                             {"time": T // 1000 + 3600, "market": m, **base, "lbuy": 7e4, "lsell": 0.0}])
-        arch = pd.DataFrame([{"time": T // 1000, "market": m, **base, "vbuy": 2.0, "lbuy": 0.0, "lsell": 0.0},
-                             {"time": T // 1000 + 3600, "market": m, **base, "vbuy": 3.0, "lbuy": 0.0, "lsell": 0.0}])
-        gaps = [(T + 3_600_000 + 1000, T + 3_600_000 + 60_000)]        # the Mac slept inside the second hour only
+        tape = pd.DataFrame(
+            [
+                {"time": T // 1000, "market": m, **base, "lbuy": 5e4, "lsell": 0.0},
+                {"time": T // 1000 + 3600, "market": m, **base, "lbuy": 7e4, "lsell": 0.0},
+            ]
+        )
+        arch = pd.DataFrame(
+            [
+                {"time": T // 1000, "market": m, **base, "vbuy": 2.0, "lbuy": 0.0, "lsell": 0.0},
+                {"time": T // 1000 + 3600, "market": m, **base, "vbuy": 3.0, "lbuy": 0.0, "lsell": 0.0},
+            ]
+        )
+        gaps = [(T + 3_600_000 + 1000, T + 3_600_000 + 60_000)]  # the Mac slept inside the second hour only
         merged, taken = rb.merge_archive(tape, arch, gaps)
         self.assertEqual(taken, {(T // 1000 + 3600, m)})
         got = merged.set_index("time")
         self.assertEqual(got.at[T // 1000, "vbuy"], 1.0, "the first hour stays the tape's")
         self.assertEqual(got.at[T // 1000 + 3600, "vbuy"], 3.0, "the gapped hour is the archive's")
-        theirs = pd.DataFrame([{"time": T // 1000, "market": m, **base, "lbuy": 5e4, "lsell": 0.0},
-                               {"time": T // 1000 + 3600, "market": m, **base, "vbuy": 3.0, "lbuy": 7e4, "lsell": 0.0}])
+        theirs = pd.DataFrame(
+            [
+                {"time": T // 1000, "market": m, **base, "lbuy": 5e4, "lsell": 0.0},
+                {"time": T // 1000 + 3600, "market": m, **base, "vbuy": 3.0, "lbuy": 7e4, "lsell": 0.0},
+            ]
+        )
         table = rb.compare_day(merged, theirs, {"binance": gaps}, rb.HOUR_MS, taken)
         self.assertEqual(list(table["comparable"]), [True, True], "an archive bar is compared, not excluded")
         self.assertEqual(list(table["match"]), [True, True], "and its liquidations are not held against it")
-        theirs.loc[0, "lbuy"] = 9e5                                    # the live Binance bar differs on liquidations
+        theirs.loc[0, "lbuy"] = 9e5  # the live Binance bar differs on liquidations
         table = rb.compare_day(merged, theirs, {"binance": gaps}, rb.HOUR_MS, taken)
-        self.assertEqual(list(table["match"]), [True, True], "Binance's liquidation stream is silent here: not compared")
+        self.assertEqual(
+            list(table["match"]), [True, True], "Binance's liquidation stream is silent here: not compared"
+        )
         table = rb.compare_day(merged, theirs, {"binance": gaps}, rb.HOUR_MS, taken, no_liq=())
         self.assertEqual(table["failed"].iloc[0], "lbuy", "on a machine Binance serves fully, it would be")
         self.assertEqual(rb.merge_archive(tape, pd.DataFrame(columns=rb.COLUMNS), gaps)[1], set())
@@ -173,8 +247,15 @@ class TestCompare(unittest.TestCase):
         rows = []
         for i in range(40):
             for venue in ("binance", "bybit", "okx", "all"):
-                rows.append({"day": f"d{i}", "bar": "1h", "venue": venue, "comparable": 10,
-                             "day_matches": not (venue == "bybit" or (venue == "all" and i == 0))})
+                rows.append(
+                    {
+                        "day": f"d{i}",
+                        "bar": "1h",
+                        "venue": venue,
+                        "comparable": 10,
+                        "day_matches": not (venue == "bybit" or (venue == "all" and i == 0)),
+                    }
+                )
         days = pd.DataFrame(rows)
         v = rb.verdict(days)
         self.assertEqual(v["days"], 40)

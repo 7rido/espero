@@ -4,10 +4,11 @@ Pure: the sleeves' daily net returns in, correlations, vol-target weights and dr
 no ledger: research/sleeves.py will, once, at the family's judgment after 2027-03-31. The numbers here are
 the pre-registration's and are not re-tuned.
 """
+
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -52,9 +53,13 @@ def correlations(returns: pd.DataFrame) -> pd.DataFrame:
     rows = []
     cols = list(r.columns)
     for i, a in enumerate(cols):
-        for b in cols[i + 1:]:
+        for b in cols[i + 1 :]:
             both = r[[a, b]]
-            c = float(both[a].corr(both[b])) if len(both) > 2 and both[a].std() > 0 and both[b].std() > 0 else float("nan")
+            c = (
+                float(both[a].corr(both[b]))
+                if len(both) > 2 and both[a].std() > 0 and both[b].std() > 0
+                else float("nan")
+            )
             rows.append({"a": a, "b": b, "corr": c, "days": int(len(both))})
     return pd.DataFrame(rows, columns=["a", "b", "corr", "days"])
 
@@ -63,8 +68,9 @@ def one_source_pairs(corr: pd.DataFrame, threshold: float = CORR_ONE_SOURCE) -> 
     return [(r["a"], r["b"]) for _, r in corr.iterrows() if math.isfinite(r["corr"]) and r["corr"] > threshold]
 
 
-def sleeve_vol(returns: pd.Series, window: int = VOL_WINDOW, min_days: int = MIN_DAYS_FOR_WINDOW,
-               periods: int = PERIODS) -> float:
+def sleeve_vol(
+    returns: pd.Series, window: int = VOL_WINDOW, min_days: int = MIN_DAYS_FOR_WINDOW, periods: int = PERIODS
+) -> float:
     """Trailing annualised volatility of a sleeve's daily net returns (in return units, not bps); the whole
     series when it is shorter than `min_days`."""
     r = returns.dropna()
@@ -74,14 +80,20 @@ def sleeve_vol(returns: pd.Series, window: int = VOL_WINDOW, min_days: int = MIN
     return float(use.std(ddof=1) * math.sqrt(periods))
 
 
-def vol_target_weights(returns: pd.DataFrame, t_values: Dict[str, float], target: float = VOL_TARGET,
-                       gross_cap: float = GROSS_CAP, sleeve_cap: float = SLEEVE_CAP) -> pd.Series:
+def vol_target_weights(
+    returns: pd.DataFrame,
+    t_values: Dict[str, float],
+    target: float = VOL_TARGET,
+    gross_cap: float = GROSS_CAP,
+    sleeve_cap: float = SLEEVE_CAP,
+) -> pd.Series:
     """Each sleeve at target / realised vol, capped at `sleeve_cap`; a pair above the one-source
     correlation shares one sleeve's weight (the larger-t member keeps it); the book scaled down pro rata to
     `gross_cap` when the sum would exceed it."""
     vols = pd.Series({c: sleeve_vol(returns[c]) for c in returns.columns})
-    w = portfolio.vol_scaled(pd.Series(1.0, index=returns.columns), vols, target=target, max_gross=float("inf"),
-                             max_scale=sleeve_cap)
+    w = portfolio.vol_scaled(
+        pd.Series(1.0, index=returns.columns), vols, target=target, max_gross=float("inf"), max_scale=sleeve_cap
+    )
     for a, b in one_source_pairs(correlations(returns)):
         loser = a if (t_values.get(a, 0.0), a) < (t_values.get(b, 0.0), b) else b
         w[loser] = 0.0
@@ -129,12 +141,21 @@ def summary(returns: pd.DataFrame, t_values: Dict[str, float]) -> Dict[str, obje
     scaled = pd.Series({c: w[c] * scale_of(states[c]["state"]) for c in returns.columns})
     book = combine(returns, scaled)
     equity = (1.0 + book).cumprod()
-    return {"weights": w.to_dict(), "scaled_weights": scaled.to_dict(), "gross": float(scaled.abs().sum()),
-            "correlations": corr, "one_source": one_source_pairs(corr), "drawdown": states,
-            "book": {"days": int(len(book)), "net_return": float(equity.iloc[-1] - 1.0) if len(equity) else float("nan"),
-                     "vol": float(book.std(ddof=1) * math.sqrt(PERIODS)) if len(book) > 1 else float("nan"),
-                     "max_drawdown": drawdown_state(equity.to_numpy())["max_drawdown"],
-                     "state": drawdown_state(equity.to_numpy())["state"]}}
+    return {
+        "weights": w.to_dict(),
+        "scaled_weights": scaled.to_dict(),
+        "gross": float(scaled.abs().sum()),
+        "correlations": corr,
+        "one_source": one_source_pairs(corr),
+        "drawdown": states,
+        "book": {
+            "days": int(len(book)),
+            "net_return": float(equity.iloc[-1] - 1.0) if len(equity) else float("nan"),
+            "vol": float(book.std(ddof=1) * math.sqrt(PERIODS)) if len(book) > 1 else float("nan"),
+            "max_drawdown": drawdown_state(equity.to_numpy())["max_drawdown"],
+            "state": drawdown_state(equity.to_numpy())["state"],
+        },
+    }
 
 
 def rule():

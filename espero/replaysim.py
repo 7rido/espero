@@ -12,14 +12,13 @@ and the fill is partial. A resting (post-only) order is replayed with hftbacktes
 on the same frames and the trades between them, with the same latency both ways, until the mirror's own
 cancel or close time.
 """
+
 from __future__ import annotations
 
-import json
-import math
 import sqlite3
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -30,26 +29,26 @@ TAKER_MEDIAN_BPS, TAKER_P90_BPS = 5.0, 15.0
 MAKER_AGREEMENT = 0.80
 MIN_TAKER, MIN_MAKER = 30, 10
 MIN_TAKER_INCONCLUSIVE = 10
-BOOK_USD = 1000.0                       # hlpbook.BOOK_USD, the notional each HLP trade carries
-MAX_BOOK_AGE_MS = 60_000                # no frame within a minute before arrival: no book, not comparable
+BOOK_USD = 1000.0  # hlpbook.BOOK_USD, the notional each HLP trade carries
+MAX_BOOK_AGE_MS = 60_000  # no frame within a minute before arrival: no book, not comparable
 QUEUE_MODEL_POWER = 3.0
-TRADE_WINDOW_MS = 3_600_000             # how much tape a resting order is replayed over at most
+TRADE_WINDOW_MS = 3_600_000  # how much tape a resting order is replayed over at most
 
 
 @dataclass
 class Order:
-    book: str                           # carry-maker, carry-taker, hlp-book, hlp2-book, paper-btc-usd-hl, mirror
-    ref: str                            # the journal row it came from
+    book: str  # carry-maker, carry-taker, hlp-book, hlp2-book, paper-btc-usd-hl, mirror
+    ref: str  # the journal row it came from
     coin: str
-    side: int                           # +1 buy, -1 sell
-    qty: float                          # coins
+    side: int  # +1 buy, -1 sell
+    qty: float  # coins
     decision_ms: int
     paper_px: float
-    kind: str = "market"                # market | limit
+    kind: str = "market"  # market | limit
     limit_px: float = float("nan")
-    until_ms: Optional[int] = None      # a resting order's cancel or close time
+    until_ms: Optional[int] = None  # a resting order's cancel or close time
     paper_filled: Optional[bool] = None  # a resting order's own outcome
-    venue: str = "hyperliquid"          # which tape: hyperliquid | hyperliquid_testnet
+    venue: str = "hyperliquid"  # which tape: hyperliquid | hyperliquid_testnet
 
 
 @dataclass
@@ -58,9 +57,9 @@ class Result:
     comparable: bool
     why: str = ""
     sim_px: float = float("nan")
-    filled: float = 0.0                 # share of qty filled
+    filled: float = 0.0  # share of qty filled
     diff_bps: float = float("nan")
-    sim_filled: Optional[bool] = None   # resting orders
+    sim_filled: Optional[bool] = None  # resting orders
     sim_fill_ms: Optional[int] = None
     book_age_ms: Optional[int] = None
     latency_ms: int = LATENCY_MS
@@ -89,8 +88,17 @@ def orders_from_journals(state: Path, since_ms: int) -> Tuple[List[Order], List[
         book = db.stem
         for r in _rows(db, "SELECT id, coin, entry_ts, exit_ts, qty_perp, perp_entry FROM positions"):
             if r["entry_ts"] * 1000 >= since_ms and r["qty_perp"] and r["perp_entry"]:
-                orders.append(Order(book, f"positions/{r['id']}/entry", r["coin"], -1, float(r["qty_perp"]),
-                                    int(r["entry_ts"]) * 1000, float(r["perp_entry"])))
+                orders.append(
+                    Order(
+                        book,
+                        f"positions/{r['id']}/entry",
+                        r["coin"],
+                        -1,
+                        float(r["qty_perp"]),
+                        int(r["entry_ts"]) * 1000,
+                        float(r["perp_entry"]),
+                    )
+                )
             if r["exit_ts"] and r["exit_ts"] * 1000 >= since_ms:
                 skipped.append((f"{book} positions/{r['id']}/exit", "the perp exit price is not journaled"))
         if book == "carry-maker":
@@ -101,23 +109,62 @@ def orders_from_journals(state: Path, since_ms: int) -> Tuple[List[Order], List[
                         continue
                     size = m["open_size"] if leg == "open" else (m["open_filled"] or m["open_size"])
                     until = (m["close_ts"] or 0) * 1000 if leg == "open" else None
-                    orders.append(Order("mirror", f"testnet_mirror/{m['position_id']}/{leg}", m["coin"], side,
-                                        float(size or 0), int(ts) * 1000, float(px), "limit", float(px),
-                                        until or None, status == "filled", "hyperliquid_testnet"))
+                    orders.append(
+                        Order(
+                            "mirror",
+                            f"testnet_mirror/{m['position_id']}/{leg}",
+                            m["coin"],
+                            side,
+                            float(size or 0),
+                            int(ts) * 1000,
+                            float(px),
+                            "limit",
+                            float(px),
+                            until or None,
+                            status == "filled",
+                            "hyperliquid_testnet",
+                        )
+                    )
     for db in sorted(state.glob("hlp*-book.db")):
         for r in _rows(db, "SELECT coin, signal_ts, status, entry_ts, entry_px, exit_ts, exit_px FROM trades"):
             if r["entry_ts"] and r["entry_px"] and r["entry_ts"] * 1000 >= since_ms:
-                orders.append(Order(db.stem, f"trades/{r['coin']}/{r['signal_ts']}/entry", r["coin"], +1,
-                                    BOOK_USD / float(r["entry_px"]), int(r["entry_ts"]) * 1000, float(r["entry_px"])))
+                orders.append(
+                    Order(
+                        db.stem,
+                        f"trades/{r['coin']}/{r['signal_ts']}/entry",
+                        r["coin"],
+                        +1,
+                        BOOK_USD / float(r["entry_px"]),
+                        int(r["entry_ts"]) * 1000,
+                        float(r["entry_px"]),
+                    )
+                )
             if r["exit_ts"] and r["exit_px"] and r["exit_ts"] * 1000 >= since_ms:
-                orders.append(Order(db.stem, f"trades/{r['coin']}/{r['signal_ts']}/exit", r["coin"], -1,
-                                    BOOK_USD / float(r["entry_px"]), int(r["exit_ts"]) * 1000, float(r["exit_px"])))
+                orders.append(
+                    Order(
+                        db.stem,
+                        f"trades/{r['coin']}/{r['signal_ts']}/exit",
+                        r["coin"],
+                        -1,
+                        BOOK_USD / float(r["entry_px"]),
+                        int(r["exit_ts"]) * 1000,
+                        float(r["exit_px"]),
+                    )
+                )
     for db in sorted(state.glob("paper-*.db")):
         for r in _rows(db, "SELECT id, product, side, size, filled_ts, filled_px FROM orders WHERE status='filled'"):
             if r["filled_ts"] and r["filled_ts"] * 1000 >= since_ms:
-                orders.append(Order(db.stem, f"orders/{r['id']}", r["product"].split("-")[0],
-                                    +1 if r["side"] == "BUY" else -1, float(r["size"]), int(r["filled_ts"]) * 1000,
-                                    float(r["filled_px"])))
+                orders.append(
+                    Order(
+                        db.stem,
+                        f"orders/{r['id']}",
+                        r["product"].split("-")[0],
+                        +1 if r["side"] == "BUY" else -1,
+                        float(r["size"]),
+                        int(r["filled_ts"]) * 1000,
+                        float(r["filled_px"]),
+                    )
+                )
     return orders, skipped
 
 
@@ -132,13 +179,25 @@ def books_and_trades(frames: Iterable[dict], coin: str) -> Tuple[List[dict], Lis
             continue
         if rec.get("ch") == "l2Book" and rec.get("s") == coin:
             lv = d["data"]["levels"]
-            books.append({"t": int(d["data"]["time"]), "rt": int(rec["rt"]),
-                          "bids": [(float(x["px"]), float(x["sz"])) for x in lv[0]],
-                          "asks": [(float(x["px"]), float(x["sz"])) for x in lv[1]]})
+            books.append(
+                {
+                    "t": int(d["data"]["time"]),
+                    "rt": int(rec["rt"]),
+                    "bids": [(float(x["px"]), float(x["sz"])) for x in lv[0]],
+                    "asks": [(float(x["px"]), float(x["sz"])) for x in lv[1]],
+                }
+            )
         elif rec.get("ch") == "trades" and rec.get("s") == coin:
             for t in d.get("data", []):
-                trades.append({"t": int(t["time"]), "rt": int(rec["rt"]), "px": float(t["px"]), "sz": float(t["sz"]),
-                               "side": +1 if t["side"] == "B" else -1})
+                trades.append(
+                    {
+                        "t": int(t["time"]),
+                        "rt": int(rec["rt"]),
+                        "px": float(t["px"]),
+                        "sz": float(t["sz"]),
+                        "side": +1 if t["side"] == "B" else -1,
+                    }
+                )
     books.sort(key=lambda b: b["t"])
     trades.sort(key=lambda x: x["t"])
     return books, trades
@@ -185,7 +244,7 @@ def tick_of(prices: Iterable[float]) -> float:
     for p in prices:
         s = f"{p:.10f}".rstrip("0").rstrip(".")
         decimals = max(decimals, len(s.split(".")[1]) if "." in s else 0)
-    return 10.0 ** -decimals
+    return 10.0**-decimals
 
 
 def replay_market(order: Order, books: List[dict], latency_ms: int = LATENCY_MS) -> Result:
@@ -207,31 +266,41 @@ def event_array(books: List[dict], trades: List[dict], tick: float, lot: float, 
     from hftbacktest import BUY_EVENT, DEPTH_EVENT, SELL_EVENT, TRADE_EVENT, event_dtype
     from hftbacktest.data.utils.difforderbooksnapshot import CHANGED, INSERTED, DiffOrderBookSnapshot
     from hftbacktest.data.validation import correct_event_order, validate_event_order
+
     rows = []
     diff = DiffOrderBookSnapshot(num_levels, tick, lot)
     stream = sorted([("b", b) for b in books] + [("t", x) for x in trades], key=lambda e: (e[1]["t"], e[1]["rt"]))
     for kind, e in stream:
         exch, local = e["t"] * 1_000_000, e["rt"] * 1_000_000
         if kind == "t":
-            rows.append((TRADE_EVENT | (BUY_EVENT if e["side"] > 0 else SELL_EVENT), exch, local, e["px"], e["sz"], 0, 0, 0))
+            rows.append(
+                (TRADE_EVENT | (BUY_EVENT if e["side"] > 0 else SELL_EVENT), exch, local, e["px"], e["sz"], 0, 0, 0)
+            )
             continue
-        bid, ask, bid_del, ask_del = diff.snapshot(np.array([p for p, _ in e["bids"]]), np.array([s for _, s in e["bids"]]),
-                                                   np.array([p for p, _ in e["asks"]]), np.array([s for _, s in e["asks"]]))
+        bid, ask, bid_del, ask_del = diff.snapshot(
+            np.array([p for p, _ in e["bids"]]),
+            np.array([s for _, s in e["bids"]]),
+            np.array([p for p, _ in e["asks"]]),
+            np.array([s for _, s in e["asks"]]),
+        )
         for entries, ev in ((bid, DEPTH_EVENT | BUY_EVENT), (ask, DEPTH_EVENT | SELL_EVENT)):
             for px, qty, flag in entries:
                 if flag == INSERTED or flag == CHANGED:
                     rows.append((ev, exch, local, px, qty, 0, 0, 0))
         for entries, ev in ((bid_del, DEPTH_EVENT | BUY_EVENT), (ask_del, DEPTH_EVENT | SELL_EVENT)):
-            for px, _qty, _flag in entries:     # a level that left the top 20 is deleted, as the converter does
+            for px, _qty, _flag in entries:  # a level that left the top 20 is deleted, as the converter does
                 rows.append((ev, exch, local, px, 0, 0, 0, 0))
     arr = np.array(rows, dtype=event_dtype)
-    data = correct_event_order(arr, np.argsort(arr["exch_ts"], kind="mergesort"), np.argsort(arr["local_ts"], kind="mergesort"))
+    data = correct_event_order(
+        arr, np.argsort(arr["exch_ts"], kind="mergesort"), np.argsort(arr["local_ts"], kind="mergesort")
+    )
     validate_event_order(data)
     return data
 
 
-def replay_limit(order: Order, books: List[dict], trades: List[dict], latency_ms: int = LATENCY_MS,
-                 until_ms: Optional[int] = None) -> Result:
+def replay_limit(
+    order: Order, books: List[dict], trades: List[dict], latency_ms: int = LATENCY_MS, until_ms: Optional[int] = None
+) -> Result:
     """A post-only order at `limit_px`, submitted at decision time, back of the queue, replayed through
     hftbacktest until `until_ms` (the mirror's own close or cancel, else TRADE_WINDOW_MS later)."""
     try:
@@ -252,12 +321,21 @@ def replay_limit(order: Order, books: List[dict], trades: List[dict], latency_ms
     # NoPartialFillExchange: hftbacktest 2.4.4's PartialFillExchange stops with error 14 at the first print on a
     # tape of whole-book frames (its own converter's output included; checked 2026-11-02), so a resting order
     # here fills whole once the queue ahead of it is cleared, or not at all.
-    asset = (BacktestAsset().data([data]).linear_asset(1.0).constant_order_latency(L, L)
-             .power_prob_queue_model3(QUEUE_MODEL_POWER).no_partial_fill_exchange().trading_value_fee_model(0.0, 0.0)
-             .tick_size(tick).lot_size(lot).last_trades_capacity(0))
+    asset = (
+        BacktestAsset()
+        .data([data])
+        .linear_asset(1.0)
+        .constant_order_latency(L, L)
+        .power_prob_queue_model3(QUEUE_MODEL_POWER)
+        .no_partial_fill_exchange()
+        .trading_value_fee_model(0.0, 0.0)
+        .tick_size(tick)
+        .lot_size(lot)
+        .last_trades_capacity(0)
+    )
     hbt = HashMapMarketDepthBacktest([asset])
     start = order.decision_ms * 1_000_000
-    hbt.elapse(1_000_000)                       # the clock starts on the first elapse, at the tape's first frame
+    hbt.elapse(1_000_000)  # the clock starts on the first elapse, at the tape's first frame
     if hbt.current_timestamp < start:
         hbt.elapse(start - hbt.current_timestamp)
     if order.side > 0:
@@ -275,21 +353,30 @@ def replay_limit(order: Order, books: List[dict], trades: List[dict], latency_ms
             filled_at = int(now // 1_000_000)
             break
         if rc == 1 or (rc != 0 and now == last):
-            break                               # the tape ended, or the engine stopped advancing
+            break  # the tape ended, or the engine stopped advancing
         last = now
     hbt.close()
     sim_filled = filled_at is not None
     agree = order.paper_filled is None or sim_filled == order.paper_filled
-    return Result(order, True, "", order.limit_px if sim_filled else float("nan"), 1.0 if sim_filled else 0.0,
-                  0.0 if agree else float("nan"), sim_filled, filled_at, None, latency_ms)
+    return Result(
+        order,
+        True,
+        "",
+        order.limit_px if sim_filled else float("nan"),
+        1.0 if sim_filled else 0.0,
+        0.0 if agree else float("nan"),
+        sim_filled,
+        filled_at,
+        None,
+        latency_ms,
+    )
 
 
 # ------------------------------------------------------------------ the comparison
 def summarize(results: List[Result]) -> Dict[str, object]:
     taker = [r for r in results if r.comparable and r.order.kind == "market"]
     maker = [r for r in results if r.comparable and r.order.kind == "limit"]
-    out: Dict[str, object] = {"taker_n": len(taker), "maker_n": len(maker),
-                              "excluded": {}, "taker": {}, "maker": {}}
+    out: Dict[str, object] = {"taker_n": len(taker), "maker_n": len(maker), "excluded": {}, "taker": {}, "maker": {}}
     why: Dict[str, int] = {}
     for r in results:
         if not r.comparable:
@@ -297,14 +384,22 @@ def summarize(results: List[Result]) -> Dict[str, object]:
     out["excluded"] = why
     if taker:
         d = np.array([r.diff_bps for r in taker])
-        out["taker"] = {"median_abs": float(np.median(np.abs(d))), "p90_abs": float(np.percentile(np.abs(d), 90)),
-                        "median_signed": float(np.median(d)), "p10": float(np.percentile(d, 10)),
-                        "p90": float(np.percentile(d, 90)), "partial": int(sum(r.filled < 1 for r in taker)),
-                        "walked_more_than_one_level": int(sum(r.levels_walked > 1 for r in taker))}
+        out["taker"] = {
+            "median_abs": float(np.median(np.abs(d))),
+            "p90_abs": float(np.percentile(np.abs(d), 90)),
+            "median_signed": float(np.median(d)),
+            "p10": float(np.percentile(d, 10)),
+            "p90": float(np.percentile(d, 90)),
+            "partial": int(sum(r.filled < 1 for r in taker)),
+            "walked_more_than_one_level": int(sum(r.levels_walked > 1 for r in taker)),
+        }
     if maker:
         agree = [r.sim_filled == r.order.paper_filled for r in maker if r.order.paper_filled is not None]
-        out["maker"] = {"agreement": float(np.mean(agree)) if agree else float("nan"), "n_with_outcome": len(agree),
-                        "sim_filled": int(sum(bool(r.sim_filled) for r in maker))}
+        out["maker"] = {
+            "agreement": float(np.mean(agree)) if agree else float("nan"),
+            "n_with_outcome": len(agree),
+            "sim_filled": int(sum(bool(r.sim_filled) for r in maker)),
+        }
     return out
 
 
@@ -320,15 +415,39 @@ def verdict(summary: Dict[str, object], final: bool = False) -> Dict[str, object
     m = summary["maker"]
     maker_ok = bool(m) and m["n_with_outcome"] > 0 and m["agreement"] >= MAKER_AGREEMENT
     call = "PASS" if taker_ok and maker_ok else "PARTIAL" if (taker_ok or maker_ok) else "FAIL"
-    return {"judged": True, "call": call, "taker_ok": taker_ok, "maker_ok": maker_ok,
-            "note": "the paper books flatter themselves" if t["median_signed"] > 3.0 else ""}
+    return {
+        "judged": True,
+        "call": call,
+        "taker_ok": taker_ok,
+        "maker_ok": maker_ok,
+        "note": "the paper books flatter themselves" if t["median_signed"] > 3.0 else "",
+    }
 
 
 def rows_of(results: List[Result]) -> pd.DataFrame:
-    return pd.DataFrame([{"book": r.order.book, "ref": r.order.ref, "coin": r.order.coin, "side": r.order.side,
-                          "kind": r.order.kind, "qty": r.order.qty, "decision_ms": r.order.decision_ms,
-                          "paper_px": r.order.paper_px, "latency_ms": r.latency_ms, "comparable": r.comparable,
-                          "why": r.why, "sim_px": r.sim_px, "filled": r.filled, "diff_bps": r.diff_bps,
-                          "sim_filled": r.sim_filled, "paper_filled": r.order.paper_filled,
-                          "sim_fill_ms": r.sim_fill_ms, "book_age_ms": r.book_age_ms, "levels": r.levels_walked}
-                         for r in results])
+    return pd.DataFrame(
+        [
+            {
+                "book": r.order.book,
+                "ref": r.order.ref,
+                "coin": r.order.coin,
+                "side": r.order.side,
+                "kind": r.order.kind,
+                "qty": r.order.qty,
+                "decision_ms": r.order.decision_ms,
+                "paper_px": r.order.paper_px,
+                "latency_ms": r.latency_ms,
+                "comparable": r.comparable,
+                "why": r.why,
+                "sim_px": r.sim_px,
+                "filled": r.filled,
+                "diff_bps": r.diff_bps,
+                "sim_filled": r.sim_filled,
+                "paper_filled": r.order.paper_filled,
+                "sim_fill_ms": r.sim_fill_ms,
+                "book_age_ms": r.book_age_ms,
+                "levels": r.levels_walked,
+            }
+            for r in results
+        ]
+    )

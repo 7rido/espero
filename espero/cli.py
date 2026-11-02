@@ -1,4 +1,5 @@
 """Command line entry point: `python -m espero ...` or the `espero` script."""
+
 from __future__ import annotations
 
 import argparse
@@ -89,9 +90,12 @@ def _cmd_paper_compare(args: argparse.Namespace) -> int:
     from .paper import compare_venues
 
     src = Journal(args.journal)
-    bars = [dict(r) for r in src.db.execute(
-        "SELECT ts, open, high, low, close, volume FROM bars WHERE product=? ORDER BY ts",
-        (args.product,)).fetchall()]
+    bars = [
+        dict(r)
+        for r in src.db.execute(
+            "SELECT ts, open, high, low, close, volume FROM bars WHERE product=? ORDER BY ts", (args.product,)
+        ).fetchall()
+    ]
     src.db.close()
     if len(bars) < 60:
         print(f"only {len(bars)} bars in {args.journal}; need at least 60")
@@ -101,17 +105,20 @@ def _cmd_paper_compare(args: argparse.Namespace) -> int:
     if unknown:
         print(f"unknown venue(s): {', '.join(unknown)}; known: {', '.join(sorted(VENUES))}")
         return 2
-    rows = compare_venues(bars, venues, product=args.product,
-                          granularity=args.granularity, initial=args.cash)
+    rows = compare_venues(bars, venues, product=args.product, granularity=args.granularity, initial=args.cash)
     first = datetime.fromtimestamp(bars[0]["ts"], timezone.utc).strftime("%m-%d %H:%M")
     last = datetime.fromtimestamp(bars[-1]["ts"], timezone.utc).strftime("%m-%d %H:%M")
     print(f"{len(bars)} bars of {args.product}, {first} .. {last} UTC; same signals, same fills\n")
     print(f"{'venue':<28}{'trades':>7}{'wins':>6}{'fees':>9}{'funding':>9}{'P&L':>9}{'equity':>10}")
     for r in rows:
-        print(f"{r['name']:<28}{r['trades']:>7}{r['wins']:>6}{r['fees']:>9.2f}"
-              f"{r['funding']:>9.2f}{r['pnl']:>+9.2f}{r['equity']:>10.2f}")
-    print("\nfees are taker (the loop fills at the next open); perp funding assumed "
-          "constant at the venue's average, longs pay")
+        print(
+            f"{r['name']:<28}{r['trades']:>7}{r['wins']:>6}{r['fees']:>9.2f}"
+            f"{r['funding']:>9.2f}{r['pnl']:>+9.2f}{r['equity']:>10.2f}"
+        )
+    print(
+        "\nfees are taker (the loop fills at the next open); perp funding assumed "
+        "constant at the venue's average, longs pay"
+    )
     return 0
 
 
@@ -130,11 +137,15 @@ def _cmd_fees(args: argparse.Namespace) -> int:
     same = abs(f.maker_bps - v.maker_bps) < 0.05 and abs(f.taker_bps - v.taker_bps) < 0.05
     print(f"Coinbase fees for this account (30-day volume ${f.usd_volume:,.2f})")
     print(f"  maker {f.maker:.4%} ({f.maker_bps:.1f} bps)   taker {f.taker:.4%} ({f.taker_bps:.1f} bps)")
-    print(f"  venue table 'coinbase': maker {v.maker_bps:.1f} / taker {v.taker_bps:.1f} bps  "
-          f"[{'matches' if same else 'differs'}]")
+    print(
+        f"  venue table 'coinbase': maker {v.maker_bps:.1f} / taker {v.taker_bps:.1f} bps  "
+        f"[{'matches' if same else 'differs'}]"
+    )
     print(f"  round trip at taker {2 * f.taker_bps:.0f} bps, at maker {2 * f.maker_bps:.0f} bps")
-    print(f"  paper loops fill at the next open (taker): add --fee-bps {f.taker_bps:.1f} "
-          f"to espero paper / espero degen paper")
+    print(
+        f"  paper loops fill at the next open (taker): add --fee-bps {f.taker_bps:.1f} "
+        f"to espero paper / espero degen paper"
+    )
     return 0
 
 
@@ -160,8 +171,10 @@ def _cmd_paper_open(args: argparse.Namespace) -> int:
             return 2
     except JournalBusy:
         Path(str(args.state) + ".open").write_text(json.dumps({"usd": args.usd}))
-        print(f"queued: the running loop buys ${args.usd:,.2f} at the next bar's open, recorded as 'manual'.\n"
-              f"watch its window for 'holding ... P&L'; take it with espero paper-close --state {args.state}")
+        print(
+            f"queued: the running loop buys ${args.usd:,.2f} at the next bar's open, recorded as 'manual'.\n"
+            f"watch its window for 'holding ... P&L'; take it with espero paper-close --state {args.state}"
+        )
         return 0
 
 
@@ -179,21 +192,26 @@ def _cmd_paper_close(args: argparse.Namespace) -> int:
                 opens = journal.open_positions()
                 product = args.product or (opens[0].product if len(opens) == 1 else None)
                 if product is None:
-                    print("no open position" if not opens else
-                          f"several open positions ({', '.join(p.product for p in opens)}): pass --product")
+                    print(
+                        "no open position"
+                        if not opens
+                        else f"several open positions ({', '.join(p.product for p in opens)}): pass --product"
+                    )
                     return 0 if not opens else 2
-                cfg = (PaperConfig.for_venue(args.venue, product=product) if args.venue
-                       else PaperConfig(product=product))
+                cfg = PaperConfig.for_venue(args.venue, product=product) if args.venue else PaperConfig(product=product)
                 if args.fee_bps is not None:
                     cfg.fee = args.fee_bps / 1e4
                 trader = PaperTrader(journal, cfg)
-                row = journal.db.execute("SELECT ts, close FROM bars WHERE product=? ORDER BY ts DESC LIMIT 1",
-                                         (product,)).fetchone()
+                row = journal.db.execute(
+                    "SELECT ts, close FROM bars WHERE product=? ORDER BY ts DESC LIMIT 1", (product,)
+                ).fetchone()
                 if row is None:
                     print(f"no bars recorded for {product}")
                     return 2
-                print(f"no loop is running on {args.state}: closing now at the latest bar's close "
-                      f"({row['close']:.2f}), fee {1e4 * cfg.fee:.1f} bps")
+                print(
+                    f"no loop is running on {args.state}: closing now at the latest bar's close "
+                    f"({row['close']:.2f}), fee {1e4 * cfg.fee:.1f} bps"
+                )
                 print("  ", trader.close_now(float(row["close"]), int(row["ts"])))
             finally:
                 journal.close()
@@ -201,8 +219,10 @@ def _cmd_paper_close(args: argparse.Namespace) -> int:
             return 0
     except JournalBusy as exc:
         request.write_text("manual close requested\n")
-        print(f"a loop is running on this journal ({exc}).\n"
-              f"queued: it sells at the next bar's open, recorded as 'manual' ({request.name})")
+        print(
+            f"a loop is running on this journal ({exc}).\n"
+            f"queued: it sells at the next bar's open, recorded as 'manual' ({request.name})"
+        )
         return 0
 
 
@@ -212,26 +232,34 @@ def _paper_loop(args: argparse.Namespace) -> int:
     hl_source = getattr(args, "source", "coinbase") == "hyperliquid"
     if hl_source:
         from . import hyperliquid as hl
+
         fetch_bars = hl.closed_bars
         venue = args.venue or "hyperliquid"
     else:
         fetch_bars, venue = recent_closed_bars, args.venue
     journal = Journal(args.state)
     if venue:
-        cfg = PaperConfig.for_venue(venue, product=args.product,
-                                    granularity=args.granularity, initial=args.cash)
+        cfg = PaperConfig.for_venue(venue, product=args.product, granularity=args.granularity, initial=args.cash)
         if args.fee_bps is not None:
             cfg.fee = args.fee_bps / 1e4
     else:
-        cfg = PaperConfig(product=args.product, granularity=args.granularity,
-                          initial=args.cash, fee=(args.fee_bps or 0.0) / 1e4)
+        cfg = PaperConfig(
+            product=args.product, granularity=args.granularity, initial=args.cash, fee=(args.fee_bps or 0.0) / 1e4
+        )
     if hl_source:
         # the perp's own hourly rates, as Hyperliquid publishes them, instead of an assumed constant
         cfg.funding_rates, cfg.funding_8h, cfg.funding_period = hl.funding_rates(args.product), 0.0, 3600
-    print(f"prices: {'Hyperliquid perp ' + hl.hl_coin(args.product) if hl_source else 'Coinbase ' + args.product}"
-          f" · fees {1e4 * cfg.fee:.1f} bps per side"
-          + (" · funding: Hyperliquid's actual hourly rates" if hl_source else
-             f", funding {1e4 * cfg.funding_8h:.2f} bps per 8h on longs" if cfg.funding_8h else ""))
+    print(
+        f"prices: {'Hyperliquid perp ' + hl.hl_coin(args.product) if hl_source else 'Coinbase ' + args.product}"
+        f" · fees {1e4 * cfg.fee:.1f} bps per side"
+        + (
+            " · funding: Hyperliquid's actual hourly rates"
+            if hl_source
+            else f", funding {1e4 * cfg.funding_8h:.2f} bps per 8h on longs"
+            if cfg.funding_8h
+            else ""
+        )
+    )
     trader = PaperTrader(journal, cfg)
     request = Path(str(args.state) + ".close")
     open_request = Path(str(args.state) + ".open")
@@ -245,8 +273,9 @@ def _paper_loop(args: argparse.Namespace) -> int:
                 request.unlink()
         if open_request.exists():
             # `espero paper-open` asked for a manual buy of N dollars at the next open
-            row = journal.db.execute("SELECT ts, close FROM bars WHERE product=? ORDER BY ts DESC LIMIT 1",
-                                     (args.product,)).fetchone()
+            row = journal.db.execute(
+                "SELECT ts, close FROM bars WHERE product=? ORDER BY ts DESC LIMIT 1", (args.product,)
+            ).fetchone()
             if row is not None:
                 usd = float(json.loads(open_request.read_text() or "{}").get("usd", 0))
                 print("  ", trader.request_open(int(row["ts"]), usd, float(row["close"])))
@@ -278,8 +307,7 @@ def _paper_loop(args: argparse.Namespace) -> int:
             print("  ", trader.holding(float(fresh[-1]["close"])), " (espero paper-close to take it)")
 
     if args.loop:
-        print(f"paper trading {args.product} {args.granularity}s -> {args.state} "
-              f"(ctrl-c to stop)")
+        print(f"paper trading {args.product} {args.granularity}s -> {args.state} (ctrl-c to stop)")
         try:
             run_loop(step, args.interval, label=f"paper {args.product}")
         except KeyboardInterrupt:
@@ -311,6 +339,7 @@ def _degen_bars(args: argparse.Namespace):
     call time."""
     if getattr(args, "source", "hyperliquid") == "hyperliquid":
         from . import hyperliquid as hl
+
         return hl.closed_bars
     return data.recent_closed_bars
 
@@ -318,6 +347,7 @@ def _degen_bars(args: argparse.Namespace):
 def _degen_universe(args: argparse.Namespace) -> list:
     if getattr(args, "source", "hyperliquid") == "hyperliquid":
         from . import hyperliquid as hl
+
         print(f"ranking Hyperliquid perps by 24h dollar volume (top {args.top}) ...", flush=True)
         uni = hl.degen_universe(top=args.top)
     else:
@@ -340,13 +370,23 @@ def _degen_table(rows: list, venue: str) -> None:
             if r.get("error"):
                 print(f"{r['product']:<12}{'error':<20}  {r['error']}")
                 continue
-            print(f"{r['product']:<12}{r['status']:<20}{r['score']:>6.2f}{1e4 * r['burst']:>+8.0f}"
-                  f"{r['vol_z']:>7.1f}{r['range_x']:>8.1f}{r['dollar_volume']:>12,.0f}")
+            print(
+                f"{r['product']:<12}{r['status']:<20}{r['score']:>6.2f}{1e4 * r['burst']:>+8.0f}"
+                f"{r['vol_z']:>7.1f}{r['range_x']:>8.1f}{r['dollar_volume']:>12,.0f}"
+            )
         print(f"\nburst in bps over the last hour; round trip on {venue} costs {cost:.0f} bps taker")
         return
     t = Table(title="打板 — altcoins moving now, 5m bars", show_lines=False)
-    for col, just in (("coin", "left"), ("status", "left"), ("score", "right"), ("burst bps", "right"),
-                      ("vol z", "right"), ("rng/ATR", "right"), ("ATR bps", "right"), ("$M 24h", "right")):
+    for col, just in (
+        ("coin", "left"),
+        ("status", "left"),
+        ("score", "right"),
+        ("burst bps", "right"),
+        ("vol z", "right"),
+        ("rng/ATR", "right"),
+        ("ATR bps", "right"),
+        ("$M 24h", "right"),
+    ):
         t.add_column(col, justify=just)
     for r in rows:
         if r.get("error"):
@@ -355,14 +395,22 @@ def _degen_table(rows: list, venue: str) -> None:
         style = "bold green" if r["status"] == "BREAKOUT" else ("yellow" if r["status"] == "near" else "")
         st = f"[{style}]{r['status']}[/{style}]" if style else r["status"]
         atr_bps = 1e4 * float(r["atr"]) / float(r["close"]) if r["close"] else float("nan")
-        t.add_row(r["product"], st, f"{r['score']:.2f}", f"{1e4 * r['burst']:+.0f}", f"{r['vol_z']:.1f}",
-                  f"{r['range_x']:.1f}", f"{atr_bps:.0f}", f"{r['dollar_volume'] / 1e6:.1f}")
+        t.add_row(
+            r["product"],
+            st,
+            f"{r['score']:.2f}",
+            f"{1e4 * r['burst']:+.0f}",
+            f"{r['vol_z']:.1f}",
+            f"{r['range_x']:.1f}",
+            f"{atr_bps:.0f}",
+            f"{r['dollar_volume'] / 1e6:.1f}",
+        )
     c = Console()
     c.print(t)
-    c.print(f"[grey58]stop is 2 ATR, target 3 ATR; a round trip on {venue} costs {cost:.0f} bps taker, "
-            f"so the ATR column is the edge budget each stop risks[/grey58]")
-
-
+    c.print(
+        f"[grey58]stop is 2 ATR, target 3 ATR; a round trip on {venue} costs {cost:.0f} bps taker, "
+        f"so the ATR column is the edge budget each stop risks[/grey58]"
+    )
 
 
 def _testnet_exchange():
@@ -376,21 +424,26 @@ def _testnet_exchange():
 def _cmd_hl_order(args: argparse.Namespace) -> int:
     """Place one resting testnet order. ALO by default: rejected rather than crossing."""
     from .hl_exchange import TestnetRefused
+
     try:
         ex = _testnet_exchange()
-        r = ex.limit(args.coin.upper(), args.side, args.size, args.price, tif=args.tif,
-                     reduce_only=args.reduce_only)
+        r = ex.limit(args.coin.upper(), args.side, args.size, args.price, tif=args.tif, reduce_only=args.reduce_only)
     except TestnetRefused as exc:
         print(f"refused: {exc}")
         return 2
-    print(f"testnet {r.coin} {r.side} {r.size} @ {r.price} {r.tif}{' reduce-only' if args.reduce_only else ''}"
-          f" -> {r.status}" + (f" oid {r.oid}" if r.oid else "") + (f"  {r.error}" if r.error else "")
-          + (f"  filled {r.filled} @ {r.avg_px}" if r.filled else ""))
+    print(
+        f"testnet {r.coin} {r.side} {r.size} @ {r.price} {r.tif}{' reduce-only' if args.reduce_only else ''}"
+        f" -> {r.status}"
+        + (f" oid {r.oid}" if r.oid else "")
+        + (f"  {r.error}" if r.error else "")
+        + (f"  filled {r.filled} @ {r.avg_px}" if r.filled else "")
+    )
     return 0 if r.status != "error" else 1
 
 
 def _cmd_hl_orders(args: argparse.Namespace) -> int:
     from .hl_exchange import TestnetRefused
+
     try:
         ex = _testnet_exchange()
     except TestnetRefused as exc:
@@ -407,9 +460,12 @@ def _cmd_hl_orders(args: argparse.Namespace) -> int:
     fills = ex.fills(int(time.time()) - args.hours * 3600)
     print(f"{len(fills)} fills in the last {args.hours}h")
     for f in fills[-20:]:
-        print(f"  {datetime.fromtimestamp(int(f['time']) // 1000, timezone.utc):%m-%d %H:%M}  {f['coin']:<8}"
-              f"{f['side']:<3}{float(f['sz']):>12,.4f} @ {float(f['px']):<12,.6g} fee {float(f.get('fee', 0)):.4f}")
+        print(
+            f"  {datetime.fromtimestamp(int(f['time']) // 1000, timezone.utc):%m-%d %H:%M}  {f['coin']:<8}"
+            f"{f['side']:<3}{float(f['sz']):>12,.4f} @ {float(f['px']):<12,.6g} fee {float(f.get('fee', 0)):.4f}"
+        )
     return 0
+
 
 def _cmd_hl_account(args: argparse.Namespace) -> int:
     """Read-only Hyperliquid account snapshot by public address. Testnet unless
@@ -423,27 +479,38 @@ def _cmd_hl_account(args: argparse.Namespace) -> int:
         print("no address: pass one or set HL_WALLET_ADDRESS in .env (see .env.example)")
         return 2
     # the account view is a development tool: testnet unless told otherwise
-    testnet = (True if args.testnet else False if args.mainnet
-               else os.environ.get("HL_NETWORK", "testnet").strip().lower() != "mainnet")
+    testnet = (
+        True
+        if args.testnet
+        else False
+        if args.mainnet
+        else os.environ.get("HL_NETWORK", "testnet").strip().lower() != "mainnet"
+    )
     url = hl.info_url(testnet=testnet)
     st = hl.user_state(address, fetch=lambda body: hl.post(body, url))
     mm = hl.margin_mode(address, fetch=lambda body: hl.post(body, url))
     unified = mm["mode"] in ("unifiedAccount", "portfolioMargin")
     print(f"{'testnet' if testnet else 'MAINNET'}  {address}  ({mm['mode']})")
     if unified:
-        print(f"margin (spot USDC) {mm['spot_usdc']:,.2f}  on hold {mm['spot_hold']:,.2f}  "
-              f"-- a unified account margins perps with spot USDC, so the perp-only figures below stay 0")
-    print(f"{'perp ' if unified else ''}equity {st['equity']:,.2f}  margin used {st['margin_used']:,.2f}  "
-          f"notional {st['notional']:,.2f}  withdrawable {st['withdrawable']:,.2f}")
+        print(
+            f"margin (spot USDC) {mm['spot_usdc']:,.2f}  on hold {mm['spot_hold']:,.2f}  "
+            f"-- a unified account margins perps with spot USDC, so the perp-only figures below stay 0"
+        )
+    print(
+        f"{'perp ' if unified else ''}equity {st['equity']:,.2f}  margin used {st['margin_used']:,.2f}  "
+        f"notional {st['notional']:,.2f}  withdrawable {st['withdrawable']:,.2f}"
+    )
     if not unified and mm["spot_usdc"]:
         print(f"spot USDC {mm['spot_usdc']:,.2f} (not perp margin until transferred)")
     if not st["positions"]:
         print("no open positions")
     for p in st["positions"]:
         liq = f"{p['liquidation']:,.4g}" if p["liquidation"] else "-"
-        print(f"  {p['coin']:<8}{p['side']:<6}{p['size']:>12,.4f} @ {p['entry']:<12,.4g}"
-              f"{p['leverage']:>4.0f}x  uPnL {p['unrealized']:>+9.2f}  "
-              f"funding {p['funding_paid']:>+8.2f}  liq {liq}")
+        print(
+            f"  {p['coin']:<8}{p['side']:<6}{p['size']:>12,.4f} @ {p['entry']:<12,.4g}"
+            f"{p['leverage']:>4.0f}x  uPnL {p['unrealized']:>+9.2f}  "
+            f"funding {p['funding_paid']:>+8.2f}  liq {liq}"
+        )
     return 0
 
 
@@ -456,19 +523,23 @@ def _cmd_carry_scan(args: argparse.Namespace) -> int:
     df = carry.scan(hl.asset_contexts(fetch=lambda b: hl.post(b, hl.info_url(testnet=False))), top=args.top)
     print(f"{'coin':<8}{'mark':>12}{'funding ann':>13}{'OI $M':>9}{'24h $M':>9}  state")
     for r in df.itertuples():
-        state = ("ENTER" if r.funding_ann > carry.ENTER_ANN else
-                 "hold" if r.funding_ann >= carry.EXIT_ANN else "exit")
-        print(f"{r.coin:<8}{r.mark:>12,.4g}{r.funding_ann:>+12.1%}{r.open_interest_m:>9,.0f}"
-              f"{r.day_volume_m:>9,.0f}  {state}")
-    print(f"\nhourly funding x 8760; the rule enters above {carry.ENTER_ANN:.0%} on the trailing-week mean "
-          f"and exits below {carry.EXIT_ANN:.0%}. This is the spot rate, not the trailing mean. "
-          "Idle market = 10.95%.")
+        state = "ENTER" if r.funding_ann > carry.ENTER_ANN else "hold" if r.funding_ann >= carry.EXIT_ANN else "exit"
+        print(
+            f"{r.coin:<8}{r.mark:>12,.4g}{r.funding_ann:>+12.1%}{r.open_interest_m:>9,.0f}"
+            f"{r.day_volume_m:>9,.0f}  {state}"
+        )
+    print(
+        f"\nhourly funding x 8760; the rule enters above {carry.ENTER_ANN:.0%} on the trailing-week mean "
+        f"and exits below {carry.EXIT_ANN:.0%}. This is the spot rate, not the trailing mean. "
+        "Idle market = 10.95%."
+    )
     return 0
 
 
 def _cmd_carry_paper(args: argparse.Namespace) -> int:
     """#12 forward paper book on live Hyperliquid funding. One loop per journal."""
     from .lock import JournalBusy, JournalLock
+
     try:
         with JournalLock(args.state):
             return _carry_loop(args)
@@ -485,6 +556,7 @@ def _carry_loop(args: argparse.Namespace) -> int:
     mirror = None
     if getattr(args, "execute_testnet", False):
         from .hl_exchange import TestnetMirror, TestnetRefused
+
         try:
             ex = _testnet_exchange()
         except TestnetRefused as exc:
@@ -492,9 +564,11 @@ def _carry_loop(args: argparse.Namespace) -> int:
             return 2
         mirror = TestnetMirror(book.db, ex)
         print(f"TESTNET mirror on: perp leg shadowed with ALO orders from {ex.address}; spot leg stays paper")
-    print(f"carry paper book ({args.costs}): spot {1e4 * c['spot_fee']:.1f} bps, perp {1e4 * c['perp_fee']:.2f} bps, "
-          f"slippage {1e4 * c['slippage']:.1f} bps per leg per side; swap gap {book.swap_gap:.0%}, "
-          f"min hold {book.min_hold // 24}d; cash {book.cash:.2f}, {len(book.open_positions())} open -> {args.state}")
+    print(
+        f"carry paper book ({args.costs}): spot {1e4 * c['spot_fee']:.1f} bps, perp {1e4 * c['perp_fee']:.2f} bps, "
+        f"slippage {1e4 * c['slippage']:.1f} bps per leg per side; swap gap {book.swap_gap:.0%}, "
+        f"min hold {book.min_hold // 24}d; cash {book.cash:.2f}, {len(book.open_positions())} open -> {args.state}"
+    )
     state = {"universe": [], "refreshed": 0.0}
 
     def step() -> None:
@@ -504,8 +578,10 @@ def _carry_loop(args: argparse.Namespace) -> int:
                 state["refreshed"] = time.time()
                 print(f"universe ({len(state['universe'])}): {' '.join(state['universe'])}")
             except Exception as exc:  # noqa: BLE001 - keep the last universe
-                print(f"universe refresh failed ({type(exc).__name__}: {exc}); "
-                      f"keeping {len(state['universe'])} coins, retrying in 5 min")
+                print(
+                    f"universe refresh failed ({type(exc).__name__}: {exc}); "
+                    f"keeping {len(state['universe'])} coins, retrying in 5 min"
+                )
                 state["refreshed"] = time.time() - 86400 + 300
         last = book.last_ts()
         if last is not None and time.time() < last + 3600:
@@ -525,14 +601,15 @@ def _carry_loop(args: argparse.Namespace) -> int:
         for ts, rows in hours:
             events = book.on_hour(ts, rows, universe=universe or None)
             paying = sum(1 for r in rows.values() if r.f_ann > book.enter)
-            print(f"{cp.stamp(ts)} UTC  {len(rows)} coins, {paying} above {book.enter:.0%}  "
-                  f"cash={book.cash:.2f} equity={book.equity(rows):.2f} open={len(book.open_positions())}")
+            print(
+                f"{cp.stamp(ts)} UTC  {len(rows)} coins, {paying} above {book.enter:.0%}  "
+                f"cash={book.cash:.2f} equity={book.equity(rows):.2f} open={len(book.open_positions())}"
+            )
             for e in events:
                 print("  ", e)
         if mirror is not None:
             rows = hours[-1][1]
-            for e in mirror.sync(book.open_positions(), book.closed_positions(),
-                                 {c: r.perp for c, r in rows.items()}):
+            for e in mirror.sync(book.open_positions(), book.closed_positions(), {c: r.perp for c, r in rows.items()}):
                 print("  ", e)
 
     if args.loop:
@@ -557,23 +634,33 @@ def _cmd_liqfwd(args: argparse.Namespace) -> int:
     out = lfm.run(sd)
     print(f"recorded: {', '.join(out['saved']) or 'nothing new'}")
     print(out["note"])
-    print(f"ledgers: {sd / lfm.LEDGERS['long']} (#22, FORWARD_LIQ.md), {sd / lfm.LEDGERS['short']} "
-          f"(#23, FORWARD_LIQSHORT.md); each judged once after 2027-03-31")
+    print(
+        f"ledgers: {sd / lfm.LEDGERS['long']} (#22, FORWARD_LIQ.md), {sd / lfm.LEDGERS['short']} "
+        f"(#23, FORWARD_LIQSHORT.md); each judged once after 2027-03-31"
+    )
     from . import lowsfwd as lwf
+
     print("#24 (FORWARD_LOWS.md): " + lwf.run(sd)["note"] + f" -> {sd / lwf.LEDGER}")
     from . import liqbreak as lbk
+
     print("#27 (FORWARD_LIQBREAK.md): " + lbk.run(sd)["note"] + f" -> {sd / lbk.LEDGER}")
     from . import fundsplit as fsp
+
     print("#32 (FORWARD_FUNDSPLIT.md): " + fsp.run(sd)["note"] + f" -> {sd / fsp.LEDGER}")
     from . import postclose as pc
+
     print("#29 (FORWARD_POSTCLOSE.md): " + pc.run(sd)["note"] + f" -> {sd / pc.LEDGER}")
     from . import levpush as lpu
+
     print("#34 (PREREGISTRATION_LEVPUSH.md, part B): " + lpu.run(sd)["note"])
     from . import bidsfwd as bfw
+
     print("#31 (FORWARD_BIDS2.md): " + bfw.run(sd)["note"] + f" -> {sd / bfw.LEDGER}")
     from . import settlefwd as sfw
+
     print("#38 (FORWARD_SHORTSPAY.md): " + sfw.run(sd)["note"] + f" -> {sd / sfw.LEDGER}")
     from . import liqhold as lhd
+
     print("#45 (FORWARD_LIQHOLD.md): " + lhd.run(sd)["note"] + f" -> {sd / lhd.LEDGER}")
     return 0
 
@@ -589,8 +676,11 @@ def _cmd_hlcollect(args: argparse.Namespace) -> int:
         return 0
     c = hc.Collector(data, top=args.top)
     if args.loop:
-        print(f"collecting into {data} (top {args.top} accounts hourly, HLP every 15 min, contexts every 5 min, "
-              f"1-minute candles daily); ctrl-c stops", flush=True)
+        print(
+            f"collecting into {data} (top {args.top} accounts hourly, HLP every 15 min, contexts every 5 min, "
+            f"1-minute candles daily); ctrl-c stops",
+            flush=True,
+        )
         c.loop()
         return 0
     for note in c.step() or ["nothing due"]:
@@ -609,8 +699,11 @@ def _cmd_deribit(args: argparse.Namespace) -> int:
         return 0
     rec = dr.Recorder(data)
     if args.loop:
-        print(f"recording Deribit into {data} ({', '.join(dr.CURRENCIES)}: options and futures every 5 min); ctrl-c stops",
-              flush=True)
+        print(
+            f"recording Deribit into {data} ({', '.join(dr.CURRENCIES)}: options and futures every 5 min); "
+            "ctrl-c stops",
+            flush=True,
+        )
         rec.loop()
         return 0
     for note in rec.step() or ["nothing due"]:
@@ -676,8 +769,11 @@ def _cmd_hlp_testnet(args: argparse.Namespace) -> int:
         with JournalLock(state):
             run = ht.Executor(state, book, ex, usd=args.usd)
             try:
-                print(f"#59 TESTNET executor: ${args.usd:,.0f} per trade from {ex.address}, reading {book} -> {state}; "
-                      f"kill switch {run.stop_file}", flush=True)
+                print(
+                    f"#59 TESTNET executor: ${args.usd:,.0f} per trade from {ex.address}, reading {book} -> {state}; "
+                    f"kill switch {run.stop_file}",
+                    flush=True,
+                )
                 if not args.loop:
                     run.step()
                     return 0
@@ -754,8 +850,9 @@ def _cmd_hlbook(args: argparse.Namespace) -> int:
         return 0
     r = hb.Recorder(data)
     if args.loop:
-        print(f"recording into {data} (top 20 levels a side, {hb.COINS} coins, every 5 minutes); ctrl-c stops",
-              flush=True)
+        print(
+            f"recording into {data} (top 20 levels a side, {hb.COINS} coins, every 5 minutes); ctrl-c stops", flush=True
+        )
         r.loop()
         return 0
     print(r.step())
@@ -769,11 +866,16 @@ def _cmd_rawrec(args: argparse.Namespace) -> int:
     raw = rr.raw_dir({**os.environ, rr.ENV: args.raw_dir} if args.raw_dir else None)
     if args.status:
         for venue, days in rr.status(raw).items():
-            print(f"== {venue}: {sum(d['files'] for d in days.values())} files, "
-                  f"{sum(d['bytes'] for d in days.values()) / 1e6:.1f} MB")
+            print(
+                f"== {venue}: {sum(d['files'] for d in days.values())} files, "
+                f"{sum(d['bytes'] for d in days.values()) / 1e6:.1f} MB"
+            )
             for day, d in days.items():
-                last = rr.dt.datetime.fromtimestamp(d["last_rt"] / 1000, rr.dt.timezone.utc).strftime("%H:%M:%S") \
-                    if d["last_rt"] else "-"
+                last = (
+                    rr.dt.datetime.fromtimestamp(d["last_rt"] / 1000, rr.dt.timezone.utc).strftime("%H:%M:%S")
+                    if d["last_rt"]
+                    else "-"
+                )
                 print(f"   {day}  {d['files']:2d} files  {d['bytes'] / 1e6:8.1f} MB  last {last} UTC")
         return 0
     if args.gaps:
@@ -784,8 +886,11 @@ def _cmd_rawrec(args: argparse.Namespace) -> int:
             total = sum(b - a for a, b in found) / 1000
             print(f"== {venue}: {len(found)} gaps, {total / 60:.1f} min")
             for a, b in found:
-                print(f"   {rr.dt.datetime.fromtimestamp(a / 1000, rr.dt.timezone.utc):%H:%M:%S} -> "
-                      f"{rr.dt.datetime.fromtimestamp(b / 1000, rr.dt.timezone.utc):%H:%M:%S}  ({(b - a) / 60000:.1f} min)")
+                print(
+                    f"   {rr.dt.datetime.fromtimestamp(a / 1000, rr.dt.timezone.utc):%H:%M:%S} -> "
+                    f"{rr.dt.datetime.fromtimestamp(b / 1000, rr.dt.timezone.utc):%H:%M:%S}  "
+                    f"({(b - a) / 60000:.1f} min)"
+                )
         return 0
     if args.manifest:
         for path in rr.write_manifests(raw):
@@ -793,6 +898,7 @@ def _cmd_rawrec(args: argparse.Namespace) -> int:
         return 0
     if args.watch:
         from . import tapewatch
+
         try:
             return tapewatch.watch(raw, [c.strip().upper() for c in args.watch.split(",") if c.strip()], read=args.read)
         except KeyboardInterrupt:
@@ -839,33 +945,45 @@ def _cmd_carry_status(args: argparse.Namespace) -> int:
     s = book.summary()
     span = f"{cp.stamp(s['first_ts'])} -> {cp.stamp(s['last_ts'])}" if s["first_ts"] else "no hours yet"
     print(f"{args.state}  ({s['costs']} costs)  {span}  {s['hours']} hours")
-    print(f"equity {s['equity']:.2f}  pnl {s['pnl']:+.2f} ({s['pnl'] / s['initial']:+.2%})  max dd {s['max_dd']:.2%}  "
-          f"funding {s['funding']:+.2f}  basis {s['basis']:+.2f}  fees {s['fees']:.2f}  "
-          f"open {s['open']}  closed {s['closed']}")
+    print(
+        f"equity {s['equity']:.2f}  pnl {s['pnl']:+.2f} ({s['pnl'] / s['initial']:+.2%})  max dd {s['max_dd']:.2%}  "
+        f"funding {s['funding']:+.2f}  basis {s['basis']:+.2f}  fees {s['fees']:.2f}  "
+        f"open {s['open']}  closed {s['closed']}"
+    )
     curve = book.equity_curve()
     if len(curve) > 2:
-        eq = pd.Series([r["equity"] for r in curve],
-                       index=pd.to_datetime([r["ts"] for r in curve], unit="s", utc=True))
-        print(f"sharpe {carry.sharpe_of(eq, carry.HOURS_PER_YEAR):.2f} hourly (the #12 criterion)  "
-              f"{carry.daily_sharpe(eq):.2f} on daily closes (info)")
+        eq = pd.Series([r["equity"] for r in curve], index=pd.to_datetime([r["ts"] for r in curve], unit="s", utc=True))
+        print(
+            f"sharpe {carry.sharpe_of(eq, carry.HOURS_PER_YEAR):.2f} hourly (the #12 criterion)  "
+            f"{carry.daily_sharpe(eq):.2f} on daily closes (info)"
+        )
     try:
         from .hl_exchange import MIRROR_SCHEMA  # noqa: F401
+
         rows = book.db.execute("SELECT * FROM testnet_mirror").fetchall()
     except Exception:  # noqa: BLE001 - no mirror table
         rows = []
     if rows:
         opens = [r for r in rows if r["open_oid"]]
         st = {k: sum(1 for r in opens if r["open_status"] == k) for k in ("filled", "part", "resting", "cancelled")}
-        print(f"testnet mirror: {len(opens)} resting shorts placed, {st['filled']} filled, {st['part']} partial, "
-              f"{st['resting']} resting, {st['cancelled']} cancelled")
+        print(
+            f"testnet mirror: {len(opens)} resting shorts placed, {st['filled']} filled, {st['part']} partial, "
+            f"{st['resting']} resting, {st['cancelled']} cancelled"
+        )
     for p in book.open_positions():
-        print(f"  open  {p['coin']:<6} since {cp.stamp(p['entry_ts'])}  {p['qty_spot'] * p['spot_entry']:.2f} a leg  "
-              f"funding {p['funding']:+.2f}")
-    for r in book.closed_positions()[-args.last:]:
-        print(f"  closed {r['coin']:<6} {cp.stamp(r['entry_ts'])} -> {cp.stamp(r['exit_ts'])}  {r['reason']:<12}"
-              f"pnl {r['pnl']:+.2f}")
+        print(
+            f"  open  {p['coin']:<6} since {cp.stamp(p['entry_ts'])}  {p['qty_spot'] * p['spot_entry']:.2f} a leg  "
+            f"funding {p['funding']:+.2f}"
+        )
+    for r in book.closed_positions()[-args.last :]:
+        print(
+            f"  closed {r['coin']:<6} {cp.stamp(r['entry_ts'])} -> {cp.stamp(r['exit_ts'])}  {r['reason']:<12}"
+            f"pnl {r['pnl']:+.2f}"
+        )
     book.close()
     return 0
+
+
 def _cmd_degen_scan(args: argparse.Namespace) -> int:
     from .degen import scan
 
@@ -887,27 +1005,30 @@ def _degen_window(args: argparse.Namespace, gran: int) -> tuple:
     if not args.start:
         return args.days, None, None
     start = int(datetime.fromisoformat(args.start).replace(tzinfo=timezone.utc).timestamp())
-    end = int(datetime.fromisoformat(args.end).replace(tzinfo=timezone.utc).timestamp()) if args.end \
-        else int(time.time())
+    end = (
+        int(datetime.fromisoformat(args.end).replace(tzinfo=timezone.utc).timestamp()) if args.end else int(time.time())
+    )
     first = start - WARMUP * gran
     days = int((time.time() - first) // 86400) + 2
     return days, first, end
 
 
-def _degen_frame(p: str, days: int, gran: int, cache: Path, label: str,
-                 source: str = "coinbase") -> pd.DataFrame:
+def _degen_frame(p: str, days: int, gran: int, cache: Path, label: str, source: str = "coinbase") -> pd.DataFrame:
     hl = source == "hyperliquid"
     path = cache / f"{p.replace('-', '')}_{gran}s_{days}d{'_hl' if hl else ''}.csv"
     if path.exists():
         df = data.load(path)
     else:
-        print(f"{label} fetching {p} {days}d of {gran // 60}m {'Hyperliquid perp bars' if hl else 'candles'} ...",
-              flush=True)
+        print(
+            f"{label} fetching {p} {days}d of {gran // 60}m {'Hyperliquid perp bars' if hl else 'candles'} ...",
+            flush=True,
+        )
         if hl:
             from . import hyperliquid as hlm
+
             df = hlm.closed_bars(p, gran, min(days * 86400 // gran, hlm.CANDLE_LIMIT))
             df["time"] = df["dt"].map(lambda t: t.isoformat())
-            time.sleep(0.5)     # a 5,000-bar page weighs heavily on its rate limit: 60 in a row drew 429s
+            time.sleep(0.5)  # a 5,000-bar page weighs heavily on its rate limit: 60 in a row drew 429s
         else:
             df = data.fetch(p, days, gran)
         data.save(df, path)
@@ -931,10 +1052,13 @@ def _cmd_degen_backtest(args: argparse.Namespace) -> int:
     source = getattr(args, "source", "hyperliquid")
     if source == "hyperliquid":
         from .hyperliquid import CANDLE_LIMIT
+
         most = CANDLE_LIMIT * gran // 86400
         if days > most:
-            print(f"Hyperliquid serves the last {CANDLE_LIMIT:,} bars: {most} days of "
-                  f"{gran // 60}m bars, not {days}" + (" (the window starts before them)" if args.start else ""))
+            print(
+                f"Hyperliquid serves the last {CANDLE_LIMIT:,} bars: {most} days of "
+                f"{gran // 60}m bars, not {days}" + (" (the window starts before them)" if args.start else "")
+            )
             days = most
 
     def cut(df: pd.DataFrame) -> pd.DataFrame:
@@ -971,16 +1095,20 @@ def _cmd_degen_backtest(args: argparse.Namespace) -> int:
     lines = [f"{'venue':<28}{'trades':>7}{'hit':>6}{'PF':>7}{'fees':>8}{'maxDD%':>8}{'P&L':>9}{'equity':>9}  exits"]
     for r in rows:
         ex = " ".join(f"{k}={v}" for k, v in sorted(r["reasons"].items()))
-        lines.append(f"{r['name']:<28}{r['trades']:>7}{r['hit']:>6.2f}{r['profit_factor']:>7.2f}"
-                     f"{r['entry_fees']:>8.2f}{100 * r['max_dd_pct']:>8.1f}{r['pnl']:>+9.2f}{r['equity']:>9.2f}  {ex}")
+        lines.append(
+            f"{r['name']:<28}{r['trades']:>7}{r['hit']:>6.2f}{r['profit_factor']:>7.2f}"
+            f"{r['entry_fees']:>8.2f}{100 * r['max_dd_pct']:>8.1f}{r['pnl']:>+9.2f}{r['equity']:>9.2f}  {ex}"
+        )
     crit = verdict(rows)
     lines.append("")
     for c in crit:
         lines.append(f"  [{'x' if c['met'] else ' '}] {c['criterion']}")
     passed = all(c["met"] for c in crit)
     lines.append(f"\nverdict: {'PASS' if passed else 'FAIL'} (rule {args.rule}, pre-registered, {PREREG[args.rule]})")
-    lines.append(f"bars and coin list: {source}"
-                 + ("" if source == "coinbase" else "; information only, the pre-registered runs used Coinbase"))
+    lines.append(
+        f"bars and coin list: {source}"
+        + ("" if source == "coinbase" else "; information only, the pre-registered runs used Coinbase")
+    )
     text = "\n".join(lines)
     print(text)
     if args.out:
@@ -1011,12 +1139,14 @@ def _degen_loop(args: argparse.Namespace) -> int:
     cfg = DegenConfig.for_venue(args.venue, rule=rule, initial=args.cash)
     gran = cfg.granularity
     if getattr(args, "fee_bps", None) is not None:
-        cfg.fee = args.fee_bps / 1e4        # e.g. your own rate from `espero fees`
+        cfg.fee = args.fee_bps / 1e4  # e.g. your own rate from `espero fees`
     trader = DegenTrader(journal, cfg)
-    print(f"打板 paper loop, rule {rule} ({gran // 60}m {args.source} bars) on {args.venue}: "
-          f"fees {1e4 * cfg.fee:.1f} bps per side"
-          + (f", funding {1e4 * cfg.funding_8h:.2f} bps per 8h" if cfg.funding_8h else "")
-          + f"; cash {trader.cash:.2f}, {len(trader.positions)} open -> {args.state}")
+    print(
+        f"打板 paper loop, rule {rule} ({gran // 60}m {args.source} bars) on {args.venue}: "
+        f"fees {1e4 * cfg.fee:.1f} bps per side"
+        + (f", funding {1e4 * cfg.funding_8h:.2f} bps per 8h" if cfg.funding_8h else "")
+        + f"; cash {trader.cash:.2f}, {len(trader.positions)} open -> {args.state}"
+    )
     state = {"universe": [], "refreshed": 0.0}
 
     def step() -> None:
@@ -1025,8 +1155,10 @@ def _degen_loop(args: argparse.Namespace) -> int:
                 state["universe"] = _degen_universe(args)
                 state["refreshed"] = time.time()
             except Exception as exc:  # noqa: BLE001 - keep trading the last universe
-                print(f"   universe refresh failed ({type(exc).__name__}: {exc}); "
-                      f"keeping {len(state['universe'])} coins, retrying in 5 min")
+                print(
+                    f"   universe refresh failed ({type(exc).__name__}: {exc}); "
+                    f"keeping {len(state['universe'])} coins, retrying in 5 min"
+                )
                 state["refreshed"] = time.time() - 3600 + 300
         volume = {u["product"]: float(u["dollar_volume"]) for u in state["universe"]}
         # a held coin is watched until it is sold, even after it leaves the top-N
@@ -1051,9 +1183,9 @@ def _degen_loop(args: argparse.Namespace) -> int:
             fresh = df[df["ts"] > (known or 0)]
             if fresh.empty:
                 continue
-            recs = features(df)                     # causal: row i reads bars <= i only
+            recs = features(df)  # causal: row i reads bars <= i only
             if p in held:
-                trade_from = known or 0                        # every missed bar gets its exits
+                trade_from = known or 0  # every missed bar gets its exits
             elif known is None:
                 # first sight: only the newest bar, and only if it is newer than the last cycle
                 trade_from = max(int(fresh["ts"].iloc[-1]) - 1, cycle)
@@ -1069,7 +1201,8 @@ def _degen_loop(args: argparse.Namespace) -> int:
             for rec in recs.to_dict("records"):
                 rec.pop("dt", None)
                 by_ts.setdefault(int(rec["ts"]), {})[p] = dict(
-                    rec, product=p, dollar_volume=volume.get(p, float("nan")), in_universe=p in volume)
+                    rec, product=p, dollar_volume=volume.get(p, float("nan")), in_universe=p in volume
+                )
             time.sleep(0.12)
         if not by_ts:
             print(_waiting(gran))
@@ -1088,8 +1221,10 @@ def _degen_loop(args: argparse.Namespace) -> int:
             stamp = datetime.fromtimestamp(ts, timezone.utc).strftime("%H:%M")
             events = trader.on_cycle(rows, bench.get(ts))
             quiet = [e for e in events if "no slot" not in e and "blocked" not in e]
-            print(f"{stamp} UTC  {len(rows)} coins{f', {errors} errors' if errors else ''}  "
-                  f"cash={trader.cash:.2f} equity={trader.equity():.2f} open={len(trader.positions)}")
+            print(
+                f"{stamp} UTC  {len(rows)} coins{f', {errors} errors' if errors else ''}  "
+                f"cash={trader.cash:.2f} equity={trader.equity():.2f} open={len(trader.positions)}"
+            )
             for e in quiet:
                 print("  ", e)
 
@@ -1128,26 +1263,36 @@ def _cmd_features(args: argparse.Namespace) -> int:
 
 
 def _cmd_tsmom(args: argparse.Namespace) -> int:
-    if args.report:   # read-only: a report must not write a mark
+    if args.report:  # read-only: a report must not write a mark
         from datetime import datetime, timezone
+
         acc = tsm.Account(Path(args.state))
         for row in reversed(acc.history(args.limit)):
             day = datetime.fromtimestamp(int(row["ts"]), timezone.utc).date()
             print(f"{day}  equity {row['equity']:8.2f}  {row['note']}")
         return 0
-    res = tsm.run(args.state, args.cash, force=args.force, span=args.span,
-                  deposit=args.deposit)
+    res = tsm.run(args.state, args.cash, force=args.force, span=args.span, deposit=args.deposit)
     print(tsm.format_report(res))
     return 0
 
 
 def _cmd_fast(args: argparse.Namespace) -> int:
     from .fast import run as fast_run
+
     venue = args.venue or ("hyperliquid" if args.source == "hyperliquid" else "coinbase")
-    return fast_run(args.product, cash=args.cash, venue=venue, record=args.record,
-                    replay_path=Path(args.replay) if args.replay else None, speed=args.speed,
-                    interval=args.interval, state_dir=Path(args.state_dir),
-                    threshold=args.threshold / 1e4, order_notional=args.order_notional, source=args.source)
+    return fast_run(
+        args.product,
+        cash=args.cash,
+        venue=venue,
+        record=args.record,
+        replay_path=Path(args.replay) if args.replay else None,
+        speed=args.speed,
+        interval=args.interval,
+        state_dir=Path(args.state_dir),
+        threshold=args.threshold / 1e4,
+        order_notional=args.order_notional,
+        source=args.source,
+    )
 
 
 def _cmd_scan(args: argparse.Namespace) -> int:
@@ -1166,13 +1311,21 @@ def _cmd_scan(args: argparse.Namespace) -> int:
             rows = fst.scan(products, fetch=bars)
         stamp = time.strftime("%H:%M UTC", time.gmtime())
         mins = fst.next_signal_minutes()
-        console.print(fst.scan_table(rows, threshold, title=f"lead-lag signal · {args.source} · {stamp} · "
-                                     f"acts at ±{args.threshold:.0f} bps · next update in {mins}m"))
+        console.print(
+            fst.scan_table(
+                rows,
+                threshold,
+                title=f"lead-lag signal · {args.source} · {stamp} · "
+                f"acts at ±{args.threshold:.0f} bps · next update in {mins}m",
+            )
+        )
         status = [fst.scan_status(r.state, threshold) for r in rows]
         n_buy, n_cold = status.count("BUY candidate"), status.count("BUY (cold)")
-        console.print(f"[grey58]{n_buy} buy candidate(s), {n_cold} more past the threshold but cold. pctile = how "
-                      f"unusual this gap is for that coin over two weeks. cold = 2-week IC below zero: the "
-                      f"signal has pointed the wrong way on that coin lately.[/]")
+        console.print(
+            f"[grey58]{n_buy} buy candidate(s), {n_cold} more past the threshold but cold. pctile = how "
+            f"unusual this gap is for that coin over two weeks. cold = 2-week IC below zero: the "
+            f"signal has pointed the wrong way on that coin lately.[/]"
+        )
         console.print(f"[grey58]{fst.REFERENCE_NOTE}[/]")
         if args.once or not sys.stdin.isatty():
             return 0
@@ -1181,10 +1334,17 @@ def _cmd_scan(args: argparse.Namespace) -> int:
         except ImportError:
             return 0
         from .ui import STYLE
-        choices = [questionary.Choice(f"{r.coin:6s} {1e4 * r.state.value:+5.0f} bps  IC "
-                                      + ("  n/a" if r.state.rolling_ic is None else f"{r.state.rolling_ic:+.2f}")
-                                      + f"  {fst.scan_status(r.state, threshold)}", value=r.product)
-                   for r in rows if r.state.value is not None][:15]
+
+        choices = [
+            questionary.Choice(
+                f"{r.coin:6s} {1e4 * r.state.value:+5.0f} bps  IC "
+                + ("  n/a" if r.state.rolling_ic is None else f"{r.state.rolling_ic:+.2f}")
+                + f"  {fst.scan_status(r.state, threshold)}",
+                value=r.product,
+            )
+            for r in rows
+            if r.state.value is not None
+        ][:15]
         choices += [questionary.Choice("rescan", value="__rescan"), questionary.Choice("quit", value=None)]
         pick = questionary.select("Open the fast screen on:", choices=choices, style=STYLE, pointer="❯").ask()
         if pick == "__rescan":
@@ -1192,8 +1352,17 @@ def _cmd_scan(args: argparse.Namespace) -> int:
         if not pick:
             return 0
         from .fast import run as fast_run
-        fast_run(pick, cash=args.cash, venue=venue, record=args.record, state_dir=Path(args.state_dir),
-                 threshold=threshold, order_notional=args.order_notional, source=args.source)
+
+        fast_run(
+            pick,
+            cash=args.cash,
+            venue=venue,
+            record=args.record,
+            state_dir=Path(args.state_dir),
+            threshold=threshold,
+            order_notional=args.order_notional,
+            source=args.source,
+        )
 
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
@@ -1253,17 +1422,25 @@ def place_state(args: argparse.Namespace, env: Optional[dict] = None) -> argpars
 
 def _cmd_ui(args: argparse.Namespace) -> int:
     from .ui import main as ui_main
+
     return ui_main(state_dir(args.state_dir))
 
 
 def _cmd_dashboard(args: argparse.Namespace) -> int:
-    out = dash.write(args.out, tsmom_db=pathlib.Path(args.tsmom_db),
-                     paper_db=pathlib.Path(args.paper_db),
-                     xs_db=pathlib.Path(args.xs_db), mf_db=pathlib.Path(args.mf_db),
-                     mf_hl_db=pathlib.Path(args.mf_db).with_name("mf-hl.db"), board=True, readout=True)
+    out = dash.write(
+        args.out,
+        tsmom_db=pathlib.Path(args.tsmom_db),
+        paper_db=pathlib.Path(args.paper_db),
+        xs_db=pathlib.Path(args.xs_db),
+        mf_db=pathlib.Path(args.mf_db),
+        mf_hl_db=pathlib.Path(args.mf_db).with_name("mf-hl.db"),
+        board=True,
+        readout=True,
+    )
     print(f"wrote {out}")
     if args.open:
         import subprocess
+
         subprocess.run(["open", str(out)], check=False)
     return 0
 
@@ -1277,10 +1454,16 @@ def _cmd_daily(args: argparse.Namespace) -> int:
     from .runner import run_daily
 
     try:
-        res = run_daily(state_dir=Path(args.state_dir), cash_tsmom=args.cash_tsmom,
-                        cash_xs=args.cash_xs, cash_mf=args.cash_mf, force=args.force, dry_run=args.dry_run,
-                        notify=not args.no_notify)
-    except RuntimeError as exc:   # the lock is held by a live run
+        res = run_daily(
+            state_dir=Path(args.state_dir),
+            cash_tsmom=args.cash_tsmom,
+            cash_xs=args.cash_xs,
+            cash_mf=args.cash_mf,
+            force=args.force,
+            dry_run=args.dry_run,
+            notify=not args.no_notify,
+        )
+    except RuntimeError as exc:  # the lock is held by a live run
         print(f"cannot start: {exc}", file=sys.stderr)
         return 3
     for name, step in res.steps.items():
@@ -1327,6 +1510,7 @@ def _cmd_board(args: argparse.Namespace) -> int:
     v = board.view(frames, pd.Timestamp.now(tz="UTC").tz_localize(None), alts=args.alts)
     try:
         from rich.console import Console
+
         Console().print(board.table(v))
     except ImportError:
         print(board.format_plain(v))
@@ -1370,6 +1554,7 @@ def _cmd_rate(args: argparse.Namespace) -> int:
 
 def _cmd_mf(args: argparse.Namespace) -> int:
     from . import mf as mfm
+
     res = mfm.run(args.state, args.cash)
     print(mfm.format_report(res))
     return 0
@@ -1413,13 +1598,17 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--granularity", type=int, default=3600)
     pp.add_argument("--state", default="paper.db")
     pp.add_argument("--cash", type=float, default=500.0)
-    pp.add_argument("--fee-bps", type=float, default=None,
-                    help="per side; overrides the venue's taker fee")
-    pp.add_argument("--venue", choices=sorted(VENUES), default=None,
-                    help="take taker fee and perp funding from the venue table")
-    pp.add_argument("--source", choices=["coinbase", "hyperliquid"], default="coinbase",
-                    help="whose candles: Coinbase spot, or Hyperliquid's perp with its actual hourly funding "
-                         "(fees default to hyperliquid's; fills stay simulated)")
+    pp.add_argument("--fee-bps", type=float, default=None, help="per side; overrides the venue's taker fee")
+    pp.add_argument(
+        "--venue", choices=sorted(VENUES), default=None, help="take taker fee and perp funding from the venue table"
+    )
+    pp.add_argument(
+        "--source",
+        choices=["coinbase", "hyperliquid"],
+        default="coinbase",
+        help="whose candles: Coinbase spot, or Hyperliquid's perp with its actual hourly funding "
+        "(fees default to hyperliquid's; fills stay simulated)",
+    )
     pp.add_argument("--seed", type=int, default=300, help="bars of history to keep")
     pp.add_argument("--loop", action="store_true")
     pp.add_argument("--interval", type=float, default=60.0)
@@ -1437,8 +1626,7 @@ def build_parser() -> argparse.ArgumentParser:
     px.add_argument("--fee-bps", type=float, default=None, help="per side, when no loop is running")
     px.set_defaults(func=_cmd_paper_close)
 
-    pc = sub.add_parser("paper-compare",
-                        help="replay one paper journal's bars under each venue's fees and funding")
+    pc = sub.add_parser("paper-compare", help="replay one paper journal's bars under each venue's fees and funding")
     pc.add_argument("journal", help="a paper .db whose bars to replay")
     pc.add_argument("--product", default="BTC-USD")
     pc.add_argument("--granularity", type=int, default=300)
@@ -1490,10 +1678,18 @@ def build_parser() -> argparse.ArgumentParser:
     fs = sub.add_parser("fast", help="semi-automatic resting-order screen on the live book (paper)")
     fs.add_argument("--product", default="ETH-USD")
     fs.add_argument("--cash", type=float, default=500.0)
-    fs.add_argument("--source", choices=["hyperliquid", "coinbase"], default="hyperliquid",
-                    help="whose candles and live book to use (Hyperliquid: perp prices, paper only)")
-    fs.add_argument("--venue", choices=["hyperliquid", "binanceus", "kraken", "coinbase"], default=None,
-                    help="whose maker fee to charge (default: the source's own)")
+    fs.add_argument(
+        "--source",
+        choices=["hyperliquid", "coinbase"],
+        default="hyperliquid",
+        help="whose candles and live book to use (Hyperliquid: perp prices, paper only)",
+    )
+    fs.add_argument(
+        "--venue",
+        choices=["hyperliquid", "binanceus", "kraken", "coinbase"],
+        default=None,
+        help="whose maker fee to charge (default: the source's own)",
+    )
     fs.add_argument("--order-notional", type=float, default=50.0)
     fs.add_argument("--threshold", type=float, default=30.0, help="signal gap in bps that triggers a proposal")
     fs.add_argument("--record", action="store_true", help="record the book to data/book/ for replay")
@@ -1504,14 +1700,22 @@ def build_parser() -> argparse.ArgumentParser:
     fs.set_defaults(func=_cmd_fast)
 
     sc = sub.add_parser("scan", help="the lead-lag signal for every coin, then open the fast screen on one")
-    sc.add_argument("--products", default="", help="comma-separated, e.g. ETH,SOL,LINK (default: the XS coins "
-                    "the source lists)")
-    sc.add_argument("--source", choices=["hyperliquid", "coinbase"], default="hyperliquid",
-                    help="whose candles (and, once you pick a coin, live book) to use")
+    sc.add_argument(
+        "--products", default="", help="comma-separated, e.g. ETH,SOL,LINK (default: the XS coins the source lists)"
+    )
+    sc.add_argument(
+        "--source",
+        choices=["hyperliquid", "coinbase"],
+        default="hyperliquid",
+        help="whose candles (and, once you pick a coin, live book) to use",
+    )
     sc.add_argument("--threshold", type=float, default=30.0, help="bps gap that makes a buy candidate")
-    sc.add_argument("--venue", choices=["hyperliquid", "binanceus", "kraken", "coinbase"], default=None,
-                    help="whose maker fee the fast screen charges (default: hyperliquid, or binanceus "
-                    "with --source coinbase)")
+    sc.add_argument(
+        "--venue",
+        choices=["hyperliquid", "binanceus", "kraken", "coinbase"],
+        default=None,
+        help="whose maker fee the fast screen charges (default: hyperliquid, or binanceus with --source coinbase)",
+    )
     sc.add_argument("--cash", type=float, default=500.0)
     sc.add_argument("--order-notional", type=float, default=50.0)
     sc.add_argument("--record", action="store_true")
@@ -1531,8 +1735,11 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--top", type=int, default=20)
     q.add_argument("--loop", action="store_true")
     q.add_argument("--interval", type=int, default=300, help="seconds between checks for a new settled hour")
-    q.add_argument("--execute-testnet", action="store_true",
-                   help="mirror the perp leg with real resting orders on the Hyperliquid TESTNET (spot stays paper)")
+    q.add_argument(
+        "--execute-testnet",
+        action="store_true",
+        help="mirror the perp leg with real resting orders on the Hyperliquid TESTNET (spot stays paper)",
+    )
     q.set_defaults(func=_cmd_carry_paper)
     q = crs.add_parser("screen", help="#12 on one screen: the launchd loops, both books, funding vs the bar")
     q.add_argument("--state-dir", default=None, help="where carry-*.db live (default as for ui)")
@@ -1552,14 +1759,19 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--testnet", action="store_true", help="api.hyperliquid-testnet.xyz (the default)")
     q.add_argument("--mainnet", action="store_true", help="api.hyperliquid.xyz")
     q.set_defaults(func=_cmd_hl_account)
-    q = hps.add_parser("order",
-                       help="place one resting TESTNET order (needs HL_PRIVATE_KEY + ESPERO_ALLOW_HL_TESTNET=1)")
+    q = hps.add_parser(
+        "order", help="place one resting TESTNET order (needs HL_PRIVATE_KEY + ESPERO_ALLOW_HL_TESTNET=1)"
+    )
     q.add_argument("coin")
     q.add_argument("side", choices=("buy", "sell"))
     q.add_argument("size", type=float)
     q.add_argument("price", type=float)
-    q.add_argument("--tif", choices=("Alo", "Gtc", "Ioc"), default="Alo",
-                   help="Alo: maker only, rejected if it would cross (default)")
+    q.add_argument(
+        "--tif",
+        choices=("Alo", "Gtc", "Ioc"),
+        default="Alo",
+        help="Alo: maker only, rejected if it would cross (default)",
+    )
     q.add_argument("--reduce-only", action="store_true")
     q.set_defaults(func=_cmd_hl_order)
     q = hps.add_parser("orders", help="open testnet orders and recent fills; --cancel COIN OID")
@@ -1569,34 +1781,56 @@ def build_parser() -> argparse.ArgumentParser:
 
     dg = sub.add_parser("degen", help="打板: scan altcoins breaking out on volume, backtest it, paper trade it (#10)")
     dgs = dg.add_subparsers(dest="degen_cmd", required=True)
-    for name, fn, h in (("scan", _cmd_degen_scan, "rank the altcoins moving now (no writes)"),
-                        ("backtest", _cmd_degen_backtest, "replay the last N days through every venue's fees"),
-                        ("paper", _cmd_degen_paper, "live-market paper loop on 5m bars")):
+    for name, fn, h in (
+        ("scan", _cmd_degen_scan, "rank the altcoins moving now (no writes)"),
+        ("backtest", _cmd_degen_backtest, "replay the last N days through every venue's fees"),
+        ("paper", _cmd_degen_paper, "live-market paper loop on 5m bars"),
+    ):
         q = dgs.add_parser(name, help=h)
         q.add_argument("--top", type=int, default=60, help="universe: top N altcoins by 24h dollar volume")
-        q.add_argument("--source", choices=["hyperliquid", "coinbase"], default="hyperliquid",
-                       help="coin list and bars: Hyperliquid perps (default) or Coinbase spot, which "
-                       "the pre-registered #10/#13 runs used")
-        q.add_argument("--venue", choices=sorted(VENUES), default=None,
-                       help="whose fees to charge (default: hyperliquid, or binanceus with --source coinbase)")
+        q.add_argument(
+            "--source",
+            choices=["hyperliquid", "coinbase"],
+            default="hyperliquid",
+            help="coin list and bars: Hyperliquid perps (default) or Coinbase spot, which "
+            "the pre-registered #10/#13 runs used",
+        )
+        q.add_argument(
+            "--venue",
+            choices=sorted(VENUES),
+            default=None,
+            help="whose fees to charge (default: hyperliquid, or binanceus with --source coinbase)",
+        )
         q.add_argument("--cash", type=float, default=500.0)
         q.set_defaults(func=fn)
         if name != "scan":
-            q.add_argument("--rule", choices=("10", "13", "13-control"), default="10",
-                           help="10: 5m bars (default); 13: 1h bars, one entry per bar, must beat BTC")
+            q.add_argument(
+                "--rule",
+                choices=("10", "13", "13-control"),
+                default="10",
+                help="10: 5m bars (default); 13: 1h bars, one entry per bar, must beat BTC",
+            )
         if name == "backtest":
             q.add_argument("--days", type=int, default=30)
             q.add_argument("--start", default="", help="fixed window start, UTC date (as pre-registered)")
             q.add_argument("--end", default="", help="fixed window end, exclusive")
-            q.add_argument("--venues", default="binanceus,kraken,coinbase,perp,hyperliquid",
-                           help="fee rows to replay; the verdict reads binanceus and kraken")
+            q.add_argument(
+                "--venues",
+                default="binanceus,kraken,coinbase,perp,hyperliquid",
+                help="fee rows to replay; the verdict reads binanceus and kraken",
+            )
             q.add_argument("--cache", default="data/degen", help="where the fetched candles are kept")
             q.add_argument("-o", "--out", default="", help="write the table and verdict here")
         if name == "paper":
-            q.add_argument("--state", default=None,
-                           help="paper journal (default: degen-hl.db, or degen.db with --source coinbase)")
-            q.add_argument("--fee-bps", type=float, default=None,
-                           help="per side; overrides the venue's taker fee (see `espero fees`)")
+            q.add_argument(
+                "--state", default=None, help="paper journal (default: degen-hl.db, or degen.db with --source coinbase)"
+            )
+            q.add_argument(
+                "--fee-bps",
+                type=float,
+                default=None,
+                help="per side; overrides the venue's taker fee (see `espero fees`)",
+            )
             q.add_argument("--loop", action="store_true")
             q.add_argument("--interval", type=float, default=60.0)
 
@@ -1636,7 +1870,9 @@ def build_parser() -> argparse.ArgumentParser:
     la.add_argument("--data", default=None, help="folder (default data/hlcollect in the repo)")
     la.add_argument("--verdict", action="store_true", help="the registered verdict, once, after the window closes")
     la.set_defaults(func=_cmd_ladder)
-    lq = sub.add_parser("liqvault", help="#64: what is recorded for it (default), or its verdict once, after 2027-03-31")
+    lq = sub.add_parser(
+        "liqvault", help="#64: what is recorded for it (default), or its verdict once, after 2027-03-31"
+    )
     lq.add_argument("--data", default=None, help="folder (default data/hlcollect in the repo)")
     lq.add_argument("--verdict", action="store_true", help="the registered verdict, once, after the window closes")
     lq.set_defaults(func=_cmd_liqvault)
@@ -1676,8 +1912,14 @@ def build_parser() -> argparse.ArgumentParser:
     rw.add_argument("--status", action="store_true", help="files, bytes and the last receive time per venue and day")
     rw.add_argument("--gaps", metavar="DAY", help="silences on the tape for one UTC day (YYYY-MM-DD)")
     rw.add_argument("--manifest", action="store_true", help="write MANIFEST.sha256 into every closed day folder")
-    rw.add_argument("--watch", metavar="COINS", help="the live tape on one screen for these coins (BTC,ETH); not a signal")
-    rw.add_argument("--read", action="store_true", help="with --watch: a column of words for what the book shows (untested, outside the registry)")
+    rw.add_argument(
+        "--watch", metavar="COINS", help="the live tape on one screen for these coins (BTC,ETH); not a signal"
+    )
+    rw.add_argument(
+        "--read",
+        action="store_true",
+        help="with --watch: a column of words for what the book shows (untested, outside the registry)",
+    )
     rw.add_argument("--raw-dir", default=None, help="the folder (default ESPERO_RAW_DIR; never data/)")
     rw.set_defaults(func=_cmd_rawrec)
 

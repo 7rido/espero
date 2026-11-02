@@ -2,6 +2,7 @@
 at arrival is the last whole frame before it, a market order walks the levels best first and stops at the
 recorded depth, the registered comparison and its call, and (with hftbacktest installed) a resting order
 that the tape's prints should fill is filled."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -15,6 +16,7 @@ from espero import replaysim as rs
 
 try:
     import hftbacktest  # noqa: F401
+
     HAVE_SIM = True
 except ImportError:
     HAVE_SIM = False
@@ -39,7 +41,8 @@ class TestJournals(unittest.TestCase):
             CREATE TABLE testnet_mirror (position_id INTEGER PRIMARY KEY, coin TEXT, open_oid INTEGER, open_px REAL,
                 open_size REAL, open_status TEXT, open_filled REAL, open_ts INTEGER, close_oid INTEGER, close_px REAL,
                 close_status TEXT, close_filled REAL, close_ts INTEGER);
-            INSERT INTO testnet_mirror VALUES (1, 'HYPE', 5, 49.88, 2.69, 'filled', 2.69, 1793664100, NULL, NULL, NULL, 0, NULL);
+            INSERT INTO testnet_mirror VALUES
+                (1, 'HYPE', 5, 49.88, 2.69, 'filled', 2.69, 1793664100, NULL, NULL, NULL, 0, NULL);
         """)
         con.commit()
         con.close()
@@ -66,14 +69,37 @@ class TestJournals(unittest.TestCase):
 
     def test_every_fill_since_the_recorder_started_becomes_an_order(self):
         orders, skipped = rs.orders_from_journals(self.state, since_ms=1_793_600_000_000)
-        got = sorted((o.book, o.ref, o.side, round(o.qty, 6), o.decision_ms, o.paper_px, o.kind, o.venue) for o in orders)
-        self.assertEqual(got, [
-            ("carry-maker", "positions/1/entry", -1, 2.7, 1793664000000, 92.75, "market", "hyperliquid"),
-            ("hlp-book", "trades/BTC/1793664000/entry", 1, round(1000 / 80000, 6), 1793664060000, 80000.0, "market", "hyperliquid"),
-            ("hlp-book", "trades/BTC/1793664000/exit", -1, round(1000 / 80000, 6), 1793678460000, 80100.0, "market", "hyperliquid"),
-            ("mirror", "testnet_mirror/1/open", -1, 2.69, 1793664100000, 49.88, "limit", "hyperliquid_testnet"),
-            ("paper-btc-usd-hl", "orders/a1", 1, 0.001, 1793667600000, 80040.0, "market", "hyperliquid"),
-        ])
+        got = sorted(
+            (o.book, o.ref, o.side, round(o.qty, 6), o.decision_ms, o.paper_px, o.kind, o.venue) for o in orders
+        )
+        self.assertEqual(
+            got,
+            [
+                ("carry-maker", "positions/1/entry", -1, 2.7, 1793664000000, 92.75, "market", "hyperliquid"),
+                (
+                    "hlp-book",
+                    "trades/BTC/1793664000/entry",
+                    1,
+                    round(1000 / 80000, 6),
+                    1793664060000,
+                    80000.0,
+                    "market",
+                    "hyperliquid",
+                ),
+                (
+                    "hlp-book",
+                    "trades/BTC/1793664000/exit",
+                    -1,
+                    round(1000 / 80000, 6),
+                    1793678460000,
+                    80100.0,
+                    "market",
+                    "hyperliquid",
+                ),
+                ("mirror", "testnet_mirror/1/open", -1, 2.69, 1793664100000, 49.88, "limit", "hyperliquid_testnet"),
+                ("paper-btc-usd-hl", "orders/a1", 1, 0.001, 1793667600000, 80040.0, "market", "hyperliquid"),
+            ],
+        )
         self.assertEqual(skipped, [("carry-maker positions/2/exit", "the perp exit price is not journaled")])
         mirror = [o for o in orders if o.kind == "limit"][0]
         self.assertTrue(mirror.paper_filled)
@@ -83,13 +109,50 @@ class TestJournals(unittest.TestCase):
 class TestTape(unittest.TestCase):
     def frames(self):
         return [
-            {"rt": T + 40, "ch": "l2Book", "s": "BTC", "d": {"channel": "l2Book", "data": {"coin": "BTC", "time": T,
-                "levels": [[{"px": "100", "sz": "1"}, {"px": "99", "sz": "2"}], [{"px": "101", "sz": "0.5"}, {"px": "102", "sz": "1"}]]}}},
-            {"rt": T + 1040, "ch": "l2Book", "s": "BTC", "d": {"channel": "l2Book", "data": {"coin": "BTC", "time": T + 1000,
-                "levels": [[{"px": "100", "sz": "1"}], [{"px": "101", "sz": "0.5"}, {"px": "102", "sz": "1"}]]}}},
-            {"rt": T + 60, "ch": "trades", "s": "BTC", "d": {"channel": "trades", "data": [
-                {"coin": "BTC", "side": "B", "px": "101", "sz": "0.2", "time": T + 20}]}},
-            {"rt": T + 60, "ch": "l2Book", "s": "ETH", "d": {"channel": "l2Book", "data": {"coin": "ETH", "time": T, "levels": [[], []]}}},
+            {
+                "rt": T + 40,
+                "ch": "l2Book",
+                "s": "BTC",
+                "d": {
+                    "channel": "l2Book",
+                    "data": {
+                        "coin": "BTC",
+                        "time": T,
+                        "levels": [
+                            [{"px": "100", "sz": "1"}, {"px": "99", "sz": "2"}],
+                            [{"px": "101", "sz": "0.5"}, {"px": "102", "sz": "1"}],
+                        ],
+                    },
+                },
+            },
+            {
+                "rt": T + 1040,
+                "ch": "l2Book",
+                "s": "BTC",
+                "d": {
+                    "channel": "l2Book",
+                    "data": {
+                        "coin": "BTC",
+                        "time": T + 1000,
+                        "levels": [[{"px": "100", "sz": "1"}], [{"px": "101", "sz": "0.5"}, {"px": "102", "sz": "1"}]],
+                    },
+                },
+            },
+            {
+                "rt": T + 60,
+                "ch": "trades",
+                "s": "BTC",
+                "d": {
+                    "channel": "trades",
+                    "data": [{"coin": "BTC", "side": "B", "px": "101", "sz": "0.2", "time": T + 20}],
+                },
+            },
+            {
+                "rt": T + 60,
+                "ch": "l2Book",
+                "s": "ETH",
+                "d": {"channel": "l2Book", "data": {"coin": "ETH", "time": T, "levels": [[], []]}},
+            },
         ]
 
     def test_books_and_trades_are_the_coins_own(self):
@@ -139,11 +202,15 @@ class TestTape(unittest.TestCase):
 
 class TestComparison(unittest.TestCase):
     def results(self, diffs, maker=()):
-        out = [rs.Result(rs.Order("b", str(i), "BTC", 1, 1.0, T, 1.0), True, "", 1.0, 1.0, d) for i, d in enumerate(diffs)]
+        out = [
+            rs.Result(rs.Order("b", str(i), "BTC", 1, 1.0, T, 1.0), True, "", 1.0, 1.0, d) for i, d in enumerate(diffs)
+        ]
         for paper, sim in maker:
             o = rs.Order("mirror", "m", "HYPE", -1, 1.0, T, 1.0, "limit", 1.0, None, paper)
             out.append(rs.Result(o, True, "", 1.0, 1.0, 0.0, sim))
-        out.append(rs.Result(rs.Order("b", "gap", "BTC", 1, 1.0, T, 1.0), False, "no book within a minute before arrival"))
+        out.append(
+            rs.Result(rs.Order("b", "gap", "BTC", 1, 1.0, T, 1.0), False, "no book within a minute before arrival")
+        )
         return out
 
     def test_summary_and_the_registered_call(self):
@@ -171,14 +238,17 @@ class TestComparison(unittest.TestCase):
 class TestResting(unittest.TestCase):
     def tape(self, prints_at_our_price: float):
         books = [book(T + i * 100, [(100.0, 5.0), (99.0, 5.0)], [(101.0, 5.0), (102.0, 5.0)]) for i in range(600)]
-        trades = [{"t": T + 5_000 + i * 100, "rt": T + 5_040 + i * 100, "px": 101.0, "sz": prints_at_our_price, "side": +1}
-                  for i in range(300)]
+        trades = [
+            {"t": T + 5_000 + i * 100, "rt": T + 5_040 + i * 100, "px": 101.0, "sz": prints_at_our_price, "side": +1}
+            for i in range(300)
+        ]
         return books, trades
 
     def test_the_registered_queue_model_and_latency_are_what_the_engine_gets(self):
         from unittest import mock
 
         import hftbacktest
+
         o = rs.Order("mirror", "m", "X", -1, 1.0, T + 1000, 101.0, "limit", 101.0, T + 20_000, True)
         books, trades = self.tape(2.0)
         calls = {}
@@ -187,10 +257,17 @@ class TestResting(unittest.TestCase):
             def f(self_, *a, **k):
                 calls[name] = a
                 return real(self_, *a, **k)
+
             return f
-        real_q, real_l = hftbacktest.BacktestAsset.power_prob_queue_model3, hftbacktest.BacktestAsset.constant_order_latency
-        with mock.patch.object(hftbacktest.BacktestAsset, "power_prob_queue_model3", wrap("q", real_q)), \
-                mock.patch.object(hftbacktest.BacktestAsset, "constant_order_latency", wrap("lat", real_l)):
+
+        real_q, real_l = (
+            hftbacktest.BacktestAsset.power_prob_queue_model3,
+            hftbacktest.BacktestAsset.constant_order_latency,
+        )
+        with (
+            mock.patch.object(hftbacktest.BacktestAsset, "power_prob_queue_model3", wrap("q", real_q)),
+            mock.patch.object(hftbacktest.BacktestAsset, "constant_order_latency", wrap("lat", real_l)),
+        ):
             rs.replay_limit(o, books, trades, latency_ms=250)
         self.assertEqual(calls["q"], (rs.QUEUE_MODEL_POWER,))
         self.assertEqual(rs.QUEUE_MODEL_POWER, 3.0)
@@ -198,12 +275,12 @@ class TestResting(unittest.TestCase):
 
     def test_a_resting_ask_fills_when_enough_prints_hit_it_and_not_otherwise(self):
         o = rs.Order("mirror", "m", "X", -1, 1.0, T + 1000, 101.0, "limit", 101.0, T + 50_000, True)
-        books, trades = self.tape(2.0)                      # 600 units print at 101 against 5 ahead of us
+        books, trades = self.tape(2.0)  # 600 units print at 101 against 5 ahead of us
         r = rs.replay_limit(o, books, trades, latency_ms=250)
         self.assertTrue(r.comparable)
         self.assertTrue(r.sim_filled, "prints at our price well beyond the queue ahead fill the order")
         self.assertGreater(r.sim_fill_ms, T + 5_000)
-        books, trades = self.tape(0.001)                    # 0.3 units print: the queue ahead is never cleared
+        books, trades = self.tape(0.001)  # 0.3 units print: the queue ahead is never cleared
         r = rs.replay_limit(o, books, trades, latency_ms=250)
         self.assertTrue(r.comparable)
         self.assertFalse(r.sim_filled)

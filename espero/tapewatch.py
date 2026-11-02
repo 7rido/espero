@@ -1,4 +1,6 @@
-"""The live tape on one screen: spread, depth, taker flow, liquidations and lag per venue, from the files the recorder is writing now. Information, not a signal.
+"""The live tape on one screen: spread, depth, taker flow, liquidations and lag per venue.
+
+Read from the files the recorder is writing now. Information, not a signal.
 
     espero rawrec --watch BTC,ETH          # refreshes every 2 s; ctrl-c stops
     espero rawrec --watch BTC --read       # adds a column of words for what the book and flow show: untested
@@ -7,8 +9,8 @@ Under each coin a second block gives trades, dollars, buy share and liquidations
 30 minutes and an hour; the screen starts from the previous hour's file so the hour window is full.
 
 It reads what `espero rawrec --loop` wrote in the last second, so it needs no second connection to any
-venue and shows exactly what the tape holds, lag included. It draws two tables a coin on `rich`, sized for an 80-column pane: the book, then
-flow by window. It shows no return and no rule. With `--read`
+venue and shows exactly what the tape holds, lag included. It draws two tables a coin on `rich`, sized
+for an 80-column pane: the book, then flow by window. It shows no return and no rule. With `--read`
 it adds, at the account holder's request, a column of words for what the book and the last minute's flow
 show, with a net lean; that column is untested, outside the registry, written to no book or ledger, and
 nothing in it was ever checked against what came next. A rule anyone wants to act on is a numbered
@@ -20,6 +22,7 @@ rebuilt from the last snapshot on the tape (the recorder requests one every five
 sequence chain checked (its checksum field reads 0 on this channel now), so a book that drifted shows a
 dash rather than a wrong number.
 """
+
 from __future__ import annotations
 
 import collections
@@ -58,8 +61,13 @@ def _iso_ms(text: str) -> int:
 
 def symbols_for(coin: str) -> Dict[str, str]:
     """The symbol each venue uses for a coin, as the recorder subscribes to it."""
-    return {"binance": f"{coin}USDT", "bybit": f"{coin}USDT", "okx": f"{coin}-USDT-SWAP",
-            "hyperliquid": HL_NAME.get(coin, coin), "coinbase": f"{coin}-USD"}
+    return {
+        "binance": f"{coin}USDT",
+        "bybit": f"{coin}USDT",
+        "okx": f"{coin}-USDT-SWAP",
+        "hyperliquid": HL_NAME.get(coin, coin),
+        "coinbase": f"{coin}-USD",
+    }
 
 
 # ------------------------------------------------------------------ books
@@ -73,7 +81,7 @@ class Book:
         self.raw_asks: Dict[float, Tuple[str, str]] = {}
         self.ok = False
         self.ct_val = ct_val
-        self.whole = False                  # whole-book frames: no deltas to apply
+        self.whole = False  # whole-book frames: no deltas to apply
 
     def set(self, bids, asks) -> None:
         self.bids = {float(p): float(s) for p, s in bids if float(s) > 0}
@@ -121,8 +129,9 @@ class Book:
             return None
         mid = (a + b) / 2
         band = mid * bps / 1e4
-        return sum(p * s * self.ct_val for p, s in self.bids.items() if mid - p <= band) + \
-            sum(p * s * self.ct_val for p, s in self.asks.items() if p - mid <= band)
+        return sum(p * s * self.ct_val for p, s in self.bids.items() if mid - p <= band) + sum(
+            p * s * self.ct_val for p, s in self.asks.items() if p - mid <= band
+        )
 
     def prune_outside(self, best_bid: float, best_ask: float) -> None:
         """Drop levels a venue's ticker says are gone: bids above its best bid, asks below its best ask.
@@ -172,10 +181,10 @@ class VenueState:
         self.book = Book(ct_val)
         self.book.whole = venue in ("binance", "hyperliquid")
         self.cb_seq: Optional[int] = None
-        self.trades: collections.deque = collections.deque()               # (t_ms, usd, buy)
-        self.liqs: collections.deque = collections.deque()                 # (t_ms, usd, side)
+        self.trades: collections.deque = collections.deque()  # (t_ms, usd, buy)
+        self.liqs: collections.deque = collections.deque()  # (t_ms, usd, side)
         self.lags: collections.deque = collections.deque(maxlen=LAG_FRAMES)
-        self.recent: collections.deque = collections.deque(maxlen=DELTA_BUFFER)   # (ts, bids, asks) deltas
+        self.recent: collections.deque = collections.deque(maxlen=DELTA_BUFFER)  # (ts, bids, asks) deltas
         self.okx_seq: Optional[int] = None
         self.last_rt: Optional[int] = None
         self.frames = 0
@@ -214,7 +223,7 @@ class VenueState:
                 ts = int(d["ts"])
                 if d.get("type") == "snapshot" or data.get("u") == 1:
                     self.book.set(data["b"], data["a"])
-                    self._replay(ts, raw=False)             # deltas already on the tape that are newer than it
+                    self._replay(ts, raw=False)  # deltas already on the tape that are newer than it
                 else:
                     self.recent.append((ts, data["b"], data["a"]))
                     if self.book.ok:
@@ -231,7 +240,7 @@ class VenueState:
             if ch == "rest.books":
                 data = d["data"][0]
                 self.book.set_raw(data["bids"], data["asks"])
-                self.okx_seq = None                     # the chain restarts from the next update
+                self.okx_seq = None  # the chain restarts from the next update
                 self._replay(int(data.get("ts", 0)), raw=True)
             elif ch == "books":
                 for data in d.get("data", []):
@@ -242,17 +251,23 @@ class VenueState:
                     else:
                         self.recent.append((ts, data["bids"], data["asks"]))
                         if self.book.ok and self.okx_seq is not None and prev != self.okx_seq and prev != -1:
-                            self.book.ok = False        # a sequence gap: a dash until the next snapshot
+                            self.book.ok = False  # a sequence gap: a dash until the next snapshot
                         if self.book.ok:
                             self.book.apply_raw(data["bids"], data["asks"])
                     self.okx_seq = seq
                     # OKX sends checksum 0 on this channel now (seen 2026-11-02); a non-zero one is checked
-                    if self.book.ok and int(data.get("checksum", 0)) != 0 and not self.book.okx_checksum_ok(int(data["checksum"])):
-                        self.book.ok = False            # drifted: a dash until the next snapshot
+                    if (
+                        self.book.ok
+                        and int(data.get("checksum", 0)) != 0
+                        and not self.book.okx_checksum_ok(int(data["checksum"]))
+                    ):
+                        self.book.ok = False  # drifted: a dash until the next snapshot
                     self.lags.append(rt - ts)
             elif ch == "trades":
                 for t in d.get("data", []):
-                    self.trades.append((int(t["ts"]), float(t["px"]) * float(t["sz"]) * self.ct_val, t["side"] == "buy"))
+                    self.trades.append(
+                        (int(t["ts"]), float(t["px"]) * float(t["sz"]) * self.ct_val, t["side"] == "buy")
+                    )
                     self.lags.append(rt - int(t["ts"]))
         elif v == "coinbase":
             if ch == "snapshot":
@@ -269,7 +284,9 @@ class VenueState:
                 self.book.prune_outside(float(d["best_bid"]), float(d["best_ask"]))
             elif ch in ("match", "last_match"):
                 t_ms = _iso_ms(d["time"])
-                self.trades.append((t_ms, float(d["price"]) * float(d["size"]), d["side"] == "sell"))   # the maker sold: the taker bought
+                self.trades.append(
+                    (t_ms, float(d["price"]) * float(d["size"]), d["side"] == "sell")
+                )  # the maker sold: the taker bought
                 self.lags.append(rt - t_ms)
         elif v == "hyperliquid":
             if ch == "l2Book":
@@ -298,8 +315,13 @@ class VenueState:
         usd = sum(x[1] for x in tr)
         buy = sum(x[1] for x in tr if x[2])
         lq = [x for x in self.liqs if x[0] >= since]
-        return {"trades": len(tr), "usd": usd, "buy_share": buy / usd if usd else None,
-                "liq_buy": sum(x[1] for x in lq if x[2] == "buy"), "liq_sell": sum(x[1] for x in lq if x[2] == "sell")}
+        return {
+            "trades": len(tr),
+            "usd": usd,
+            "buy_share": buy / usd if usd else None,
+            "liq_buy": sum(x[1] for x in lq if x[2] == "buy"),
+            "liq_sell": sum(x[1] for x in lq if x[2] == "sell"),
+        }
 
     def row(self, now_ms: int) -> Dict[str, object]:
         while self.trades and now_ms - self.trades[0][0] > KEEP_S * 1000:
@@ -308,17 +330,32 @@ class VenueState:
             self.liqs.popleft()
         minute, five = self.window(now_ms, FLOW_S), self.window(now_ms, LIQ_S)
         b, a = self.book.top()
-        return {"venue": self.venue, "bid": b, "ask": a, "spread_bps": self.book.spread_bps(),
-                "depth_usd": self.book.depth_usd(), "trades_1m": minute["trades"], "usd_1m": minute["usd"],
-                "buy_share": minute["buy_share"], "liq_buy_5m": five["liq_buy"], "liq_sell_5m": five["liq_sell"],
-                "lag_ms": statistics.median(self.lags) if self.lags else None,
-                "age_s": (now_ms - self.last_rt) / 1000 if self.last_rt else None, "frames": self.frames,
-                "windows": {name: self.window(now_ms, sec) for name, sec in WINDOWS}}
+        return {
+            "venue": self.venue,
+            "bid": b,
+            "ask": a,
+            "spread_bps": self.book.spread_bps(),
+            "depth_usd": self.book.depth_usd(),
+            "trades_1m": minute["trades"],
+            "usd_1m": minute["usd"],
+            "buy_share": minute["buy_share"],
+            "liq_buy_5m": five["liq_buy"],
+            "liq_sell_5m": five["liq_sell"],
+            "lag_ms": statistics.median(self.lags) if self.lags else None,
+            "age_s": (now_ms - self.last_rt) / 1000 if self.last_rt else None,
+            "frames": self.frames,
+            "windows": {name: self.window(now_ms, sec) for name, sec in WINDOWS},
+        }
 
 
 # ------------------------------------------------------------------ following the tape
-def follow(raw: Path, venue: str, clock: Callable[[], int] = lambda: int(time.time() * 1000),
-           start_ms: Optional[int] = None, symbols: Optional[List[str]] = None) -> Iterator[Optional[dict]]:
+def follow(
+    raw: Path,
+    venue: str,
+    clock: Callable[[], int] = lambda: int(time.time() * 1000),
+    start_ms: Optional[int] = None,
+    symbols: Optional[List[str]] = None,
+) -> Iterator[Optional[dict]]:
     """Yield records as the recorder writes them: the hour file of `start_ms` (default now) from the
     beginning, then every new line, moving to the next hour's file when it appears and this one is read.
     Yields None when nothing new arrived. Cut frames (a restart) are handled as `rawrec.FrameDecoder` does."""
@@ -330,13 +367,13 @@ def follow(raw: Path, venue: str, clock: Callable[[], int] = lambda: int(time.ti
     while True:
         want = rr.hour_path(raw, venue, clock())
         if fh is None and path.exists():
-            want = path                             # begin where asked (an hour back), not at now
+            want = path  # begin where asked (an hour back), not at now
         elif fh is not None and want != path:
             day, hh = path.parent.name, int(path.stem.split(".")[0])
             t = dt.datetime.strptime(f"{day} {hh:02d}", "%Y-%m-%d %H").replace(tzinfo=dt.timezone.utc)
             following = rr.hour_path(raw, venue, int(t.timestamp() * 1000) + 3_600_000)
             if following != want and following.exists():
-                want = following                    # the hour after this one, before jumping to now
+                want = following  # the hour after this one, before jumping to now
         if fh is None or (want != path and want.exists()):
             if fh is not None:
                 fh.close()
@@ -400,22 +437,35 @@ def read_of(row: Dict[str, object], book: Book) -> str:
 def render(coin: str, rows: List[Dict[str, object]], now_ms: int, reads: Optional[List[str]] = None) -> str:
     def f(x, fmt, dash="-"):
         return dash if x is None else format(x, fmt)
+
     label = "information, not a signal" + ("; the read column is untested and outside the registry" if reads else "")
-    lines = [f"{coin}  {dt.datetime.fromtimestamp(now_ms / 1000, dt.timezone.utc):%H:%M:%S} UTC   {label}",
-             f"{'venue':<12}{'bid':>12}{'ask':>12}{'spread bps':>11}{'depth ±10bps':>14}{'trades/1m':>10}"
-             f"{'$M/1m':>8}{'buy':>6}{'liq buy 5m':>12}{'liq sell 5m':>12}{'lag ms':>8}{'age s':>7}" + ("   read" if reads else "")]
+    lines = [
+        f"{coin}  {dt.datetime.fromtimestamp(now_ms / 1000, dt.timezone.utc):%H:%M:%S} UTC   {label}",
+        f"{'venue':<12}{'bid':>12}{'ask':>12}{'spread bps':>11}{'depth ±10bps':>14}{'trades/1m':>10}"
+        f"{'$M/1m':>8}{'buy':>6}{'liq buy 5m':>12}{'liq sell 5m':>12}{'lag ms':>8}{'age s':>7}"
+        + ("   read" if reads else ""),
+    ]
     for i, r in enumerate(rows):
         depth = "-" if r["depth_usd"] is None else f"{r['depth_usd'] / 1e6:.1f}M"
-        lines.append(f"{r['venue']:<12}{f(r['bid'], ',.6g'):>12}{f(r['ask'], ',.6g'):>12}{f(r['spread_bps'], '.2f'):>11}"
-                     f"{depth:>14}{r['trades_1m']:>10}{r['usd_1m'] / 1e6:>8.2f}{f(r['buy_share'], '.2f'):>6}"
-                     f"{r['liq_buy_5m'] / 1e3:>11.0f}k{r['liq_sell_5m'] / 1e3:>11.0f}k{f(r['lag_ms'], '.0f'):>8}{f(r['age_s'], '.0f'):>7}"
-                     + (f"   {reads[i]}" if reads else ""))
-    lines.append(f"{'flow by window':<12}" + "".join(f"{name:>8}{'$M':>8}{'buy':>6}{'liq buy':>9}{'liq sell':>10}" for name, _ in WINDOWS))
+        lines.append(
+            f"{r['venue']:<12}{f(r['bid'], ',.6g'):>12}{f(r['ask'], ',.6g'):>12}{f(r['spread_bps'], '.2f'):>11}"
+            f"{depth:>14}{r['trades_1m']:>10}{r['usd_1m'] / 1e6:>8.2f}{f(r['buy_share'], '.2f'):>6}"
+            f"{r['liq_buy_5m'] / 1e3:>11.0f}k{r['liq_sell_5m'] / 1e3:>11.0f}k"
+            f"{f(r['lag_ms'], '.0f'):>8}{f(r['age_s'], '.0f'):>7}"
+            + (f"   {reads[i]}" if reads else "")
+        )
+    lines.append(
+        f"{'flow by window':<12}"
+        + "".join(f"{name:>8}{'$M':>8}{'buy':>6}{'liq buy':>9}{'liq sell':>10}" for name, _ in WINDOWS)
+    )
     for r in rows:
         cells = ""
         for name, _ in WINDOWS:
             w = r["windows"][name]
-            cells += f"{w['trades']:>8}{w['usd'] / 1e6:>8.2f}{f(w['buy_share'], '.2f'):>6}{w['liq_buy'] / 1e3:>8.0f}k{w['liq_sell'] / 1e3:>9.0f}k"
+            cells += (
+                f"{w['trades']:>8}{w['usd'] / 1e6:>8.2f}{f(w['buy_share'], '.2f'):>6}"
+                f"{w['liq_buy'] / 1e3:>8.0f}k{w['liq_sell'] / 1e3:>9.0f}k"
+            )
         lines.append(f"{r['venue']:<12}" + cells)
     return "\n".join(lines)
 
@@ -447,22 +497,45 @@ def tables(coin: str, rows: List[Dict[str, object]], now_ms: int, reads: Optiona
     third of words per venue."""
     from rich import box
     from rich.table import Table
-    from rich.text import Text
+
     stamp = dt.datetime.fromtimestamp(now_ms / 1000, dt.timezone.utc).strftime("%H:%M:%S")
-    book = Table(title=f"{coin}  {stamp} UTC", title_justify="left", box=box.SIMPLE_HEAD, pad_edge=False,
-                 show_edge=False, expand=False)
-    for name, just in (("venue", "left"), ("bid", "right"), ("ask", "right"), ("sprd bps", "right"), ("depth ±10", "right"),
-                       ("lag ms", "right"), ("age", "right")):
+    book = Table(
+        title=f"{coin}  {stamp} UTC",
+        title_justify="left",
+        box=box.SIMPLE_HEAD,
+        pad_edge=False,
+        show_edge=False,
+        expand=False,
+    )
+    for name, just in (
+        ("venue", "left"),
+        ("bid", "right"),
+        ("ask", "right"),
+        ("sprd bps", "right"),
+        ("depth ±10", "right"),
+        ("lag ms", "right"),
+        ("age", "right"),
+    ):
         book.add_column(name, justify=just, no_wrap=True)
     for r in rows:
-        cells = [r["venue"], _fmt_px(r["bid"]), _fmt_px(r["ask"]),
-                 "-" if r["spread_bps"] is None else f"{r['spread_bps']:.2f}",
-                 "-" if r["depth_usd"] is None else _fmt_usd(r["depth_usd"]),
-                 "-" if r["lag_ms"] is None else f"{r['lag_ms']:.0f}",
-                 "-" if r["age_s"] is None else f"{r['age_s']:.0f}s"]
+        cells = [
+            r["venue"],
+            _fmt_px(r["bid"]),
+            _fmt_px(r["ask"]),
+            "-" if r["spread_bps"] is None else f"{r['spread_bps']:.2f}",
+            "-" if r["depth_usd"] is None else _fmt_usd(r["depth_usd"]),
+            "-" if r["lag_ms"] is None else f"{r['lag_ms']:.0f}",
+            "-" if r["age_s"] is None else f"{r['age_s']:.0f}s",
+        ]
         book.add_row(*cells, style="dim" if r["bid"] is None else "")
-    flow = Table(box=box.SIMPLE_HEAD, pad_edge=False, show_edge=False, expand=False,
-                 caption="$ traded (taker buy %) · liq: $ liquidated, buys/sells", caption_justify="left")
+    flow = Table(
+        box=box.SIMPLE_HEAD,
+        pad_edge=False,
+        show_edge=False,
+        expand=False,
+        caption="$ traded (taker buy %) · liq: $ liquidated, buys/sells",
+        caption_justify="left",
+    )
     flow.add_column("flow", justify="left", no_wrap=True)
     for name in ("1m",) + tuple(n for n, _ in WINDOWS):
         flow.add_column(name, justify="right", no_wrap=True)
@@ -486,41 +559,61 @@ def tables(coin: str, rows: List[Dict[str, object]], now_ms: int, reads: Optiona
     return book, flow, read
 
 
-def screen(coins: List[str], states: Dict[Tuple[str, str], "VenueState"], venues: Tuple[str, ...], now_ms: int,
-           read: bool):
+def screen(
+    coins: List[str], states: Dict[Tuple[str, str], "VenueState"], venues: Tuple[str, ...], now_ms: int, read: bool
+):
     """The whole screen as one rich renderable."""
     from rich.console import Group
     from rich.text import Text
+
     parts = []
     for c in coins:
         rows = [states[(c, v)].row(now_ms) for v in venues]
         reads = [read_of(rows[i], states[(c, v)].book) for i, v in enumerate(venues)] if read else None
         parts += list(tables(c, rows, now_ms, reads)) + [Text("")]
     note = "information, not a signal" + ("; the read column is untested and outside the registry" if read else "")
-    parts.append(Text(note + "\nBinance depth: top 20 levels; Coinbase and Bybit 50; OKX 400. A dash: the rebuilt book "
-                      "is not trustworthy until the next snapshot.", style="dim"))
+    parts.append(
+        Text(
+            note + "\nBinance depth: top 20 levels; Coinbase and Bybit 50; OKX 400. A dash: the rebuilt book "
+            "is not trustworthy until the next snapshot.",
+            style="dim",
+        )
+    )
     return Group(*parts)
 
 
-def watch(raw: Path, coins: List[str], refresh_s: float = REFRESH_S, out=sys.stdout, clock=lambda: int(time.time() * 1000),
-          max_rounds: Optional[int] = None, sleep=time.sleep, read: bool = False) -> int:
+def watch(
+    raw: Path,
+    coins: List[str],
+    refresh_s: float = REFRESH_S,
+    out=sys.stdout,
+    clock=lambda: int(time.time() * 1000),
+    max_rounds: Optional[int] = None,
+    sleep=time.sleep,
+    read: bool = False,
+) -> int:
     ct = okx_ct_vals(raw)
     venues = ("binance", "bybit", "okx", "hyperliquid", "coinbase")
-    states = {(c, v): VenueState(v, symbols_for(c)[v], ct.get(symbols_for(c)["okx"], 1.0) if v == "okx" else 1.0)
-              for c in coins for v in venues}
+    states = {
+        (c, v): VenueState(v, symbols_for(c)[v], ct.get(symbols_for(c)["okx"], 1.0) if v == "okx" else 1.0)
+        for c in coins
+        for v in venues
+    }
     try:
         import os
-        os.nice(10)                                 # the recorder wins the CPU; this screen can wait
+
+        os.nice(10)  # the recorder wins the CPU; this screen can wait
     except (OSError, AttributeError):
         pass
-    start = clock() - KEEP_S * 1000                 # from the previous hour's file, so the hour window is full
+    start = clock() - KEEP_S * 1000  # from the previous hour's file, so the hour window is full
     feeds = {v: follow(raw, v, clock, start_ms=start, symbols=[symbols_for(c)[v] for c in coins]) for v in venues}
     rounds = 0
     try:
         from rich.console import Console
         from rich.live import Live
+
         console = Console(file=out, force_terminal=out is sys.stdout)
-    except ImportError:                             # the tui extra is missing: the plain layout
+    except ImportError:  # the tui extra is missing: the plain layout
         console = None
 
     def catch_up() -> int:
@@ -530,21 +623,32 @@ def watch(raw: Path, coins: List[str], refresh_s: float = REFRESH_S, out=sys.std
                     break
                 for c in coins:
                     states[(c, v)].feed(rec)
-        return clock()                              # after the read, so an age is never negative
+        return clock()  # after the read, so an age is never negative
 
     if console is None:
         while max_rounds is None or rounds < max_rounds:
             now = catch_up()
-            text = "\n\n".join(render(c, [states[(c, v)].row(now) for v in venues], now,
-                                       [read_of(states[(c, v)].row(now), states[(c, v)].book) for v in venues] if read else None)
-                                for c in coins)
+            text = "\n\n".join(
+                render(
+                    c,
+                    [states[(c, v)].row(now) for v in venues],
+                    now,
+                    [read_of(states[(c, v)].row(now), states[(c, v)].book) for v in venues] if read else None,
+                )
+                for c in coins
+            )
             out.write("\x1b[2J\x1b[H" + text + "\n")
             out.flush()
             rounds += 1
             sleep(refresh_s)
         return 0
-    with Live(screen(coins, states, venues, clock(), read), console=console, screen=out is sys.stdout,
-              auto_refresh=False, transient=False) as live:
+    with Live(
+        screen(coins, states, venues, clock(), read),
+        console=console,
+        screen=out is sys.stdout,
+        auto_refresh=False,
+        transient=False,
+    ) as live:
         while max_rounds is None or rounds < max_rounds:
             now = catch_up()
             live.update(screen(coins, states, venues, now, read), refresh=True)

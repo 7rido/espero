@@ -142,7 +142,8 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
     "64": ("Forward: the liquidator vault's inventory", ["FORWARD_LIQVAULT.md", "FORWARD_LIQVAULT.md.ots"]),
     "65": ("Forward: a sharp 5-minute fall read by its open interest", ["FORWARD_OI5M.md", "FORWARD_OI5M.md.ots"]),
     "66": ("A HAR volatility forecast against the books' trailing variance", ["EXPLORE_VOLF.md", "volf.py", "volf_design_run.txt",
-                                                                         "PREREGISTRATION_VOLF.md", "PREREGISTRATION_VOLF.md.ots"]),
+                                                                         "PREREGISTRATION_VOLF.md", "PREREGISTRATION_VOLF.md.ots",
+                                                                         "RESULTS_VOLF.md", "volf_run.txt", "volf_series.csv"]),
 }
 
 # files that belong to the project as a whole, not to one test

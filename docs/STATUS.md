@@ -1,10 +1,10 @@
-# Status — generated 2026-11-02 10:34 UTC by `scripts/status.py`
+# Status — generated 2026-11-02 20:45 UTC by `scripts/status.py`
 
 Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `state/health.json`.
 
 ## The ledger
 
-64 tests: 25 fail, 19 forward_pending, 12 measurement, 6 pass, 1 exploratory, 1 provisional.
+65 tests: 25 fail, 19 forward_pending, 12 measurement, 7 pass, 1 exploratory, 1 provisional.
 
 | # | status | what | document |
 |---|---|---|---|
@@ -15,40 +15,41 @@ Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `
 | 40 | pass | Fill-reconciliation plumbing on Hyperliquid testnet | `research/RESULTS_TESTNET.md` |
 | 42 | pass | Dress rehearsal of real-fill test on testnet | `research/RESULTS_REHEARSAL.md` |
 | 43 | pass | At which holding period do real signals pay? | `research/RESULTS_HORIZONS.md` |
+| 66 | pass | HAR volatility forecast from 5-minute bars against #8's 30-day trailing variance, next week | `research/RESULTS_VOLF.md` |
 
 **Forward, judged once after 2027-03-31:** #22, #23, #24, #27, #29, #31, #32, #34, #38, #45, #49, #58, #59, #60, #61, #62, #63, #64, #65. Their running numbers decide nothing and are not shown here.
 
 ## The last daily run
 
-`last_run` 2026-11-02T00:49:26+00:00 — dry run (nothing marked); `last_success` 2026-11-01T21:25:36+00:00
+`last_run` 2026-11-02T12:32:57+00:00 — ok; `last_success` 2026-11-02T12:32:57+00:00
 
 | step | ok | note |
 |---|---|---|
-| tsmom | yes | skipped (dry run) |
-| xs | yes | skipped (dry run) |
-| mf | yes | skipped (dry run) |
-| mf-hl | yes | skipped (dry run) |
-| liqfwd | yes | skipped (dry run) |
-| lowsfwd | yes | skipped (dry run) |
-| liqbreak | yes | skipped (dry run) |
-| fundsplit | yes | skipped (dry run) |
-| postclose | yes | skipped (dry run) |
-| levpush | yes | skipped (dry run) |
-| bidsfwd | yes | skipped (dry run) |
-| settlefwd | yes | skipped (dry run) |
-| liqhold | yes | skipped (dry run) |
-| publish | yes | skipped (dry run) |
+| tsmom | yes | rebalance |
+| xs | yes | rebalance |
+| mf | yes | rebalance |
+| mf-hl | yes | mark |
+| liqfwd | yes | mark: longs 14 trades on 3 days (+28.9 bps a day); shorts 21 trades on 3 days (+38.8 bps a day) (paper, gross; decides nothing) |
+| lowsfwd | yes | mark: 161 paper trades on 3 days (+37.0 bps a day, gross; decides nothing); 4 coin-days not published yet |
+| liqbreak | yes | mark: 110 breaks on 3 days; forced down-breaks bought: 29, +5.8 bps an hour (decides nothing) |
+| fundsplit | yes | mark: 29 forced down-breaks, 0 after crowded funding |
+| postclose | yes | mark: 1 trading days (BTC+ETH after the close -7.3 bps in 15 min; decides nothing) |
+| levpush | yes | mark: 1 trading days (SOL+XRP into the close -14.9 bps; decides nothing) |
+| bidsfwd | yes | mark: 52 fills of 152 breakdowns on 3 days (+42.8 bps a fill net; decides nothing) |
+| settlefwd | yes | mark: 3 shorts-paying settlements of 240 (-32.2 bps in 30 min; decides nothing) |
+| liqhold | yes | mark: forced down-breaks held, net trade-weighted: 4h -13.1 bps over 25; 12h -56.6 bps over 15; 1d -89.4 bps over 15 (decides nothing) |
+| publish | yes | published: https://github.com/7rido/espero/releases/tag/data-2026-11-02 |
 | dashboard | yes | wrote /Users/fredp/Espero Trading QuantBot/espero/state/dashboard.html |
 
 ## Recorded on disk (cannot be fetched again)
 
 | folder | files |
 |---|---|
-| `data/hlcollect` | 1676 |
-| `data/deribit` | 18 |
-| `data/hlbook` | 649 |
-| `data/aggr/forward` | 2 |
-| `data/aggr/forward5m` | 2 |
-| `data/lows/forward` | 123 |
+| `data/hlcollect` | 1891 |
+| `data/deribit` | 387 |
+| `data/hlbook` | 772 |
+| `data/aggr/forward` | 3 |
+| `data/aggr/forward5m` | 3 |
+| `data/lows/forward` | 164 |
 
 Verdicts, costs and what a pass leads to: `research/INDEX.md`, `research/FORWARD_FAMILY.md`.

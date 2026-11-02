@@ -25,8 +25,9 @@ snapshot requests) under `_meta`. A gap is therefore visible on the tape: `gaps(
 on the same folder refuses to start, and launchd's KeepAlive simply retries until the first one is gone.
 
 **Append-only.** A file is opened for appending and each session writes one zstd frame into it; zstd frames
-concatenate, so a restart adds a frame rather than rewriting the hour. A crash leaves the last frame without
-its end, and `read_lines()` returns what was decodable and says so (`truncated`). Nothing is ever rewritten.
+concatenate, so a restart adds a frame rather than rewriting the hour. A stop (SIGTERM from launchd, ctrl-c)
+closes the frame; a crash or a kill leaves it without its end, and `read_lines()` returns what was decodable,
+says so (`truncated`), and reads on from the next frame. Nothing is ever rewritten.
 
 **The venues.**
 * Bybit USDT perps: `publicTrade`, `orderbook.50` (20 ms deltas after a snapshot), `allLiquidation`. Its REST
@@ -40,13 +41,18 @@ its end, and `read_lines()` returns what was decodable and says so (`truncated`)
   Hyperliquid publishes no liquidation stream; its liquidations are trades like any other.
 * Hyperliquid testnet: the same two channels, for the coins #12's maker mirror rests orders on, so #62 can
   replay those fills on the book they rested in.
-* Binance USDⓈ-M: `aggTrade`, `depth@100ms` (diffs, absolute size per level), `depth20@100ms` (the top 20
-  levels whole, every 100 ms: the snapshot the diffs are anchored to), `forceOrder`, `markPrice@1s`,
-  `bookTicker`, and a REST `depth?limit=1000` snapshot where REST answers. **From this machine, checked
-  2026-11-02:** `fapi.binance.com` answers HTTP 451 (so no 1000-level snapshot; one attempt an hour is on the
-  tape), the single-stream `wss://fstream.binance.com/ws/...` never completes its handshake, and the combined
-  `wss://fstream.binance.com/stream?streams=...` connects and streams. The recorder uses the combined
-  endpoint; the streams are in its URL, so it sends no subscribe message. `espero.binance_archive` backfills
+* Binance USDⓈ-M: `trade` (every print, what aggr-server itself reads), `aggTrade`, `depth@100ms` (diffs,
+  absolute size per level), `depth20@100ms` (the top 20 levels whole, every 100 ms: the snapshot the diffs
+  are anchored to), `forceOrder`, `markPrice@1s`, `bookTicker`, and a REST `depth?limit=1000` snapshot where
+  REST answers. **From this machine, checked 2026-11-02:** `fapi.binance.com` answers HTTP 451 (so no
+  1000-level snapshot; one attempt an hour is on the tape), the single-stream `wss://fstream.binance.com/ws/...`
+  never completes its handshake, and the combined `wss://fstream.binance.com/stream?streams=...` connects
+  and streams, but only some streams: `trade`, `depth@100ms`, `depth20@100ms` and `bookTicker` deliver frames;
+  `aggTrade`, `forceOrder`, `markPrice@1s` and `kline_1m` open and stay silent (probed one at a time). So here
+  Binance's prints and books are live and its liquidations and mark price are not; the archive has prints,
+  quotes and a mark-price kline but no liquidations either. The recorder uses the combined endpoint with the
+  whole list, so a machine Binance treats differently records the rest; the streams are in the URL, so it
+  sends no subscribe message. `espero.binance_archive` backfills
   the public archive for the gaps. Binance's own words on `forceOrder`: "For each symbol, only the latest one
   liquidation order within 1000ms will be pushed as the snapshot. If no liquidation happens in the interval
   of 1000ms, no stream will be pushed." So a cascade of ten liquidations in a second reaches every
@@ -100,7 +106,7 @@ OKX_WS = "wss://ws.okx.com/ws/v5/public"
 OKX_REST = "https://www.okx.com/api/v5"
 BINANCE_WS = "wss://fstream.binance.com/stream?streams="
 BINANCE_REST = "https://fapi.binance.com/fapi/v1"
-BINANCE_STREAMS = ("aggTrade", "depth@100ms", "depth20@100ms", "forceOrder", "markPrice@1s", "bookTicker")
+BINANCE_STREAMS = ("trade", "aggTrade", "depth@100ms", "depth20@100ms", "forceOrder", "markPrice@1s", "bookTicker")
 BOOK_CHANNELS = {"bybit": ("orderbook.50",), "okx": ("books", "rest.books"), "hyperliquid": ("l2Book",),
                  "hyperliquid_testnet": ("l2Book",), "binance": ("depth@100ms", "depth20@100ms", "rest.depth")}
 PROJECT = Path(__file__).resolve().parents[1]
@@ -231,30 +237,90 @@ def _rt_of(data: bytes) -> int:
 _RT = __import__("re").compile(rb'\{"rt":(\d+)')
 
 
-def read_lines(path: Path, piece: int = 1 << 16) -> Iterator[dict]:
-    """Every decodable line of one hour file, in order. A truncated last frame ends the iteration with a
-    final `{"truncated": True}` marker rather than an exception: a crash is a fact of the tape, and
-    costs the block that was being written (at most `FLUSH_EVERY_S` of frames). A file still being
-    written reads the same way, since its frame has no end yet."""
+ZSTD_MAGIC = b"\x28\xb5\x2f\xfd"
+FRAME_HEADER_MAX = 18
+
+
+def _next_frame(data: bytes, start: int) -> int:
+    """Offset of the next frame start in `data` at or after `start`: the magic followed by a header zstd
+    accepts, so four random bytes inside a frame are not mistaken for one. -1 when there is none."""
+    import zstandard
+    k = data.find(ZSTD_MAGIC, start)
+    while k >= 0:
+        if len(data) - k < FRAME_HEADER_MAX:
+            return k                            # maybe: the caller keeps these bytes for the next piece
+        try:
+            zstandard.get_frame_parameters(data[k:k + FRAME_HEADER_MAX])
+            return k
+        except zstandard.ZstdError:
+            k = data.find(ZSTD_MAGIC, k + 1)
+    return -1
+
+
+def read_lines(path: Path, piece: int = 1 << 12) -> Iterator[dict]:
+    """Every decodable line of one hour file, in order. A frame without its end (a crash, a kill, or the
+    session still writing) costs the block being written: the reader yields one `{"truncated": True}`
+    marker where the next session's frame begins (found by its magic and a valid header), and reads on. A
+    file still being written ends with the marker. A frame cut mid-block with nothing after it reads as far
+    as its last complete block."""
     import zstandard
     dctx = zstandard.ZstdDecompressor()
     dobj = None
     rest = b""
-    truncated = open_frame = False
+    open_frame = resyncing = False
+    pending = b""
     with Path(path).open("rb") as fh:
-        while not truncated:
-            data = fh.read(piece)
+        while True:
+            chunk = fh.read(piece)
+            data = pending + chunk
+            pending = b""
             if not data:
                 break
             while data:
                 if dobj is None:
                     dobj = dctx.decompressobj()
                     open_frame = True
+                    cut_at = _next_frame(data, 1)    # this piece starts a frame; a second start inside it is a cut
+                else:
+                    cut_at = _next_frame(data, 0)    # a frame start while one is open: the open one was cut
+                if cut_at >= 0 and len(data) - cut_at < FRAME_HEADER_MAX and chunk:
+                    pending = data[cut_at:]         # not enough bytes to judge the header yet
+                    data = data[:cut_at]
+                    if not data:
+                        break
+                    cut_at = -1
+                if cut_at >= 0:
+                    head, data = data[:cut_at], data[cut_at:]
+                    if head:
+                        try:
+                            rest += dobj.decompress(head)
+                        except zstandard.ZstdError:
+                            pass
+                        *lines, rest = rest.split(b"\n")
+                        for raw in lines:
+                            if raw.strip():
+                                yield json.loads(raw)
+                    if not dobj.eof:                # the open frame never got its end before the next began
+                        yield {"truncated": True}
+                        rest = b""
+                    dobj, open_frame = None, False
+                    continue
                 try:
                     out = dobj.decompress(data)
                 except zstandard.ZstdError:
-                    truncated = True
-                    break
+                    if not resyncing:
+                        yield {"truncated": True}
+                    resyncing = True
+                    rest = b""
+                    nxt = _next_frame(data, 1)
+                    dobj, open_frame = None, False
+                    if nxt < 0:
+                        pending = data[-3:] if chunk else b""
+                        data = b""
+                        break
+                    data = data[nxt:]
+                    continue
+                resyncing = False
                 rest += out
                 *lines, rest = rest.split(b"\n")
                 for raw in lines:
@@ -262,19 +328,18 @@ def read_lines(path: Path, piece: int = 1 << 16) -> Iterator[dict]:
                         yield json.loads(raw)
                 if dobj.eof:                    # the frame ended: the next session's frame may follow
                     data = dobj.unused_data
-                    dobj = None
-                    open_frame = False
+                    dobj, open_frame = None, False
                 else:
                     data = b""
+            if not chunk:
+                break
     if open_frame:
-        truncated = True                        # the last frame never got its end: a crash, or still being written
-    if rest.strip():
+        yield {"truncated": True}               # the last frame never got its end: a crash, or still being written
+    elif rest.strip():
         try:
             yield json.loads(rest)
         except ValueError:
-            truncated = True
-    if truncated:
-        yield {"truncated": True}
+            yield {"truncated": True}
 
 
 def read_day(raw: Path, venue: str, day: str) -> Iterator[dict]:
@@ -720,7 +785,11 @@ class Recorder:
     async def run(self) -> None:
         from .lock import JournalLock
         with JournalLock(self.raw / "rawrec"):      # one writer per tape; the kernel frees it on any exit
-            await self._run()
+            try:
+                await self._run()
+            finally:
+                for w in self.writers.values():
+                    w.close()                       # every frame gets its end, whichever way the loop stopped
 
     async def _run(self) -> None:
         lists = self.lists()
@@ -752,14 +821,21 @@ class Recorder:
         finally:
             for t in tasks:
                 t.cancel()
-            for w in self.writers.values():
-                w.close()
 
 
 def main_loop(raw: Path, state: Optional[Path] = None) -> int:
+    """Run until SIGINT or SIGTERM (launchd's stop); either closes the hour files so their frames get an end."""
+    import signal
     rec = Recorder(raw, state)
-    try:
-        asyncio.run(rec.run())
-    except KeyboardInterrupt:
-        pass
+
+    async def run() -> None:
+        loop = asyncio.get_running_loop()
+        task = asyncio.ensure_future(rec.run())
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, task.cancel)
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+    asyncio.run(run())
     return 0

@@ -5,6 +5,19 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
+## 2026-11-02: Binance's liquidation stream delivers nothing from this machine; #61's Binance liquidation columns are never comparable here
+
+**No tolerance or criterion changes; written before any comparable day exists (the first is 2026-11-03).**
+`PREREGISTRATION_RAWBARS.md` lists Binance's `aggTrade` and `forceOrder` among the raw inputs and says a Binance
+bar taken from the archive loses its liquidation comparison. Probing each stream alone on 2026-11-02 showed that
+from this Mac Binance's combined endpoint delivers `trade`, `depth@100ms`, `depth20@100ms` and `bookTicker` and
+nothing on `aggTrade`, `forceOrder`, `markPrice@1s` or `kline_1m`; the recorder now carries `trade` (aggr-server's
+own source, one print each) and the rebuild reads it. Binance's prices, volumes and counts are therefore
+compared from the live tape as planned, but its `lbuy`/`lsell` are "cannot be rebuilt" on every bar recorded
+here, not only on archive bars, and a recording from a machine Binance serves fully would be the first to
+compare them. The venue tables and criterion (a) are unchanged: the liquidation fields of those bars are left
+out, as the plan already does for archive bars.
+
 ## 2026-11-02: #62's replay walks the recorded frame itself, and rests orders on hftbacktest's no-partial-fill exchange
 
 **No tolerance, latency, queue model or criterion changes; written before any fill existed on the tape (0 at

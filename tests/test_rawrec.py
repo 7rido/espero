@@ -10,6 +10,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from espero import manifest
 from espero import rawrec as rr
@@ -121,6 +122,43 @@ class TestFiles(unittest.TestCase):
         self.assertGreaterEqual(len(recs), 151, "every block but the one being written survives")
         self.assertEqual([r["d"]["n"] for r in recs[:-1]], list(range(len(recs) - 1)))
 
+    def test_a_killed_session_does_not_hide_the_next_one(self):
+        w = rr.HourWriter(self.raw, "bybit")
+        for n in range(100):
+            w.write(rr.line(T0 + n, "publicTrade", "B", json.dumps({"n": n, "pad": "x" * 50}).encode()))
+            if n == 49:
+                w.flush()
+        w.flush()
+        path = rr.hour_path(self.raw, "bybit", T0)
+        w._fh.close()                               # killed: no frame end
+        data = path.read_bytes()
+        path.write_bytes(data[: len(data) - 7])
+        w2 = rr.HourWriter(self.raw, "bybit")      # launchd's next session appends its own frame
+        for n in range(100, 110):
+            w2.write(rr.line(T0 + n, "publicTrade", "B", json.dumps({"n": n}).encode()))
+        w2.close()
+        recs = list(rr.read_lines(path))
+        ns = [r["d"]["n"] for r in recs if "d" in r]
+        self.assertEqual(ns[:50], list(range(50)))
+        self.assertEqual(ns[-10:], list(range(100, 110)), "the second session's frame is read after the cut")
+        self.assertEqual(sum(1 for r in recs if r.get("truncated")), 1)
+
+    def test_sigterm_closes_the_frame(self):
+        import os
+        import signal
+        import threading
+
+        class Quick(rr.Recorder):
+            async def _run(self):
+                self.writers["okx"].write(rr.line(T0, "trades", "A", b"{}"))
+                await asyncio.sleep(30)
+        rec = Quick(self.raw, state=self.raw / "nostate")
+        threading.Timer(0.3, lambda: os.kill(os.getpid(), signal.SIGTERM)).start()
+        with mock.patch.object(rr, "Recorder", lambda raw, state=None: rec):
+            self.assertEqual(rr.main_loop(self.raw), 0)
+        recs = list(rr.read_lines(rr.hour_path(self.raw, "okx", T0)))
+        self.assertEqual([r.get("ch") for r in recs], ["trades"], "the frame got its end: no truncated marker")
+
     def test_gaps_come_from_the_tape(self):
         w = rr.HourWriter(self.raw, "okx")
         day0 = T0 - T0 % 86_400_000
@@ -208,7 +246,7 @@ class TestSubscriptions(unittest.TestCase):
                                          {"channel": "books", "instId": "BTC-USDT-SWAP"}])
         hl = [json.loads(m) for m in rr.hl_subscribe(["BTC"])]
         self.assertEqual([m["subscription"]["type"] for m in hl], ["trades", "l2Book"])
-        self.assertEqual(rr.binance_url(["BTCUSDT"]), rr.BINANCE_WS + "btcusdt@aggTrade/btcusdt@depth@100ms/"
+        self.assertEqual(rr.binance_url(["BTCUSDT"]), rr.BINANCE_WS + "btcusdt@trade/btcusdt@aggTrade/btcusdt@depth@100ms/"
                          "btcusdt@depth20@100ms/btcusdt@forceOrder/btcusdt@markPrice@1s/btcusdt@bookTicker")
         self.assertEqual(rr.Feed("binance", ["BTCUSDT"], None).subscriptions(), [],
                          "Binance refuses a subscribe message: its streams are in the URL")

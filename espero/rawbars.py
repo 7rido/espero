@@ -62,7 +62,10 @@ def events_from_frames(venue: str, frames: Iterable[dict], ct_val: Optional[Dict
                                      float(t["sz"]) * k, t["side"], True, 1))
         elif venue == "binance":
             data = d.get("data", {})
-            if ch == "aggTrade":
+            if ch == "trade":                   # the raw print stream, aggr's own source: one trade each
+                rows.append((int(data["T"]), MARKET["binance"].format(s=data["s"].lower()), float(data["p"]),
+                             float(data["q"]), "sell" if data["m"] else "buy", False, 1))
+            elif ch == "aggTrade":
                 rows.append((int(data["T"]), MARKET["binance"].format(s=data["s"].lower()), float(data["p"]),
                              float(data["q"]), "sell" if data["m"] else "buy", False,
                              int(data["l"]) - int(data["f"]) + 1))
@@ -175,10 +178,12 @@ def merge_archive(tape: pd.DataFrame, archive: pd.DataFrame, binance_gaps: List[
 
 def compare_day(ours: pd.DataFrame, theirs: pd.DataFrame, gaps_ms: Dict[str, List[Tuple[int, int]]],
                 bar_ms: int = HOUR_MS, archive_bars: Iterable[Tuple[int, str]] = (),
-                markets: Optional[Iterable[str]] = None) -> pd.DataFrame:
+                markets: Optional[Iterable[str]] = None, no_liq: Iterable[str] = ("binance",)) -> pd.DataFrame:
     """Every market-bar of a day on either side, over aggr's `markets` only (a market aggr never has is not
     a miss): excluded when the bar overlaps a recorded gap of its venue and did not come from the archive,
-    else compared. Columns: time, market, comparable, match, failed."""
+    else compared. A venue in `no_liq` has no liquidation stream on this tape (Binance's delivers nothing
+    here, ERRATA 2026-11-02), so its `lbuy`/`lsell` are not compared. Columns: time, market, comparable,
+    match, failed."""
     archive = set(archive_bars)
     allowed = set(markets) if markets is not None else None
     o = ours.set_index(["time", "market"]) if len(ours) else pd.DataFrame(columns=COLUMNS).set_index(["time", "market"])
@@ -193,7 +198,7 @@ def compare_day(ours: pd.DataFrame, theirs: pd.DataFrame, gaps_ms: Dict[str, Lis
             continue
         r = compare_bar(o.loc[(time, market)] if (time, market) in o.index else None,
                         t.loc[(time, market)] if (time, market) in t.index else None,
-                        liq_comparable=not from_archive)
+                        liq_comparable=not from_archive and venue not in no_liq)
         rows.append({"time": int(time), "market": market, "comparable": True, **r})
     return pd.DataFrame(rows, columns=["time", "market", "comparable", "match", "failed"])
 

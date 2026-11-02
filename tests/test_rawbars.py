@@ -50,6 +50,9 @@ class TestEvents(unittest.TestCase):
         self.assertEqual(list(e["count"]), [5, 1])
         self.assertEqual(list(e["side"]), ["sell", "buy"])
         self.assertEqual(e["market"].iloc[0], "BINANCE_FUTURES:btcusdt")
+        raw = rb.events_from_frames("binance", [frame("trade", {"data": {"s": "ETHUSDT", "T": T + 3, "p": "10", "q": "2",
+                                                                          "m": False}})])
+        self.assertEqual((raw["count"].iloc[0], raw["side"].iloc[0], raw["market"].iloc[0]), (1, "buy", "BINANCE_FUTURES:ethusdt"))
 
     def test_archive_rows_become_the_same_events(self):
         agg = pd.DataFrame({"agg_trade_id": [1], "price": [100.0], "quantity": [2.0], "first_trade_id": [7],
@@ -159,6 +162,11 @@ class TestCompare(unittest.TestCase):
         table = rb.compare_day(merged, theirs, {"binance": gaps}, rb.HOUR_MS, taken)
         self.assertEqual(list(table["comparable"]), [True, True], "an archive bar is compared, not excluded")
         self.assertEqual(list(table["match"]), [True, True], "and its liquidations are not held against it")
+        theirs.loc[0, "lbuy"] = 9e5                                    # the live Binance bar differs on liquidations
+        table = rb.compare_day(merged, theirs, {"binance": gaps}, rb.HOUR_MS, taken)
+        self.assertEqual(list(table["match"]), [True, True], "Binance's liquidation stream is silent here: not compared")
+        table = rb.compare_day(merged, theirs, {"binance": gaps}, rb.HOUR_MS, taken, no_liq=())
+        self.assertEqual(table["failed"].iloc[0], "lbuy", "on a machine Binance serves fully, it would be")
         self.assertEqual(rb.merge_archive(tape, pd.DataFrame(columns=rb.COLUMNS), gaps)[1], set())
 
     def test_verdict_needs_thirty_days_then_95_percent_on_the_all_rows(self):

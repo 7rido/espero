@@ -127,11 +127,12 @@ recorder into `data/`: the installer and the module both refuse a folder under i
 the recorder of record is a laptop that sleeps, so every gap is on the tape (`--gaps`) and none is filled
 from another source.
 
-**Binance.** The recorder keeps Binance USDⓈ-M's `aggTrade`, `depth@100ms` (diffs), `depth20@100ms` (the top
-20 levels whole, every 100 ms, the snapshot the diffs are anchored to), `forceOrder`, `markPrice@1s` and
-`bookTicker` through the combined websocket endpoint, which answers from this machine; Binance's REST
-(`fapi.binance.com`, HTTP 451) and its single-stream websocket path do not (checked 2026-11-02), so there is no
-1000-level REST snapshot here. Beside the live tape, `espero.binance_archive` backfills what
+**Binance.** The recorder asks Binance USDⓈ-M's combined websocket endpoint for `trade`, `aggTrade`,
+`depth@100ms` (diffs), `depth20@100ms` (the top 20 levels whole, every 100 ms, the snapshot the diffs are
+anchored to), `forceOrder`, `markPrice@1s` and `bookTicker`. From this machine (checked 2026-11-02) only
+`trade` and the three book streams deliver frames; `aggTrade`, `forceOrder` and `markPrice` open and stay
+silent, Binance's REST answers HTTP 451 and its single-stream websocket path never connects. So here Binance's
+prints and books are live, its liquidations and mark price are not, and there is no 1000-level REST snapshot. Beside the live tape, `espero.binance_archive` backfills what
 `data.binance.vision` publishes, a day or two late, into `<ESPERO_RAW_DIR>/binance_archive/`: `aggTrades`,
 `bookTicker`, `bookDepth`, `metrics`, `premiumIndexKlines`, each verified against its published SHA-256, so a
 gap in the live tape (the Mac slept) has prints and quotes to fall back on. **The archive has no liquidation

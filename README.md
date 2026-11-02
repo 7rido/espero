@@ -649,7 +649,9 @@ espero/
     reconcile.py      # Reconcile our record of orders against the exchange's record of fills (#40,
     hl_exchange.py    # Hyperliquid **testnet** order path. The only code in espero that signs anything.
     rawbars.py        # #61: aggr's forward bars rebuilt from the raw streams (research/PREREGISTRATION_RAWBARS.md).
-    replaysim.py      # #62: replaysim (research/PREREGISTRATION_REPLAYSIM.md).
+    replaysim.py      # #62: the paper fills replayed on the recorded book (research/PREREGISTRATION_REPLAYSIM.md).
+    robustness.py     # Robustness readouts reported beside every result from #61 on (research/ROBUSTNESS_STANDARD.md) …
+    sleeves.py        # #63: the portfolio layer, how passes combine, fixed before any two exist …
     # operate: the commands, the screens, the scheduler and this table
     cli.py            # Command line entry point: `python -m espero ...` or the `espero` script.
     ui.py             # `espero` with no arguments: an interactive home screen.

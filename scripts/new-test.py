@@ -60,6 +60,14 @@ How many events the window should hold, and the smallest effect those events cou
 ## Information only
 
 Readouts that will be reported beside the verdict and never become a claim.
+
+## Robustness, information only
+
+Reported beside the verdict by `espero.robustness` (research/ROBUSTNESS_STANDARD.md), never a bar unless
+a number above says so: deflated Sharpe (N = the ledger's judged rows at judgment), PBO by CSCV over the
+configurations listed here (one configuration: not applicable), purged k-fold with embargo where the
+script cross-validates, signal half-life, turnover, capacity from the recorded depth at the rule's trade
+times. Say here which apply.
 {forward}
 """
 

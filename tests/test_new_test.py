@@ -44,7 +44,8 @@ class TestScaffold(unittest.TestCase):
                                    "tests/test_depthday.py"])
         prereg = (self.root / "research" / "PREREGISTRATION_DEPTHDAY.md").read_text()
         for must in ("#61", "Benjamini-Hochberg q < 0.05", "|t| ≥ 3", "next bar's open", "FORWARD_FAMILY.md",
-                     "never zero"):
+                     "never zero", "## Robustness, information only", "ROBUSTNESS_STANDARD.md", "deflated Sharpe",
+                     "PBO", "purged k-fold", "half-life", "turnover", "capacity"):
             self.assertIn(must, prereg)
         self.assertNotIn("## Forward", prereg)
         self.assertIn("NotImplementedError", (self.root / "espero" / "depthday.py").read_text())

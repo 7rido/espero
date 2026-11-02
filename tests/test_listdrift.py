@@ -161,6 +161,34 @@ class TestEvent(unittest.TestCase):
         self.assertAlmostEqual(ld.break_even_bps(e, 0.0015), (net + 0.003) / 2 * 1e4)
 
 
+class TestCover(unittest.TestCase):
+    def setUp(self):
+        days = pd.date_range("2023-05-10", "2023-05-17", freq="D").strftime("%Y-%m-%d")
+        self.b = bars(days, [100, 100, 95, 90, 120, 140, 150, 160], [100, 95, 90, 125, 140, 150, 160, 170])
+        self.b["high"] = [130.0, 101, 96, 126, 141, 151, 161, 171]
+        self.btc = bars(days, [100] * 8, [100] * 8)
+        self.none = pd.Series(dtype=float)
+
+    def test_the_level_is_the_listing_days_high(self):
+        self.assertEqual(ld.cover_level(self.b, D("2023-05-10")), 130.0)
+        self.assertTrue(np.isnan(ld.cover_level(self.b, D("2023-05-09"))))
+
+    def test_cover_at_the_open_after_the_first_close_above(self):
+        self.assertEqual(ld.cover_exit(self.b, D("2023-05-11"), D("2023-05-18"), 130.0), D("2023-05-15"))
+        self.assertEqual(ld.cover_exit(self.b, D("2023-05-11"), D("2023-05-18"), 140.0), D("2023-05-16"))
+        self.assertEqual(ld.cover_exit(self.b, D("2023-05-11"), D("2023-05-14"), 130.0), D("2023-05-14"))
+        self.assertEqual(ld.cover_exit(self.b, D("2023-05-11"), D("2023-05-18"), float("nan")), D("2023-05-18"))
+
+    def test_a_covered_pair_and_its_basket_close_at_that_open(self):
+        e = ld.event(self.b, self.btc, D("2023-05-11"), D("2023-05-18"), self.none, self.none, 0.0, 0.0, cover=130.0)
+        self.assertEqual(e.index[-1], D("2023-05-15"))
+        self.assertAlmostEqual(e["short"].sum(), -(140 - 100) / 100)
+        u = ld.event(self.b, self.btc, D("2023-05-11"), D("2023-05-18"), self.none, self.none, 0.0, 0.0)
+        self.assertEqual(u.index[-1], D("2023-05-17"))
+        a = ld.abnormal(self.b, {"B": self.btc}, D("2023-05-11"), D("2023-05-18"), cover=130.0)
+        self.assertEqual(a.index[-1], D("2023-05-15"))
+
+
 class TestBasketMembers(unittest.TestCase):
     def test_established_liquid_and_known_before_the_entry(self):
         days = pd.date_range("2022-01-01", "2023-06-30", freq="D")

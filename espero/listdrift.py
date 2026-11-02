@@ -152,6 +152,25 @@ def cost_per_side(listing_half_spread_bps: float = LISTING_HALF_SPREAD_BPS, fee_
     return (fee_bps + listing_half_spread_bps) / 1e4
 
 
+def cover_level(bars: pd.DataFrame, listing_day: pd.Timestamp) -> float:
+    """The cover rule's level: the high of the listing day's own bar, known before the entry. NaN without a bar."""
+    if listing_day not in bars.index or "high" not in bars.columns:
+        return float("nan")
+    return float(bars.at[listing_day, "high"])
+
+
+def cover_exit(bars: pd.DataFrame, entry: pd.Timestamp, exit_: pd.Timestamp, level: Optional[float]) -> pd.Timestamp:
+    """The cover rule: after the first daily close above `level` while the short is open, the pair closes at the next
+    day's open, after the signal. Without such a close, or without a level, the planned exit stands."""
+    if level is None or not math.isfinite(level):
+        return exit_
+    held = bars.loc[(bars.index >= entry) & (bars.index < exit_), "close"]
+    above = held[held > level]
+    if above.empty:
+        return exit_
+    return min(exit_, above.index[0] + pd.Timedelta(days=1))
+
+
 def close_of(short: pd.DataFrame, exit_: pd.Timestamp) -> pd.Timestamp:
     """When the pair closes: the planned exit, or, if the listing's bars stop early, the open after its last day,
     which is its last close."""
@@ -171,9 +190,10 @@ def hedge_leg(bars: pd.DataFrame, entry: pd.Timestamp, short: pd.DataFrame, exit
 # ---------------------------------------------------------------------------------------------- one event
 def event(listing: pd.DataFrame, hedge: pd.DataFrame, entry: pd.Timestamp, exit_: pd.Timestamp,
           listing_rates: pd.Series, hedge_rates: pd.Series, listing_cost: float, hedge_cost: float,
-          with_funding: bool = True) -> pd.DataFrame:
-    """Daily P&L of short the listing, long the hedge, one unit each, net of funding and costs.
-    Columns: short, long, funding, cost, net."""
+          with_funding: bool = True, cover: Optional[float] = None) -> pd.DataFrame:
+    """Daily P&L of short the listing, long the hedge, one unit each, net of funding and costs, closed early by the
+    cover rule when `cover` (the listing day's high) is given. Columns: short, long, funding, cost, net."""
+    exit_ = cover_exit(listing, entry, exit_, cover)
     s = leg(listing, entry, exit_, -1)
     if s.empty:
         return pd.DataFrame(columns=["short", "long", "funding", "cost", "net"])
@@ -193,9 +213,10 @@ def event(listing: pd.DataFrame, hedge: pd.DataFrame, entry: pd.Timestamp, exit_
 
 
 def abnormal(listing: pd.DataFrame, members: Dict[str, pd.DataFrame], entry: pd.Timestamp,
-             exit_: pd.Timestamp) -> pd.DataFrame:
-    """Short the listing, long an equal-weight basket of `members`, price only: no funding, no costs.
-    Column: net."""
+             exit_: pd.Timestamp, cover: Optional[float] = None) -> pd.DataFrame:
+    """Short the listing, long an equal-weight basket of `members`, price only: no funding, no costs, closed by the
+    same cover rule as the trade. Column: net."""
+    exit_ = cover_exit(listing, entry, exit_, cover)
     s = leg(listing, entry, exit_, -1)
     if s.empty or not members:
         return pd.DataFrame(columns=["net"])

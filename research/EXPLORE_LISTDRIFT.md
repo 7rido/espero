@@ -110,3 +110,19 @@ funding and costs, short the listing and long BTC:
   the same effect gives t about 1.8, perhaps 2 with 2025's denser listings, against a bar of 3.
 - The holdout is the only historical sample for this question. Whether to read it with this specification, or to
   add a cover rule first, is the account holder's decision, asked on 2026-11-02 before any pre-registration.
+
+## The cover rule, fixed before the third design run
+
+**Decided by the account holder on 2026-11-02, after the second run:** add a cover rule before any holdout read.
+This is a change the section "What the design run may change" did not list, made on the account holder's word
+and written here before the third run reads anything.
+
+- **The rule.** The short is covered, and the BTC hedge closed with it, at the open of the day after the first
+  daily close above the high of the listing day's own bar. Without such a close the planned exit stands.
+- **Where the level comes from.** It is the usual stop for shorting a new issue, the high of its first day, taken
+  as is. It has no parameter, so nothing was scanned to choose it; it is known at the entry; and it aims at what
+  the second run showed, a few listings rising hard against the short and paying funding while they do. The
+  fill is the next open, the repo's fill rule, since daily bars cannot say where an intraday stop would fill.
+- **Everything else stands:** the events, the split, the entry, the hedge, funding and costs, the series, its t,
+  the bar, the conditions, and the hold chosen as the largest design t among 7, 14 and 30. The comparison against
+  the basket is closed by the same rule. The trade without the rule is printed as information.

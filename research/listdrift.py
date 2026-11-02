@@ -112,11 +112,11 @@ def bars(symbol: str, last_month: str) -> pd.DataFrame:
     """Daily open, close and quote volume by UTC day, from files whose month is at most `last_month`."""
     files = sorted(p for p in (KLINES / symbol).glob("*.parquet") if readable(p.stem, last_month))
     if not files:
-        return pd.DataFrame(columns=["open", "close", "quote_volume"])
-    df = pd.concat([pd.read_parquet(p, columns=["open_time", "open", "close", "quote_volume"]) for p in files])
+        return pd.DataFrame(columns=["open", "high", "close", "quote_volume"])
+    df = pd.concat([pd.read_parquet(p, columns=["open_time", "open", "high", "close", "quote_volume"]) for p in files])
     df["day"] = pd.to_datetime(df["open_time"].astype("int64") // ld.DAY_MS * ld.DAY_MS, unit="ms")
     df = df.drop_duplicates("day", keep="last").set_index("day").sort_index()
-    return df[["open", "close", "quote_volume"]].astype(float)
+    return df[["open", "high", "close", "quote_volume"]].astype(float)
 
 
 def months_between(a: pd.Timestamp, b: pd.Timestamp) -> List[str]:
@@ -214,28 +214,32 @@ def run(design: bool) -> Tuple[List[str], dict]:
 
     results = {}
     for key, p in plans.items():
-        net, gross, unhedged, abn, info = {}, {}, {}, {}, {}
+        net, gross, unhedged, abn, uncovered, info, covered = {}, {}, {}, {}, {}, {}, {}
         for _, r in p.iterrows():
             s, entry, exit_ = r["symbol"], r["entry"], r["exit"]
             b, fr = allbars.get(s), rates.get(s)
             if b is None or fr is None:
                 info[s] = "no bars" if b is None else "funding missing"
                 continue
-            ev = ld.event(b, btc, entry, exit_, fr, btc_rates, lc, hc)
+            level = ld.cover_level(b, r["listing_day"])
+            ev = ld.event(b, btc, entry, exit_, fr, btc_rates, lc, hc, cover=level)
             if ev.empty:
                 info[s] = "no entry bar"
                 continue
             net[s] = ev
-            gross[s] = ld.event(b, btc, entry, exit_, fr, btc_rates, 0.0, 0.0, with_funding=False)
-            short = ld.leg(b, entry, exit_, -1)
-            f_short = ld.funding(fr, short, entry, ld.close_of(short, exit_), -1).reindex(short.index).fillna(0.0)
+            covered[s] = ld.cover_exit(b, entry, exit_, level)
+            gross[s] = ld.event(b, btc, entry, exit_, fr, btc_rates, 0.0, 0.0, with_funding=False, cover=level)
+            uncovered[s] = ld.event(b, btc, entry, exit_, fr, btc_rates, lc, hc)
+            stop = covered[s]
+            short = ld.leg(b, entry, stop, -1)
+            f_short = ld.funding(fr, short, entry, ld.close_of(short, stop), -1).reindex(short.index).fillna(0.0)
             cst = pd.Series(0.0, index=short.index)
             cst.iloc[0] -= lc
             cst.iloc[-1] -= lc
             unhedged[s] = pd.DataFrame({"net": short["pnl"] + f_short + cst})
-            abn[s] = ld.abnormal(b, {m: allbars[m] for m in members_at(entry, s)}, entry, exit_)
+            abn[s] = ld.abnormal(b, {m: allbars[m] for m in members_at(entry, s)}, entry, exit_, cover=level)
         results[key] = {"plan": p, "net": net, "gross": gross, "unhedged": unhedged, "abnormal": abn, "dropped": info,
-                        "bars": allbars}
+                        "uncovered": uncovered, "covered": covered, "bars": allbars}
     return report(results, design, lc, hc, e, allbars), results
 
 
@@ -293,6 +297,9 @@ def report(results: dict, design: bool, lc: float, hc: float, e: pd.DataFrame, a
         say(line("gross: no funding, no costs", r["gross"]))
         say(line("unhedged short, net", r["unhedged"]))
         say(line("abnormal: short the listing, long the basket", r["abnormal"]))
+        say(line("without the cover rule, net", r["uncovered"]))
+        n_cov = sum(1 for s, x in r["covered"].items() if x != r["plan"].set_index("symbol").at[s, "exit"])
+        say(f"  covered early by a close above the listing day's high: {n_cov} of {len(r['covered'])}")
         fund = ld.totals(r["net"], "funding")
         say(f"  funding per position: mean {fund.mean() * 100:+.2f}%  median {fund.median() * 100:+.2f}%; "
             f"break-even listing cost per side {ld.break_even_bps(r['net'], lc):+.1f} bps")
@@ -328,11 +335,11 @@ def report(results: dict, design: bool, lc: float, hc: float, e: pd.DataFrame, a
     up, down = per[day1.reindex(per.index) > med], per[day1.reindex(per.index) <= med]
     say(f"  by the listing day's own move (median {med * 100:+.1f}%): above {up.mean() * 100:+.2f}% ({len(up)}), "
         f"at or below {down.mean() * 100:+.2f}% ({len(down)})")
-    short_paths = {s: ld.leg(allbars[s], plan.at[s, "entry"], plan.at[s, "exit"], -1) for s in per.index}
-    stopped = sum(1 for s, v in short_paths.items() if v.index[-1] != plan.at[s, "exit"])
+    short_paths = {s: ld.leg(allbars[s], plan.at[s, "entry"], r["covered"][s], -1) for s in per.index}
+    stopped = sum(1 for s, v in short_paths.items() if v.index[-1] != r["covered"][s])
     worst = max((float(v["ratio"].max()) - 1 for v in short_paths.values()), default=float("nan"))
     say(f"  positions whose listing stopped trading inside the hold: {stopped}; worst rise against the short at a "
-        f"daily close: {worst * 100:+.0f}%")
+        f"daily close while it was open: {worst * 100:+.0f}%")
     return out
 
 

@@ -558,6 +558,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `PREREGISTRATION_RAWBARS.md`
 - `PREREGISTRATION_RAWBARS.md.ots`
 - `rawbars.py`  (rule: `espero/rawbars.py`)
+- `rawbars_days.csv`
 
 ## #62 — The paper fills replayed on the recorded book
 
@@ -565,12 +566,23 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `PREREGISTRATION_REPLAYSIM.md`
 - `PREREGISTRATION_REPLAYSIM.md.ots`
+- `replaysim.py`  (rule: `espero/replaysim.py`)
+- `replaysim_fills.csv`
+
+## #63 — The portfolio layer: how passes combine, fixed before any two exist
+
+*#63 (not in trials.csv)*
+
+- `PREREGISTRATION_SLEEVES.md`
+- `PREREGISTRATION_SLEEVES.md.ots`
+- `sleeves.py`  (rule: `espero/sleeves.py`)
 
 ## Cross-cutting
 
 **The ledger of every test**
 
 - `FDR_STANDARD.md`
+- `ROBUSTNESS_STANDARD.md`
 - `fdr_rescore.py`
 - `trials.csv`
 - `trials_dsr.csv`

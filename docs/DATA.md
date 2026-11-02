@@ -119,7 +119,7 @@ receive time and the frame verbatim (`espero/rawrec.py` says the format). The re
 | what is on disk | `espero rawrec --status` (files, bytes, last receive time; never a value) |
 | where it was silent | `espero rawrec --gaps 2026-11-03`, from the tape itself |
 | check a day later | `python -m espero.manifest check $ESPERO_RAW_DIR/okx/2026-11-03` |
-| size | about 2 GB a day with the book channels on, measured over five minutes on 2026-11-02 before Binance streamed (zstd level 9; Bybit's 20 ms deltas and OKX's 400-level books are most of it; Binance's diffs and partial books add to it, measured in `espero rawrec --status`), about 0.2 GB without. Under `FREE_FLOOR_GB` (30 GB) free, the book channels stop and the trades and liquidations continue; the tape says when |
+| size | about 4 GB a day with every book channel on, measured over the first 17 minutes on 2026-11-02 (zstd level 9: Binance's diffs, partial books and bookTicker about 2.5 GB, Bybit's 20 ms deltas 0.6, OKX's 400-level books 0.8, Hyperliquid 0.1), about 0.3 GB without. Under `FREE_FLOOR_GB` (30 GB) free, the book channels stop and the trades and liquidations continue; the tape says when. On this Mac's 150 GB free that is about a month of books: point `ESPERO_RAW_DIR` at a larger disk for the full window |
 
 **What it is not.** It is not in `publish-data.sh`'s weekly release: a day is larger than a GitHub release
 asset allows, so the only copy is the disk named by `ESPERO_RAW_DIR` and its manifests. It is not a second

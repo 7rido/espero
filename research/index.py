@@ -131,15 +131,20 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
     "59": ("Forward: #58 with a guard against failed reads", ["FORWARD_HLP2.md"]),
     "60": ("Forward: the liquidation ladder", ["FORWARD_LADDER.md"]),
     "61": ("aggr's forward bars rebuilt from the raw streams", ["PREREGISTRATION_RAWBARS.md",
-                                                                "PREREGISTRATION_RAWBARS.md.ots", "rawbars.py"]),
+                                                                "PREREGISTRATION_RAWBARS.md.ots", "rawbars.py",
+                                                                "rawbars_*"]),
     "62": ("The paper fills replayed on the recorded book", ["PREREGISTRATION_REPLAYSIM.md",
-                                                             "PREREGISTRATION_REPLAYSIM.md.ots"]),
+                                                             "PREREGISTRATION_REPLAYSIM.md.ots", "replaysim.py",
+                                                             "replaysim_*"]),
+    "63": ("The portfolio layer: how passes combine, fixed before any two exist", ["PREREGISTRATION_SLEEVES.md",
+                                                                                   "PREREGISTRATION_SLEEVES.md.ots",
+                                                                                   "sleeves.py"]),
 }
 
 # files that belong to the project as a whole, not to one test
 CROSS_CUTTING: Dict[str, List[str]] = {
     "The ledger of every test": ["trials.csv", "trials_dsr.csv", "trials_scored.csv", "trials_spa_series.csv",
-                                 "trials_summary.json", "fdr_rescore.py", "FDR_STANDARD.md"],
+                                 "trials_summary.json", "fdr_rescore.py", "FDR_STANDARD.md", "ROBUSTNESS_STANDARD.md"],
     "What a pass leads to, and what is still untested": ["FORWARD_FAMILY.md", "IDEAS_NOVEL.md", "ERRATA.md",
                                                           "OPERATOR_READOUT.md"],
     "Costs and venues": ["RECHECK_COSTS.md", "VENUE_CONFIRMATION.md", "VENUE_NONUS.md", "HL_ARCHIVE.md"],

@@ -44,6 +44,15 @@ flowchart LR
    whole ledger and |t| ≥ 3, both ([FDR_STANDARD.md](../research/FDR_STANDARD.md)). A pass that pays
    leads where [FORWARD_FAMILY.md](../research/FORWARD_FAMILY.md) says, and nowhere else.
 
+**Beside the path, from 2026-11-02:** `espero rawrec --loop` keeps the venues' raw websocket streams
+(Binance, Bybit, OKX, Hyperliquid mainnet and testnet) in the folder named by `ESPERO_RAW_DIR`, never
+`data/` (docs/DATA.md, section 5). Two measurements read that tape: #61 rebuilds aggr's bars from it and
+reports how far they diverge, and #62 replays every paper and testnet fill on the recorded book. Both are
+pre-registered with a tolerance and change no verdict. From #61 on every result also carries the robustness
+block of `research/ROBUSTNESS_STANDARD.md` (deflated Sharpe, PBO, purged k-fold, half-life, turnover,
+capacity), reported, not decisive; and #63 fixes, before any two passes exist, how passes would share one
+account (`research/PREREGISTRATION_SLEEVES.md`).
+
 What is deliberately **not** on the path: a mainnet order. The only signing code is the Hyperliquid
 testnet mirror for #12's maker book. A real order is the account holder's act, outside this repo.
 
@@ -59,6 +68,7 @@ testnet mirror for #12's maker book. A real order is the account holder's act, o
 | its ledger | `state/<name>_trades.csv` | `.gitignore` (never in git) |
 | a paper book | `state/<name>.db` | the lock in `espero/lock.py`; the installer's guard |
 | a recording | `data/<folder>/` | `.gitignore` class 4, `MANIFEST.sha256`, `publish-data.sh` |
+| the raw tape | `$ESPERO_RAW_DIR/<venue>/<day>/` | `espero rawrec`, `MANIFEST.sha256` per day; not in the release |
 | the ledger of tests | `research/trials.csv` | `espero/trials.py`, `research/fdr_rescore.py` |
 | the current state of everything | `docs/STATUS.md` | `scripts/status.py` (generated) |
 

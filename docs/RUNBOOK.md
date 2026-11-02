@@ -210,8 +210,9 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp
   (files, bytes, last receive time; never a value). Its log is `~/Library/Logs/espero/rawrec.log`.
 - Stop and remove it: `./scripts/install-rawrec-launchd.sh --uninstall`. The recordings stay.
 - Gaps: `espero rawrec --gaps YYYY-MM-DD`. Frames missed while the Mac slept are gone; the tape shows where.
-- Disk: about 2 GB a day with the book channels, 0.2 GB without. Under 30 GB free the book channels stop and
-  the trades continue. Point `ESPERO_RAW_DIR` at a disk with room; the folder is not in the weekly release.
+- Disk: about 4 GB a day with every book channel (Binance is over half), 0.3 GB without. Under 30 GB free the
+  book channels stop and the trades continue. Point `ESPERO_RAW_DIR` at a disk with room (the Mac's own holds
+  about a month); the folder is not in the weekly release.
 - Binance streams through its combined websocket endpoint; its REST answers 451 here, so the top-20 partial
   book is the snapshot and `espero.binance_archive` backfills the public archive for gaps. Don't study the
   tape casually: every look uses up a future holdout. Pre-register first.

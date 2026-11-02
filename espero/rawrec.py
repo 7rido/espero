@@ -55,8 +55,8 @@ on Hyperliquid the ten `hlbook` records and every coin a paper book holds. The l
 it was added, never removed. The watch reads the books' journals read-only, every `WATCH_EVERY_S`.
 
 **What stays weak.** The recorder of record is a laptop that sleeps. Every gap is on the tape and in
-`--gaps`; none is patched from another source. Disk: a 5-minute measurement at install time put the five
-feeds together near the figure in docs/DATA.md; `FREE_FLOOR_GB` stops the book channels, trades continue,
+`--gaps`; none is patched from another source. Disk: the first 17 minutes on 2026-11-02 put the five feeds
+together near 4 GB a day (docs/DATA.md, section 5); `FREE_FLOOR_GB` stops the book channels, trades continue,
 when the volume holding `ESPERO_RAW_DIR` falls under it.
 """
 from __future__ import annotations

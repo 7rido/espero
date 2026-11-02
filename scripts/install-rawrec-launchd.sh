@@ -64,6 +64,10 @@ if ! "$PYTHON" -c "import espero.rawrec, zstandard, websockets" >/dev/null 2>&1;
     echo "$PYTHON cannot import espero.rawrec with zstandard and websockets; pip install -e '.[raw]' first" >&2
     exit 1
 fi
+if pgrep -f "espero rawrec --loop" >/dev/null 2>&1; then
+    echo "a rawrec loop is already running (pid $(pgrep -f 'espero rawrec --loop' | head -1)); two writers on one tape is refused. Stop it first" >&2
+    exit 1
+fi
 mkdir -p "$LOG_DIR" "$RAW_DIR" "$HOME/Library/LaunchAgents"
 render > "$PLIST"
 plutil -lint "$PLIST" >/dev/null

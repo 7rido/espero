@@ -703,6 +703,12 @@ def _cmd_rawrec(args: argparse.Namespace) -> int:
         for path in rr.write_manifests(raw):
             print(f"wrote {path}")
         return 0
+    if args.watch:
+        from . import tapewatch
+        try:
+            return tapewatch.watch(raw, [c.strip().upper() for c in args.watch.split(",") if c.strip()], read=args.read)
+        except KeyboardInterrupt:
+            return 0
     if args.loop:
         print(f"recording into {raw}; ctrl-c stops", flush=True)
         return rr.main_loop(raw)
@@ -1560,6 +1566,8 @@ def build_parser() -> argparse.ArgumentParser:
     rw.add_argument("--status", action="store_true", help="files, bytes and the last receive time per venue and day")
     rw.add_argument("--gaps", metavar="DAY", help="silences on the tape for one UTC day (YYYY-MM-DD)")
     rw.add_argument("--manifest", action="store_true", help="write MANIFEST.sha256 into every closed day folder")
+    rw.add_argument("--watch", metavar="COINS", help="the live tape on one screen for these coins (BTC,ETH); not a signal")
+    rw.add_argument("--read", action="store_true", help="with --watch: a column of words for what the book shows (untested, outside the registry)")
     rw.add_argument("--raw-dir", default=None, help="the folder (default ESPERO_RAW_DIR; never data/)")
     rw.set_defaults(func=_cmd_rawrec)
 

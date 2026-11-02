@@ -257,89 +257,105 @@ def _next_frame(data: bytes, start: int) -> int:
     return -1
 
 
+class FrameDecoder:
+    """The state machine behind `read_lines` and `tapewatch.follow`: bytes in, records out, across the
+    concatenated zstd frames of one hour file. A frame without its end (a crash, a kill, or the session
+    still writing) costs the block being written: the decoder yields one `{"truncated": True}` marker where
+    the next session's frame begins (found by its magic and a valid header), and reads on. Input goes to
+    zstd in small pieces on purpose: a decoder that raises discards the output of the call that raised."""
+
+    def __init__(self):
+        import zstandard
+        self._dctx = zstandard.ZstdDecompressor()
+        self._dobj = None
+        self._rest = b""
+        self._pending = b""
+        self.open_frame = False
+        self._resyncing = False
+        self._only = None
+
+    def _emit(self, out: bytes):
+        self._rest += out
+        *lines, self._rest = self._rest.split(b"\n")
+        only = self._only
+        for raw in lines:
+            if raw.strip() and (only is None or any(k in raw for k in only)):
+                yield json.loads(raw)
+
+    def feed(self, chunk: bytes, final: bool = False, only=None) -> Iterator[dict]:
+        """`only`: byte strings; a line is parsed only when it contains one of them (a cheap pre-filter)."""
+        import zstandard
+        self._only = only
+        data = self._pending + chunk
+        self._pending = b""
+        while data:
+            if self._dobj is None:
+                self._dobj = self._dctx.decompressobj()
+                self.open_frame = True
+                cut_at = _next_frame(data, 1)       # this piece starts a frame; a second start inside it is a cut
+            else:
+                cut_at = _next_frame(data, 0)       # a frame start while one is open: the open one was cut
+            if cut_at >= 0 and len(data) - cut_at < FRAME_HEADER_MAX and not final:
+                self._pending = data[cut_at:]       # not enough bytes to judge the header yet
+                data = data[:cut_at]
+                if not data:
+                    break
+                cut_at = -1
+            if cut_at >= 0:
+                head, data = data[:cut_at], data[cut_at:]
+                if head:
+                    try:
+                        yield from self._emit(self._dobj.decompress(head))
+                    except zstandard.ZstdError:
+                        pass
+                if not self._dobj.eof:              # the open frame never got its end before the next began
+                    yield {"truncated": True}
+                    self._rest = b""
+                self._dobj, self.open_frame = None, False
+                continue
+            try:
+                out = self._dobj.decompress(data)
+            except zstandard.ZstdError:
+                if not self._resyncing:
+                    yield {"truncated": True}
+                self._resyncing = True
+                self._rest = b""
+                nxt = _next_frame(data, 1)
+                self._dobj, self.open_frame = None, False
+                if nxt < 0:
+                    self._pending = b"" if final else data[-3:]
+                    break
+                data = data[nxt:]
+                continue
+            self._resyncing = False
+            yield from self._emit(out)
+            if self._dobj.eof:                      # the frame ended: the next session's frame may follow
+                data = self._dobj.unused_data
+                self._dobj, self.open_frame = None, False
+            else:
+                data = b""
+
+    def finish(self) -> Iterator[dict]:
+        """At the end of the file: a frame still open is a cut (or still being written)."""
+        if self.open_frame:
+            yield {"truncated": True}
+        elif self._rest.strip():
+            try:
+                yield json.loads(self._rest)
+            except ValueError:
+                yield {"truncated": True}
+
+
 def read_lines(path: Path, piece: int = 1 << 12) -> Iterator[dict]:
-    """Every decodable line of one hour file, in order. A frame without its end (a crash, a kill, or the
-    session still writing) costs the block being written: the reader yields one `{"truncated": True}`
-    marker where the next session's frame begins (found by its magic and a valid header), and reads on. A
-    file still being written ends with the marker. A frame cut mid-block with nothing after it reads as far
-    as its last complete block."""
-    import zstandard
-    dctx = zstandard.ZstdDecompressor()
-    dobj = None
-    rest = b""
-    open_frame = resyncing = False
-    pending = b""
+    """Every decodable line of one hour file, in order (see `FrameDecoder` for what a cut frame costs)."""
+    dec = FrameDecoder()
     with Path(path).open("rb") as fh:
         while True:
             chunk = fh.read(piece)
-            data = pending + chunk
-            pending = b""
-            if not data:
-                break
-            while data:
-                if dobj is None:
-                    dobj = dctx.decompressobj()
-                    open_frame = True
-                    cut_at = _next_frame(data, 1)    # this piece starts a frame; a second start inside it is a cut
-                else:
-                    cut_at = _next_frame(data, 0)    # a frame start while one is open: the open one was cut
-                if cut_at >= 0 and len(data) - cut_at < FRAME_HEADER_MAX and chunk:
-                    pending = data[cut_at:]         # not enough bytes to judge the header yet
-                    data = data[:cut_at]
-                    if not data:
-                        break
-                    cut_at = -1
-                if cut_at >= 0:
-                    head, data = data[:cut_at], data[cut_at:]
-                    if head:
-                        try:
-                            rest += dobj.decompress(head)
-                        except zstandard.ZstdError:
-                            pass
-                        *lines, rest = rest.split(b"\n")
-                        for raw in lines:
-                            if raw.strip():
-                                yield json.loads(raw)
-                    if not dobj.eof:                # the open frame never got its end before the next began
-                        yield {"truncated": True}
-                        rest = b""
-                    dobj, open_frame = None, False
-                    continue
-                try:
-                    out = dobj.decompress(data)
-                except zstandard.ZstdError:
-                    if not resyncing:
-                        yield {"truncated": True}
-                    resyncing = True
-                    rest = b""
-                    nxt = _next_frame(data, 1)
-                    dobj, open_frame = None, False
-                    if nxt < 0:
-                        pending = data[-3:] if chunk else b""
-                        data = b""
-                        break
-                    data = data[nxt:]
-                    continue
-                resyncing = False
-                rest += out
-                *lines, rest = rest.split(b"\n")
-                for raw in lines:
-                    if raw.strip():
-                        yield json.loads(raw)
-                if dobj.eof:                    # the frame ended: the next session's frame may follow
-                    data = dobj.unused_data
-                    dobj, open_frame = None, False
-                else:
-                    data = b""
             if not chunk:
                 break
-    if open_frame:
-        yield {"truncated": True}               # the last frame never got its end: a crash, or still being written
-    elif rest.strip():
-        try:
-            yield json.loads(rest)
-        except ValueError:
-            yield {"truncated": True}
+            yield from dec.feed(chunk)
+    yield from dec.finish()
 
 
 def read_day(raw: Path, venue: str, day: str) -> Iterator[dict]:

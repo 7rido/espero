@@ -10,8 +10,8 @@ What the pass says, and what it does not:
 
 - **It beats the estimator #8 uses.** It does not show that the 5-minute data does the work. Information readout
   (c) puts three quarters of the gain in calibration alone: a regression of the target on #8's own 30-day
-  variance, fitted the same way, takes +0.112 of the +0.150 gap, and the HAR's intraday inputs add +0.038
-  (t 2.11). That readout decides nothing.
+  variance, fitted the same way, takes +0.112 of the +0.150 gap. The HAR's 5-minute inputs and its three horizons,
+  together, add +0.038 (t 2.11). That readout decides nothing.
 - **It changes no running book.** #8's forward account keeps its 30-day estimator to 2027-05-03, and #63 keeps its
   90-day window, being frozen. A new rule may size with the HAR under its own pre-registration.
 - **It cleared the bar narrowly, as its power said it would be close.** The design window projected t about 2.9 at

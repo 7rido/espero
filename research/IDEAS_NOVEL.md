@@ -220,6 +220,51 @@ Hyperliquid alone, with Binance as the signal. It needs second-by-second recordi
 - **Status.** Pre-registered as #64 ([FORWARD_LIQVAULT.md](FORWARD_LIQVAULT.md)) on 2026-11-02, window
   2026-11-04 to 2027-03-31. Nothing of #58, #59 or #60 changes.
 
+### 16. The options dealers' hedging (added 2026-11-02)
+
+- **Mechanism.** The market makers who sell BTC and ETH options on Deribit hedge their delta, and the
+  size of that hedging per 1% move is their gamma. Short gamma, they sell falls and buy rises, so a
+  move runs; long gamma, they do the reverse and the price pins. Near the Friday 08:00 UTC expiries the
+  pin has a level. They are forced traders with a public book: every strike's open interest and mark
+  implied volatility is served every minute, and the Black-76 gamma of each follows from them.
+- **Evidence.** None here. On 2026-11-02 the BTC book held about $400M of hedging per 1% move across
+  all strikes, unsigned. The sign is the whole question: the US-equity convention (dealers long calls,
+  short puts) has nothing behind it on Deribit, where the sellers are funds as often as market makers.
+- **The test it would need.** `espero deribit --loop` records the book from 2026-11-02. A
+  pre-registration must fix the sign convention before any window, from a mechanism and not from the
+  recorded returns; then: (a) with the net dealer gamma below the trailing 20th percentile, a 1-hour
+  move continues over the next hour more than usual (and the reverse above the 80th); (b) in the last
+  24 hours before an expiry, the price drifts toward the strike with the largest gamma. Both are
+  conditional, horizon one hour to one day, judged on #58's cost and bar.
+- **Status.** Idea. The recorder runs; no pre-registration written.
+
+### 17. The Coinbase premium at seconds (added 2026-11-02)
+
+- **Mechanism.** US spot buyers, ETF creations among them, buy on Coinbase; offshore leverage trades
+  the perps. When Coinbase trades rich to Binance and the perps, US money is coming in, and over a
+  session that money is what moves BTC. The gap is a price level, not a queue: it says who is buying,
+  not who is first.
+- **Evidence.** None here at this scale. Lead-lag at the minute scale died in #9, #16 and #17, and
+  queue games are on the list below. The premium is older and slower than either, and the raw tape now
+  holds Coinbase spot beside four perp venues with one receive clock, which nobody has used for this.
+- **The test it would need.** From the tape: Coinbase's mid against Binance's and Hyperliquid's, each
+  second. Pre-registered: a premium above its trailing 90th percentile for 5 minutes predicts BTC up over
+  the next hour (and the mirror). It fails if the premium is only the perps' funding in another coat, so
+  the funding-adjusted gap is the information row that would show it.
+- **Status.** Idea. The data is recorded; no pre-registration written.
+
+### 18. Open interest beside the tape: a cascade or a repricing (added 2026-11-02)
+
+- **Mechanism.** #25 found that a fall made of closing positions behaves unlike one made of new sellers.
+  The collector holds every perp's open interest every 5 minutes and the tape holds the fall as it
+  happens: open interest falling with the price is a cascade, which overshoots and comes back (#26);
+  open interest rising with a falling price is new sellers, which does not.
+- **Evidence.** #25 and #26, on daily and hourly data. Nothing at 5 minutes.
+- **What it is.** A live read, not a trade: it tells the screen which kind of fall is on it. The trade
+  it would inform is #26's rule, already a pass. A pre-registration would test whether the open-interest
+  split improves #26's rule out of sample, nothing else.
+- **Status.** Idea. The data is recorded; no pre-registration written.
+
 ### Not worth trying here
 
 - **Order-book imbalance and queue games**: firms with servers next to the exchange win that race.

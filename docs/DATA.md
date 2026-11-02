@@ -95,6 +95,7 @@ stay in Binance's archive and can be fetched again.
 |---|---|---|
 | `data/hlcollect/` | Hyperliquid snapshots: top accounts' positions, HLP and which of its accounts failed to read (#59), asset contexts, 1-minute candles | `espero hlcollect --loop`, `./scripts/install-hlcollect-launchd.sh` (macOS), or `docker compose up -d` (any OS) |
 | `data/hlbook/` | Hyperliquid's order book, top 20 levels a side, 10 frozen coins, every 5 minutes | `espero hlbook --loop`, `./scripts/install-hlbook-launchd.sh` (macOS) |
+| `data/deribit/` | Deribit's book summary every 5 minutes: every option's open interest, mark, implied volatility and underlying, and every future's, for BTC and ETH (inverse) and USDC (linear: SOL, XRP, BNB, DOGE, LINK and the rest); one file per currency per slot, about 100 KB a slot, 30 MB a day. Reachable from this Mac on 2026-11-02 (Deribit blocks US addresses). No history of open interest by strike is served: a slot not taken is gone | `espero deribit --loop`, `./scripts/install-deribit-launchd.sh` (macOS) |
 
 These folders are in `.gitignore` on purpose, under "class 4": git must never see them, so that
 `git clean` and `git add -A` can't touch them. The release is their backup.

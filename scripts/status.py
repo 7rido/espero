@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT))
 from espero.cli import state_dir  # noqa: E402
 
 OUT = ROOT / "docs" / "STATUS.md"
-RECORDED = ("data/hlcollect", "data/hlbook", "data/aggr/forward", "data/aggr/forward5m", "data/lows/forward")
+RECORDED = ("data/hlcollect", "data/deribit", "data/hlbook", "data/aggr/forward", "data/aggr/forward5m", "data/lows/forward")
 JUDGED = "2027-03-31"
 
 

@@ -69,6 +69,7 @@ data/bookwalk/
 # never touch them; `git clean -x` still would, so never run it. Never delete them. data/lows/forward/
 # is the same class but is under data/lows/.
 data/hlcollect/
+data/deribit/
 data/hlbook/
 data/book/
 data/aggr/forward/

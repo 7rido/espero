@@ -598,6 +598,26 @@ def _cmd_hlcollect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_deribit(args: argparse.Namespace) -> int:
+    """Deribit's option and future book summaries every 5 minutes, saved under data/deribit/ (public data)."""
+    from . import deribit as dr
+
+    data = Path(args.data) if args.data else dr.DATA
+    if args.status:
+        for cur, s in dr.status(data).items():
+            print(f"{cur:6s} {s['files']:6d} files  {s['bytes'] / 1e6:8.1f} MB  latest {s['latest'] or '-'}")
+        return 0
+    rec = dr.Recorder(data)
+    if args.loop:
+        print(f"recording Deribit into {data} ({', '.join(dr.CURRENCIES)}: options and futures every 5 min); ctrl-c stops",
+              flush=True)
+        rec.loop()
+        return 0
+    for note in rec.step() or ["nothing due"]:
+        print(note)
+    return 0
+
+
 def _cmd_hlp(args: argparse.Namespace) -> int:
     """#58's or #59's paper book on HLP's recorded positions. Fills are simulated; nothing signs."""
     from collections import Counter
@@ -1566,6 +1586,11 @@ def build_parser() -> argparse.ArgumentParser:
     hc.add_argument("--top", type=int, default=2000, help="accounts by account value, snapshotted hourly")
     hc.add_argument("--data", default=None, help="folder (default data/hlcollect in the repo)")
     hc.set_defaults(func=_cmd_hlcollect)
+    dr = sub.add_parser("deribit", help="record Deribit's options and futures book summaries every 5 min (public data)")
+    dr.add_argument("--loop", action="store_true", help="run forever (what launchd runs)")
+    dr.add_argument("--status", action="store_true", help="what is on disk, then exit")
+    dr.add_argument("--data", default=None, help="folder (default data/deribit in the repo)")
+    dr.set_defaults(func=_cmd_deribit)
 
     rt = sub.add_parser("rate", help="a 1-10 directional rating from a symbol's history, with its evidence (read-only)")
     rt.add_argument("symbols", nargs="*", metavar="SYMBOL", help="for example BTC, ETH-USD, SPY")

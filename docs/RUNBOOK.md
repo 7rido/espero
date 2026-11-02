@@ -243,6 +243,23 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlcollect-
 - Data goes to `data/hlcollect/` (not committed), roughly 12–17 MB a day.
 - A restart fetches only the slots not on disk. Slots missed while the Mac slept are lost:
   Hyperliquid keeps no history of positions, and only about three days of 1-minute candles.
+## The Deribit recorder
+
+`espero deribit --loop` records Deribit's book summary every 5 minutes, for idea 16 in
+`research/IDEAS_NOVEL.md` (the options dealers' hedging): every option's open interest, mark price,
+implied volatility and underlying, and every future's, for BTC and ETH and for the USDC-settled
+contracts on SOL, XRP, BNB, DOGE, LINK and the rest. Public data only; nothing signs or trades.
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-deribit-launchd.sh
+```
+
+- Check it: `./scripts/install-deribit-launchd.sh --status`, and `espero deribit --status` for what is
+  on disk. Its log is `~/Library/Logs/espero/deribit.log`.
+- Data goes to `data/deribit/<currency>/<day>/<HHMM>.csv.gz` (not committed, in the weekly release),
+  about 30 MB a day. A currency whose call fails writes nothing for that slot and is tried again.
+- A restart fetches only the slots not on disk. Deribit serves no history of open interest by strike,
+  so a slot missed while the Mac slept is lost.
 
 ## Running it in Docker — any machine
 

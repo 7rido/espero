@@ -19,7 +19,7 @@ TAG="data-$DAY"
 OUT="${TMPDIR:-/tmp}/espero-live-data"
 NAME="espero-live-data.tar.gz"
 PYTHON="${PYTHON:-$REPO/.venv/bin/python}"
-PATHS=(data/hlcollect data/hlbook data/book data/lows/forward data/aggr/forward data/aggr/forward5m)
+PATHS=(data/hlcollect data/deribit data/hlbook data/book data/lows/forward data/aggr/forward data/aggr/forward5m)
 
 cd "$REPO"
 if [ "${1:-}" != "--dry-run" ] && gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then

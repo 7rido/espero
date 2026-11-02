@@ -101,3 +101,27 @@ registered direction is a positive mean. The run is the blocked-network copy at 
 
 **Then:** the 33 judged tests are scored under this document's rule with the rerun t for the other 19, and the result is
 written below.
+
+**Result, 2026-11-02.** Each replay matched its published figures: #2's Sharpe −0.06 against BTC's 0.69, #11's 0.88 hourly
+and 3.48 daily, #14's 0.02, and #10's 812 trades at −$12.60. #13 is the exception, with 456 trades at −$69.49 against 468 at −$80.93.
+
+| # | t | q, all 33 | FDR | t ≥ 3 | Verdict, unchanged |
+|---|---|---|---|---|---|
+| **11** | **+3.41** | **0.0030** | **met** | **met** | fail: +5.2% against 8%, and Kraken fees |
+| 2 | −0.98 against BTC | 0.6818 | no, wrong sign | no | fail |
+| 13 | −0.73 | 0.7675 | no, wrong sign | no | fail |
+| 6 | +0.49, estimate | 0.9786 | no | no | fail |
+| 10 | −0.12, Student's t | 1.0000 | no, wrong sign | no | fail |
+| 5 | −0.12, estimate | 1.0000 | no, wrong sign | no | fail |
+| 14 | −0.01 | 1.0000 | no, wrong sign | no | fail |
+
+- **#11's funding carry is the one new signal.** Its daily net return is positive at t 3.41, so it clears both bars. It
+  still failed on cost: it earned +5.2% a year against the 8% bar. #12, the same carry with maker execution, is the test that
+  asks whether it pays, and it stays sealed until its window closes.
+- **#11 clears t ≥ 3 only by the committed method.** Its plain daily t is 2.63 and its hourly Newey-West t is 2.65, both of
+  which clear FDR alone but not t ≥ 3. The Newey-West t is higher because the daily returns are negatively autocorrelated
+  (lag 1 −0.35, then +0.15, +0.04 and −0.14),
+  estimated from 209 days. Under a slightly different method, it would be the first test to pass FDR and fail t ≥ 3.
+- **Every other newly scored test misses both bars,** and five of the seven went the wrong way.
+- **The other tests' results don't change.** The FDR cutoff stays at p ≤ 0.00905, #25's q falls to 0.0670, and the next
+  test's FDR bar falls to |t| ≥ 2.48, so t ≥ 3 still decides.

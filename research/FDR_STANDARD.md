@@ -75,3 +75,29 @@ of all 33 judged tests, Benjamini-Yekutieli, and #44's trade-weighted t where it
 - **14 judged tests have no p-value:** #2 to #7, #9 to #14, #40 and #42. Their results stay as they were.
 - **#15, #36 and #43 have other statistical bars,** so they aren't rescored. #43's own rule stands, though its q across the
   ledger is 0.0662.
+
+## Scoring the judged tests with no t, information only
+
+**Written 2026-11-02, before computing.** 14 judged tests have no t, so they count as p = 1 and can't be discoveries. This
+section fixes how each gets one. Rough estimates from the ledger were seen first, so the choices are fixed but not blind. It
+spends no trial, changes no verdict and leaves `trials.csv` as it is.
+
+**Common to all:** a two-sided t on a daily series over the test's registered window, venue and costs, against zero or the
+registered benchmark. Newey-West with floor(4(n/100)^(2/9)) lags. Over 100 days the normal p, otherwise Student's t. The
+registered direction is a positive mean. The run is the blocked-network copy at `bbd1575`, with nothing from 2026-10-30 on.
+
+| # | Series | Against | Notes |
+|---|---|---|---|
+| 2 | daily strategy return minus BTC's, holdout 2024-01-01 to 2026-10-27, as `research/momentum.py` computes them | BTC buy and hold | the registered bar is beating BTC |
+| 10 | daily net P&L of closed trades at Binance.US fees, by UTC exit day, zero on days with no exit, over the 30-day window | zero | the corrected replay in `ERRATA.md` |
+| 11 | daily returns of the hourly equity, the #11 rule, primary hours | zero | hourly returns with 24 Newey-West lags and the plain daily t are reported beside, deciding nothing |
+| 13 | as #10, 1-hour rule, 2026-03-30 to 2026-09-26, dollar volume from the last 24 stored bars | zero | approximate: the replay gives 456 trades against the published 468 |
+| 14 | as #11, #12's rule on Kraken, maker costs, primary window | zero | |
+| 5 | estimate: holdout Sharpe × √years from the ledger | zero | data missing; no Newey-West |
+| 6 | estimate: r √(n − 2) / √(1 − r²) from the ledger's Spearman r | zero | data missing; days overlap, so this overstates |
+
+**Not scored, still p = 1:** #3 (one market over 30 days, a simulation), #7 (exploratory, data missing), #9 (never run), #12
+(inside its forward window), #40 and #42 (testnet plumbing, no effect to measure), and #4 (passed on its own rule).
+
+**Then:** the 33 judged tests are scored under this document's rule with the rerun t for the other 19, and the result is
+written below.

@@ -1,7 +1,9 @@
 """research/INDEX.md claims every file in research/ exactly once, and the committed copy is current."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import tempfile
 import unittest
 from pathlib import Path
@@ -75,7 +77,8 @@ class TestTheChecker(unittest.TestCase):
         cross = {"ledger": ["trials.csv", "stray.txt"]}
         with mock.patch.object(self.ix, "RESEARCH", self.folder), mock.patch.object(self.ix, "TESTS", tests), \
                 mock.patch.object(self.ix, "CROSS_CUTTING", cross), \
-                mock.patch.object(self.ix, "INDEX", self.folder / "INDEX.md"):
+                mock.patch.object(self.ix, "INDEX", self.folder / "INDEX.md"), \
+                contextlib.redirect_stdout(io.StringIO()):               # its report lines are not check.sh's
             self.assertEqual(self.ix.main(["--check"]), 1)          # no INDEX.md yet
             self.assertEqual(self.ix.main([]), 0)                   # writes it
             self.assertEqual(self.ix.main(["--check"]), 0)

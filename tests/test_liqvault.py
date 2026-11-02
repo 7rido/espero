@@ -68,6 +68,26 @@ class TheReadRecord(unittest.TestCase):
         self.assertIs(lv.read_record(self.write([V2.upper()])), False)
         self.assertIsNone(lv.read_record(self.write(None)))
 
+    def test_counts_records_that_stopped_asking_a_vault(self):
+        root = Path(self.tmp.name)
+        self.write([])
+        folder = root / "hlp_reads" / "2026-11-04"
+        every = [a.upper() for a in lv.VAULTS] + ["0x0104"]
+        (folder / "1000.json").write_text(json.dumps({"ts": 1, "accounts": every, "failed": []}))
+        (folder / "1015.json").write_text(json.dumps({"ts": 2, "accounts": every[1:], "failed": []}))
+        (folder / "1030.json").write_text("not json")
+        self.assertEqual(lv.slots_not_asking_a_vault(root), 1)
+
+    def test_candles_load_for_the_wanted_coins_only(self):
+        root = Path(self.tmp.name)
+        path = root / "day.csv.gz"
+        pd.DataFrame({"ts": [0, 0], "coin": ["A", "B"], "open": [1.0, 2.0], "close": [1.0, 2.0]}).to_csv(path, index=False)
+        p = hb.Prices()
+        lv.load_candles(path, p, {"B"})
+        self.assertEqual((p.last_end("A"), p.last_end("B")), (0, 60))
+        lv.load_candles(path, p)
+        self.assertEqual(p.last_end("A"), 60)
+
     def test_read_slot_keeps_vault_rows_only(self):
         root = Path(self.tmp.name)
         path = self.write([])
@@ -245,6 +265,7 @@ class TheLedger(unittest.TestCase):
         self.assertEqual(out["counts"]["signals"], 1)
         self.assertEqual(out["information"]["by_tier"], {"$5M–$50M": {"n": 1, "mean": 1e4 * (109 / 99 - 1) - 18 - 1}})
         self.assertEqual(out["information"]["unwind_slots_median"], 1.0)
+        self.assertEqual(out["information"]["slots_not_asking_a_vault"], 0)
         self.assertEqual(out["rows"][0]["side"], 1)
 
     def test_status_opens_nothing(self):

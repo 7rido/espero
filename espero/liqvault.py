@@ -81,11 +81,27 @@ def read_slot(path: Path) -> Slot:
     return Slot(slot, int(df["ts"].iloc[0]), positions, clean)
 
 
-def load_candles(path: Path, prices: hb.Prices) -> None:
-    """Every coin's candles from a daily file (hlpbook's loader keeps #58's 14 coins only)."""
+def load_candles(path: Path, prices: hb.Prices, coins: Optional[Iterable[str]] = None) -> None:
+    """A daily file's candles, for these coins or every coin (hlpbook's loader keeps #58's 14 coins only)."""
     df = pd.read_csv(path, usecols=["ts", "coin", "open", "close"])
+    if coins is not None:
+        df = df[df["coin"].isin(set(coins))]
     for coin, part in df.groupby("coin"):
         prices.add(coin, part)
+
+
+def slots_not_asking_a_vault(data: Path = DATA) -> int:
+    """Read records whose `accounts` lack one of the four addresses: a vault the collector stopped asking for
+    (retired or replaced) gives no signal and never shows in `failed`; this count is the only trace of it."""
+    n = 0
+    for record in sorted(Path(data).glob("hlp_reads/*/*.json")):
+        try:
+            asked = {str(a).lower() for a in json.loads(record.read_text())["accounts"]}
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if not set(VAULTS) <= asked:
+            n += 1
+    return n
 
 
 def fetch_recent(prices: hb.Prices, coins: Iterable[str], now: int, fetch: Optional[hb.Fetch] = None,
@@ -274,13 +290,16 @@ def ledger(data: Path = DATA, fetch: Optional[hb.Fetch] = None, now: Optional[in
     paths = slot_paths(data)
     found = walk([read_slot(p) for p in paths])
     prices = hb.Prices()
+    wanted = {s.coin for s in found["signals"]}
     for path in sorted(data.glob("candles/*.csv.gz")):
-        load_candles(path, prices)
+        load_candles(path, prices, wanted)
     api_rows = fetch_recent(prices, [s.coin for s in found["signals"]], now, fetch, pace=0)
     rows = trades(found["signals"], prices, final=True)
     later_rows = trades(found["later"], prices, final=True)
     closed, later = closed_trades(rows, fetch), closed_trades(later_rows, fetch)
-    return {"verdict": evaluate(closed), "information": information(closed, later, found["unwind"], data),
+    info = information(closed, later, found["unwind"], data)
+    info["slots_not_asking_a_vault"] = slots_not_asking_a_vault(data)
+    return {"verdict": evaluate(closed), "information": info,
             "slots": len(paths), "candles_from_api": api_rows, "counts": dict(found["counts"]),
             "statuses": dict(Counter(r["status"] for r in rows)), "rows": rows, "later_rows": later_rows}
 

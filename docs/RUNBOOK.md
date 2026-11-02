@@ -171,6 +171,13 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlp2-launc
 
 Check it with `./scripts/install-hlp2-launchd.sh --status` and `espero hlp --test 59 --status`.
 
+## #60, the liquidation ladder
+
+[#60](../research/FORWARD_LADDER.md) has no paper book and no loop. It reads the same `data/hlcollect/`
+recordings as #58, so the collector is all it needs running. `espero ladder` counts what is on disk by
+file name; `espero ladder --verdict` computes the registered verdict once, after 2027-03-31, and
+refuses before then (the plan's `python -m espero.ladder` is the same ledger).
+
 ## The order-book recorder
 
 `espero hlbook --loop` records Hyperliquid's top 20 levels a side on 10 coins every 5 minutes, into

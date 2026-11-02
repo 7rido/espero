@@ -288,5 +288,33 @@ class TheFiles(unittest.TestCase):
         self.assertEqual(out["verdict"]["verdict"], "INCONCLUSIVE")
 
 
+class TestCommand(unittest.TestCase):
+    """`espero ladder` shows counts by file name before the window and refuses the verdict until it closes."""
+
+    def test_status_counts_files_without_opening_them(self):
+        with tempfile.TemporaryDirectory() as d:
+            data = Path(d)
+            (data / "positions" / "2026-11-05").mkdir(parents=True)
+            (data / "positions" / "2026-11-05" / "00.csv.gz").write_bytes(b"not even gzip")
+            (data / "candles").mkdir()
+            (data / "candles" / "BTC.csv.gz").write_bytes(b"not even gzip")
+            lines = la.status(data, now=hb.WINDOW_START - 1)
+            self.assertIn("not open yet", lines[0])
+            self.assertEqual(lines[1:], ["position slots on disk: 1", "candle files on disk: 1"])
+            self.assertIn("closed", la.status(data, now=hb.WINDOW_END + 1)[0])
+
+    def test_verdict_refuses_before_the_window_closes_and_runs_after(self):
+        from espero import cli
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(la, "ledger") as ledger, \
+                mock.patch("espero.cli.time") as clock:
+            ledger.return_value = {"verdict": {"verdict": "INCONCLUSIVE"}, "slots": 0, "rows": [], "thin_rows": []}
+            clock.time.return_value = hb.WINDOW_END - 1
+            self.assertEqual(cli.main(["ladder", "--verdict", "--data", d]), 2)
+            ledger.assert_not_called()
+            clock.time.return_value = hb.WINDOW_END + 1
+            self.assertEqual(cli.main(["ladder", "--verdict", "--data", d]), 0)
+            ledger.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()

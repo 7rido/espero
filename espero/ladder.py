@@ -40,6 +40,18 @@ def slot_paths(data: Path = DATA) -> List[Path]:
     return sorted(Path(data).glob("positions/*/*.csv.gz"))
 
 
+def status(data: Path = DATA, now: Optional[int] = None) -> List[str]:
+    """What is on disk for #60, by file name only: nothing opens a recorded file before the window closes."""
+    now = int(time.time()) if now is None else now
+    data = Path(data)
+    opens, closes = pd.Timestamp(hb.WINDOW_START, unit="s").date(), pd.Timestamp(hb.WINDOW_END - 1, unit="s").date()
+    where = "not open yet" if now < hb.WINDOW_START else "open" if now < hb.WINDOW_END else "closed"
+    return [f"#60 ladder: window {opens} to {closes}; {where}. No paper book; the verdict is computed once, "
+            f"after {closes}, with `espero ladder --verdict`",
+            f"position slots on disk: {len(slot_paths(data))}",
+            f"candle files on disk: {len(list(data.glob('candles/*.csv.gz')))}"]
+
+
 def read_slot(path: Path) -> Optional[Slot]:
     """One positions file, the 14 coins only. A file with no rows says nothing, so it counts as missing."""
     df = pd.read_csv(path, usecols=["ts", "coin", "szi", "value", "liq"])

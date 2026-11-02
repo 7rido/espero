@@ -193,6 +193,32 @@ order on the fade side at 16:00 ET. Waits for #29's verdict.
 When Hyperliquid-only liquidations push its price away from Binance's, arbitrage pulls it back. Trade
 Hyperliquid alone, with Binance as the signal. It needs second-by-second recording (the collector).
 
+### 15. The liquidator vault's inventory, the forced flow with a name (added 2026-11-02)
+
+- **Mechanism.** When a Hyperliquid account cannot be closed on the book, its position lands in one of
+  HLP's four liquidator vaults (about $32M between them), which hold nothing otherwise and work the
+  position off over the next hour. Their inventory is therefore forced flow by construction, with a side,
+  a size and an entry price, read every 15 minutes by the collector. Strategy A and B, the accounts #58
+  and #59 can see, are ordinary market making; Strategy X, 64% of the vault, is hidden from the API
+  (ERRATA 2026-11-02).
+- **Evidence, one event.** 2026-11-01 04:30–04:45 UTC: XPL fell 18% (0.0862 → 0.0703) on $28M of
+  volume against about $50k a quarter-hour before. At 04:45 Liquidator 3 held 135.6M XPL long at
+  0.0759, $9.6M, $0.7M under water; it sold a quarter of it every 15 minutes and was flat by 06:00.
+  While it was selling, XPL rose from 0.0714 to 0.0738; by 09:00 it was 0.0750, 6.7% above the low,
+  and it closed the day at 0.0712. One event, so this is a description, not a result.
+- **Why #58 and #59 cannot see it.** XPL is not in their coin list, and #58 voids any slot in which
+  the set of accounts with rows changes, which is exactly what a liquidator appearing and going flat
+  does. The tests' own text calls the liquidator "not separated"; this idea separates it.
+- **The test it would need.** Pre-registered, forward: on any coin, when a liquidator vault shows a
+  new position, take the same side as the vault at the next 15-minute read (it is still selling, so
+  the entry is into forced flow) or, the sharper variant, when the vault's size drops below a quarter
+  of its first read (the forced flow is nearly done). Exit at a fixed hold or when the vault is flat
+  plus one read. Costs as in #58. Expect of the order of 100 events a year over all coins; most will
+  be in thin coins the raw tape does not record, so the fill is the paper book's, not a replay. The
+  collector's 15-minute cadence is the ceiling on timing; a faster read of the four liquidator
+  addresses alone costs little and would be the first change.
+- **Status.** Idea. No pre-registration written. Nothing of #58, #59 or #60 changes.
+
 ### Not worth trying here
 
 - **Order-book imbalance and queue games**: firms with servers next to the exchange win that race.

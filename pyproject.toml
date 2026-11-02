@@ -26,6 +26,7 @@ tui = ["rich>=13", "questionary>=2"]
 dev = ["pytest>=8", "ruff>=0.6"]
 pit = ["duckdb>=1.0", "pyarrow>=15"]             # the point-in-time store (espero/pit.py)
 hl = ["hyperliquid-python-sdk>=0.24"]   # testnet order signing only (espero/hl_exchange.py)
+raw = ["zstandard>=0.22", "websockets>=12"]   # the raw stream recorder (espero/rawrec.py)
 
 [project.scripts]
 espero = "espero.cli:main"

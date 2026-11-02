@@ -103,6 +103,43 @@ These folders are in `.gitignore` on purpose, under "class 4": git must never se
 Hyperliquid's API serves the current state, not history. A snapshot not taken is never available.
 `espero hlcollect --status` shows what is on disk.
 
+## 5. The raw stream — recorded outside `data/`, manifested, not in the weekly release
+
+`espero rawrec --loop` keeps every websocket frame from Binance USDⓈ-M (below), Bybit (USDT perps:
+`publicTrade`, `orderbook.50`, `allLiquidation`), OKX (USDT swaps: `trades`, `books`, `liquidation-orders`,
+plus a REST book snapshot every 5 minutes) and Hyperliquid mainnet and testnet (`trades`, `l2Book`), on the 14 coins aggr's forward
+bars cover, the ten `hlbook` records, and every coin a paper book holds. It writes **only** the folder named by
+`ESPERO_RAW_DIR`, never `data/`, as `<venue>/<YYYY-MM-DD>/<HH>.ndjson.zst`: one line per frame with the
+receive time and the frame verbatim (`espero/rawrec.py` says the format). The recorder writes
+`MANIFEST.sha256` into each day folder once the day is over, the same format as section 4's.
+
+| | |
+|---|---|
+| install | `ESPERO_RAW_DIR=<folder outside data/> ./scripts/install-rawrec-launchd.sh` (docs/RUNBOOK.md) |
+| what is on disk | `espero rawrec --status` (files, bytes, last receive time; never a value) |
+| where it was silent | `espero rawrec --gaps 2026-11-03`, from the tape itself |
+| check a day later | `python -m espero.manifest check $ESPERO_RAW_DIR/okx/2026-11-03` |
+| size | about 2 GB a day with the book channels on, measured over five minutes on 2026-11-02 before Binance streamed (zstd level 9; Bybit's 20 ms deltas and OKX's 400-level books are most of it; Binance's diffs and partial books add to it, measured in `espero rawrec --status`), about 0.2 GB without. Under `FREE_FLOOR_GB` (30 GB) free, the book channels stop and the trades and liquidations continue; the tape says when |
+
+**What it is not.** It is not in `publish-data.sh`'s weekly release: a day is larger than a GitHub release
+asset allows, so the only copy is the disk named by `ESPERO_RAW_DIR` and its manifests. It is not a second
+recorder into `data/`: the installer and the module both refuse a folder under it. And it is not complete:
+the recorder of record is a laptop that sleeps, so every gap is on the tape (`--gaps`) and none is filled
+from another source.
+
+**Binance.** The recorder keeps Binance USDⓈ-M's `aggTrade`, `depth@100ms` (diffs), `depth20@100ms` (the top
+20 levels whole, every 100 ms, the snapshot the diffs are anchored to), `forceOrder`, `markPrice@1s` and
+`bookTicker` through the combined websocket endpoint, which answers from this machine; Binance's REST
+(`fapi.binance.com`, HTTP 451) and its single-stream websocket path do not (checked 2026-11-02), so there is no
+1000-level REST snapshot here. Beside the live tape, `espero.binance_archive` backfills what
+`data.binance.vision` publishes, a day or two late, into `<ESPERO_RAW_DIR>/binance_archive/`: `aggTrades`,
+`bookTicker`, `bookDepth`, `metrics`, `premiumIndexKlines`, each verified against its published SHA-256, so a
+gap in the live tape (the Mac slept) has prints and quotes to fall back on. **The archive has no liquidation
+dataset** (daily and monthly listings checked 2026-11-01, and by the module at each run), and Binance's
+`forceOrder` stream, the only source, pushes at most one order per symbol per second: "For each symbol, only
+the latest one liquidation order within 1000ms will be pushed as the snapshot." So a liquidation missed live
+cannot be backfilled, and even a complete recording sees the throttled stream aggr saw.
+
 ## Getting the maintainer's copy
 
 Sections 3 and 4 started on different days on different machines. **For the forward tests'

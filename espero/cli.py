@@ -674,6 +674,42 @@ def _cmd_hlbook(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_rawrec(args: argparse.Namespace) -> int:
+    """The raw stream recorder: writes only ESPERO_RAW_DIR. Status and gaps show counts and clocks, never a value."""
+    from . import rawrec as rr
+
+    raw = rr.raw_dir({**os.environ, rr.ENV: args.raw_dir} if args.raw_dir else None)
+    if args.status:
+        for venue, days in rr.status(raw).items():
+            print(f"== {venue}: {sum(d['files'] for d in days.values())} files, "
+                  f"{sum(d['bytes'] for d in days.values()) / 1e6:.1f} MB")
+            for day, d in days.items():
+                last = rr.dt.datetime.fromtimestamp(d["last_rt"] / 1000, rr.dt.timezone.utc).strftime("%H:%M:%S") \
+                    if d["last_rt"] else "-"
+                print(f"   {day}  {d['files']:2d} files  {d['bytes'] / 1e6:8.1f} MB  last {last} UTC")
+        return 0
+    if args.gaps:
+        for venue in rr.VENUES:
+            if not (raw / venue / args.gaps).is_dir():
+                continue
+            found = rr.gaps(raw, venue, args.gaps)
+            total = sum(b - a for a, b in found) / 1000
+            print(f"== {venue}: {len(found)} gaps, {total / 60:.1f} min")
+            for a, b in found:
+                print(f"   {rr.dt.datetime.fromtimestamp(a / 1000, rr.dt.timezone.utc):%H:%M:%S} -> "
+                      f"{rr.dt.datetime.fromtimestamp(b / 1000, rr.dt.timezone.utc):%H:%M:%S}  ({(b - a) / 60000:.1f} min)")
+        return 0
+    if args.manifest:
+        for path in rr.write_manifests(raw):
+            print(f"wrote {path}")
+        return 0
+    if args.loop:
+        print(f"recording into {raw}; ctrl-c stops", flush=True)
+        return rr.main_loop(raw)
+    print("nothing to do: --loop, --status, --gaps DAY or --manifest")
+    return 2
+
+
 def _cmd_carry_screen(args: argparse.Namespace) -> int:
     """#12's forward test on one screen. Read-only: the books are read from copies."""
     from . import carry_view as cv
@@ -1518,6 +1554,14 @@ def build_parser() -> argparse.ArgumentParser:
     hk.add_argument("--status", action="store_true", help="files and slot counts, then exit")
     hk.add_argument("--data", default=None, help="folder (default data/hlbook in the repo)")
     hk.set_defaults(func=_cmd_hlbook)
+
+    rw = sub.add_parser("rawrec", help="record the raw websocket streams (Bybit, OKX, Hyperliquid) into ESPERO_RAW_DIR")
+    rw.add_argument("--loop", action="store_true", help="run forever (what launchd runs)")
+    rw.add_argument("--status", action="store_true", help="files, bytes and the last receive time per venue and day")
+    rw.add_argument("--gaps", metavar="DAY", help="silences on the tape for one UTC day (YYYY-MM-DD)")
+    rw.add_argument("--manifest", action="store_true", help="write MANIFEST.sha256 into every closed day folder")
+    rw.add_argument("--raw-dir", default=None, help="the folder (default ESPERO_RAW_DIR; never data/)")
+    rw.set_defaults(func=_cmd_rawrec)
 
     lf = sub.add_parser("liqfwd", help="#22 forward paper test: record aggr's bars, show the ledger")
     lf.add_argument("--state-dir", default=None)

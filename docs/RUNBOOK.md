@@ -194,6 +194,28 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-hlbook-lau
 - Slots missed while the Mac slept are lost. A gap stays a gap.
 - Don't study these files casually: every look uses up a future holdout. Pre-register first.
 
+## The raw stream recorder
+
+`espero rawrec --loop` keeps every websocket frame from Bybit, OKX and Hyperliquid (mainnet and testnet) on
+the forward coins and the paper books' holdings, into the folder named by `ESPERO_RAW_DIR` (docs/DATA.md,
+section 5). Public data only; it never signs or trades. It needs `pip install -e ".[raw]"` (zstandard,
+websockets). It refuses to start without `ESPERO_RAW_DIR`, and refuses a folder under the repo's `data/`,
+where `hlcollect` and `hlbook` already write.
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp/Espero Trading QuantBot/espero-raw" ./scripts/install-rawrec-launchd.sh
+```
+
+- Check it: `./scripts/install-rawrec-launchd.sh --status`, and `espero rawrec --status` for what is on disk
+  (files, bytes, last receive time; never a value). Its log is `~/Library/Logs/espero/rawrec.log`.
+- Stop and remove it: `./scripts/install-rawrec-launchd.sh --uninstall`. The recordings stay.
+- Gaps: `espero rawrec --gaps YYYY-MM-DD`. Frames missed while the Mac slept are gone; the tape shows where.
+- Disk: about 2 GB a day with the book channels, 0.2 GB without. Under 30 GB free the book channels stop and
+  the trades continue. Point `ESPERO_RAW_DIR` at a disk with room; the folder is not in the weekly release.
+- Binance streams through its combined websocket endpoint; its REST answers 451 here, so the top-20 partial
+  book is the snapshot and `espero.binance_archive` backfills the public archive for gaps. Don't study the
+  tape casually: every look uses up a future holdout. Pre-register first.
+
 ## The Hyperliquid collector
 
 `espero hlcollect --loop` records what Hyperliquid shows only in the present, for ideas 3, 4, 10 and

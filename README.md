@@ -635,6 +635,8 @@ espero/
     hlbook.py         # Hyperliquid's order book, recorded: the top 20 levels a side, every 5 minutes, on 10 coins.
     book.py           # The order book, as a thing you can read, record and replay.
     manifest.py       # A hash manifest for the folders that cannot be recorded again.
+    rawrec.py         # Raw market data as it arrives: every websocket frame from Bybit, OKX and Hyperliquid, appended …
+    binance_archive.py# Binance USDⓈ-M's public archive, backfilled into ESPERO_RAW_DIR: what the raw recorder cannot …
     # measure: costs on prints, fills on tape, the point-in-time store and the ledger of every trial
     markout.py        # What a fill costs, measured on prints (#39, research/PREREGISTRATION_MARKOUT.md).
     execsim.py        # What a fill would have cost, replayed on the venue's own prints and quotes.
@@ -646,6 +648,8 @@ espero/
     tca.py            # Transaction cost analysis for the paper accounts.
     reconcile.py      # Reconcile our record of orders against the exchange's record of fills (#40,
     hl_exchange.py    # Hyperliquid **testnet** order path. The only code in espero that signs anything.
+    rawbars.py        # #61: aggr's forward bars rebuilt from the raw streams (research/PREREGISTRATION_RAWBARS.md).
+    replaysim.py      # #62: replaysim (research/PREREGISTRATION_REPLAYSIM.md).
     # operate: the commands, the screens, the scheduler and this table
     cli.py            # Command line entry point: `python -m espero ...` or the `espero` script.
     ui.py             # `espero` with no arguments: an interactive home screen.

@@ -50,6 +50,10 @@ every command, and `espero <command> --help` its flags.
    |t| ≥ 3 on the same t, in the registered direction. Missing either is a fail. #1 to #60 keep their committed criteria.
    See `research/FDR_STANDARD.md`.
 
+8. **A new test starts with the scaffold.** `python scripts/new-test.py <NN> <name> [--forward]` writes
+   the pre-registration skeleton, the empty rule module and its test, and prints what is left; the
+   whole path is docs/HOW_IT_WORKS.md, "Adding a test". A new module is claimed in `espero/layers.py`.
+
 Ideas that haven't been tested yet go in `research/IDEAS_NOVEL.md`.
 
 ## Data — fetch it yourself, and know why

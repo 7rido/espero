@@ -1,47 +1,53 @@
 # espero
 
-A small, honest crypto research harness: causal indicators, next-bar fills, and tests that fail
-the moment you cheat.
+A crypto research harness that tries to find a tradable edge and refuses to lie about it: every
+test pre-registered before its result exists, run once, judged against a bar that gets stricter with
+every test tried, with costs measured on real prints and fills that were physically possible.
 
-## Why this exists
+## What it is now
 
-I inherited a 12,000-line trading bot. It looked complete — data layer, risk manager, order manager,
-ML ensemble, paper trading. It had never placed a trade. The live path had no exchange client wired
-into it, both entry points called methods that didn't exist, the only real order code talked to an
-API Coinbase shut down in 2023, and the backtester filled at the *open* of the bar whose *close*
-produced the signal.
+- **Fourteen forward tests on data being recorded today**, judged once, after 2027-03-31, by
+  criteria frozen in `research/FORWARD_*.md`. Their running numbers decide nothing. The recordings
+  (Hyperliquid's positions and order book, aggr's liquidation bars) can't be fetched again, so they
+  are manifested, published weekly and never deleted. The path from a bar to a verdict is
+  [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
+- **A ledger of 59 tests** in `research/trials.csv`: 25 failed, 6 passed (two are plumbing, one a
+  measurement, one old literature, one history-only, one with its forward test pending), 12 are
+  measurements, 14 are forward. **No confirmed, tradable live edge yet.** From #61 on a pass needs
+  Benjamini-Hochberg q < 0.05 over the whole ledger and |t| ≥ 3, both.
+- **Costs that were measured, not assumed:** #39 and #41 put a round trip at 10–14 bps from
+  Binance and Hyperliquid prints; every rule is charged that, or a venue's fee, never zero.
+- **Paper books, not a trading bot.** Two paper accounts, two carry books and three forward books run
+  under launchd; nothing in the tree can place a mainnet order, and the account holder places any
+  real one outside it.
+- **A test suite that fails when you cheat:** causal indicators, next-bar fills, numbers pinned to
+  committed data, and tests that hold the repo's own shape (every module in a layer, every research
+  file claimed, every daily step with its plan).
 
-That last bug was worth 38 percentage points of imaginary return. ([Full audit](docs/AUDIT.md).)
+[docs/STATUS.md](docs/STATUS.md) is where it stands today, generated from the ledger and the last run.
 
-This repo is what was left after deleting everything that couldn't be trusted: one honest backtest
-loop, four strategies, and a test suite whose job is to make the same mistakes impossible.
+## Where it came from
 
-## What it does
-
-- **Causal indicators** — 20/50 SMA, RSI(14), Bollinger(20, 2σ), MACD(12, 26, 9), all computed from
-  past data only, with a test that proves it by recomputing every value on a truncated series.
-- **Two execution models** — `next_bar` (signal at close *i*, fill at open *i+1*) and `same_bar`
-  (the original bug), so the size of the look-ahead is measurable instead of assumed.
-- **Costs that bite** — per-side fees and slippage from the command line; gaps through the stop fill
-  at the open, not at the stop.
-- **Numbers pinned in CI** — `tests/test_reference.py` asserts the audit's published figures against
-  the committed dataset. Change the engine, and the claims break loudly.
-- **Point-in-time features** — funding rates (Hyperliquid, OKX) and prediction-market odds
-  (Polymarket CLOB) land in SQLite with two timestamps: when the data is *about* and when it could
-  first have been read. `features.attach()` refuses to use a feature that is younger than the bar it
-  would explain. The funding-extreme factor is wired into the signal stack and only fires when the
-  column exists.
-- **Paper trading with a spine** — `espero paper` runs the same signal code against live Coinbase
-  candles, fills on the next bar's open (never the bar that produced the signal), writes every
-  signal/order/fill/equity mark to SQLite, and resumes the open position after a restart. A risk
-  gate sits under the strategy: max 25% of equity per position, 1% risk per trade, daily loss cap.
+It started as the audit of a 12,000-line bot that had never placed a trade: no exchange client wired
+in, entry points calling methods that didn't exist, and a backtester filling at the *open* of the bar
+whose *close* produced the signal — 38 percentage points of imaginary return
+([the audit](docs/AUDIT.md)). What survived was one honest backtest loop and a test suite built to
+make those mistakes impossible; the forward tests and the recorders were built on top of it. The
+original strategies all failed their tests, and their Coinbase order path was removed on 2026-11-01.
 
 ## Recent changes
 
+- **2026-11-02.** The repo's shape is now held by tests: every module in one of seven layers
+  (`espero/layers.py`, rendered into [Layout](#layout)), every research file claimed
+  ([research/INDEX.md](research/INDEX.md)), every daily step with its plan, no state file beside the
+  code. State moved to `state/`; the unrecoverable recordings are manifested and in the weekly release;
+  the Coinbase order path is gone; `espero ladder` reaches #60; [docs/STATUS.md](docs/STATUS.md) is
+  generated; [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) draws the path from a recording to a
+  verdict, and `scripts/new-test.py` scaffolds the next test. No rule, verdict or recording changed.
 - **2026-11-01.** Three forward tests registered before their window opens on 2026-11-05: #58 and #59 (HLP's
   absorbed inventory) and #60 (Hyperliquid's liquidation ladder). Paper books for #58 and #59 and an always-on
   paper trader run under launchd, and home-screen paper books moved from `/tmp`, which macOS clears on restart, to
-  `paper-books/`. `espero readout` shows what #51–#57 measured, as context and not as signals.
+  `paper-books/` (now `state/paper-books/`). `espero readout` shows what #51–#57 measured, as context and not as signals.
 - **2026-10-31.** `espero rate` (#50), Hyperliquid's market-order costs (#51) and microstructure measurements
   (#52–#57). [FORWARD_FAMILY.md](research/FORWARD_FAMILY.md) (#46) fixes what a forward pass leads to.
 - **2026-10-30.** The repo moved to this GitHub account. Added [AGENTS.md](AGENTS.md), fetchable live data
@@ -555,48 +561,114 @@ Same signals every row. The only things that change are when the fill happens an
 
 ## Layout
 
+Every module sits in one of seven layers; `espero/layers.py` is the table, each line is the module's
+own first docstring line, and `tests/test_layers.py` fails when a module is unclaimed or this block is
+stale. The path from a recording to a verdict is [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
+
+<!-- layers:start -->
 ```
 espero/
   espero/
-    data.py         # Coinbase/Yahoo/FRED fetches with retries and a cached fallback
-    indicators.py   # causal SMAs, RSI, Bollinger, MACD
-    signals.py      # four strategies + weighted combiner (pure functions)
-    backtest.py     # one position, one bar at a time, two fill models
-    journal.py      # SQLite: bars, signals, orders, positions, equity
-    risk.py         # pre-trade gate: size, exposure, daily loss cap
-    paper.py        # simulated loop: closed bar -> signal -> next-bar fill -> journal
-    broker.py       # reads .env (load_env); named from the order adapter it held until 2026-11-01
-    tsmom.py        # monthly cross-asset trend paper account
-    xs.py           # weekly cross-sectional crypto paper account, degraded-universe guard
-    cash.py         # where idle cash lives, and why
-    runner.py       # `espero daily`: tsmom -> xs -> dashboard -> health.json, lock, notifications
-    notify.py       # macOS notification + optional webhook
-    dashboard.py    # static HTML, with TCA per account
-    ops.py          # Alpha101/191 operators, causal
-    panel.py        # wide panel + dated eligibility
-    factors.py      # the factor zoo
-    factor_eval.py  # rank IC, purged walk-forward, deflated Sharpe
-    portfolio.py    # vol targeting, caps, turnover buffer
-    tca.py          # transaction cost analysis
-    report.py       # the matrix table and the equity chart
-    ui.py           # the home screen
-    rate.py         # `espero rate`, the 1-10 rating (#50)
-    hlcollect.py    # records Hyperliquid's positions, HLP, contexts and candles
-    hlbook.py       # records Hyperliquid's order book
-    hlpbook.py      # #58 and #59's rule and paper books
-    ladder.py       # #60's ledger, which refuses to read the recordings before the window closes
-    trials.py       # the trial budget behind research/trials.csv
-    cli.py          # every command; `espero --help` lists them
-    ...             # one module per test or account (liqhold.py is #45)
-  tests/            # over 1,000 tests
-  deploy/launchd/   # the LaunchAgent templates; the scripts/install-*-launchd.sh scripts render them
-  Dockerfile, docker-compose.yml  # the collector and the daily job as two services
-  research/         # one pre-registration and one results file per hypothesis; INDEX.md lists every file by test
-  data/             # committed BTC/ETH daily candles so the numbers reproduce offline
-  docs/AUDIT.md     # the audit that started this
-  docs/AUDIT_2026-10.md  # the second audit: what broke on a bad day, and the factor stack
-  docs/RUNBOOK.md   # install, check, pause, recover
+    # core: market data, venues and the causal primitives every rule is built from
+    data.py           # Market data: Coinbase Exchange public candles, cached as CSV.
+    hyperliquid.py    # Hyperliquid public `info` endpoint: perp universe, hourly funding, candles.
+    kraken_futures.py # Kraken Futures public market data, read-only: tickers, funding history and
+    coinbase_fees.py  # Your actual Coinbase fee rates, read-only.
+    aggr.py           # aggr's public hourly bars (api.aggr.trade, github.com/Tucsky/aggr-server).
+    coinm.py          # Binance COIN-M liquidation snapshots (data.binance.vision, 2023-06-25 → 2024-10-14).
+    panel.py          # The wide panel: one DataFrame per field, dates down, coins across.
+    features.py       # Point-in-time features. The rule that matters: a feature may only be used
+    indicators.py     # Causal technical indicators.
+    ops.py            # Alpha operators, in the WorldQuant Alpha101 / Guotai Junan Alpha191 dialect.
+    venues.py         # Venue registry: fees, symbol conventions and minimums in one place.
+    costs.py          # Measured trading costs, from #39 (research/PREREGISTRATION_MARKOUT.md).
+    costs_table.py    # Generated by research/markout.py (#39) and research/markout_small.py (#41). Do not edit by hand.
+    cash.py           # Where idle cash goes, decided by a rule the bot can defend.
+    # rules: one module per hypothesis: the frozen rule and its criteria, pure, no I/O
+    liq.py            # Liquidations as a breakout filter (#18, research/PREREGISTRATION_LIQ.md).
+    liqspike.py       # Liquidation spikes reverse (#21, research/PREREGISTRATION_LIQSPIKE.md).
+    lows.py           # New 4-hour lows on volume bounce (#20, research/PREREGISTRATION_LOWS.md).
+    bids.py           # Resting bids catch forced sellers (#30, research/PREREGISTRATION_BIDS.md).
+    settle.py         # The funding settlement as a price event (#19, research/PREREGISTRATION_SETTLE.md).
+    oi.py             # Breakdowns made of closing positions bounce more (#25, research/PREREGISTRATION_OI.md).
+    levetf.py         # Leveraged ETFs push crypto into the US close (#28, research/PREREGISTRATION_LEVETF.md).
+    levpush.py        # 2x funds push small coins into the US close (#34, research/PREREGISTRATION_LEVPUSH.md).
+    sweeps.py         # Stop runs at yesterday's low reverse (#35, research/PREREGISTRATION_SWEEPS.md).
+    fillcost.py       # What the accounts' 00:00 UTC fills cost (#33, research/PREREGISTRATION_FILLCOST.md).
+    carry.py          # Perpetual funding carry, delta-neutral, hourly — hypothesis #11.
+    degen.py          # 打板 — "hit the board": chase the altcoin that is breaking out on abnormal volume.
+    polyhour.py       # Polymarket's hourly bitcoin crowd against a random walk (#37 …
+    ethena.py         # Ethena's USDe flows forecast funding (#36, research/PREREGISTRATION_ETHENA.md).
+    horizons.py       # At which holding period do the repo's real signals pay? (#43 …
+    catchup.py        # What is left of Hyperliquid's catch-up to Binance after a delay (#57 …
+    bookwalk.py       # What a market order costs as it walks a recorded book (#51 …
+    patterns.py       # Descriptive patterns for the operator (#52-#56, research/PREREGISTRATION_PATTERNS.md). …
+    trend.py          # Hypothesis #15: multi-asset trend, sized by volatility. The rule and the book, no I/O.
+    factors.py        # The factor zoo: named, pure, signed.
+    signals.py        # The four strategies from the original repo, reduced to pure functions.
+    regimes.py        # Regime research: the lean gate that runs before a candidate is counted …
+    rate.py           # How a coin or stock is moving, and which way its history leans, as a rating from 1 to 10 (#50).
+    ladder.py         # #60: buying after the price falls through a dense band of long liquidation prices
+    # forward: the daily job's steps: record a day, rebuild a ledger, decide nothing until 2027-03-31
+    liqfwd.py         # #22's forward paper test (research/FORWARD_LIQ.md): record aggr's hourly bars
+    lowsfwd.py        # #24's forward paper test (research/FORWARD_LOWS.md): record Binance's daily
+    liqbreak.py       # #27's forward paper test (research/FORWARD_LIQBREAK.md): #26's rule on live data.
+    fundsplit.py      # #32's forward test (research/FORWARD_FUNDSPLIT.md): #27's forced down-breaks split by
+    postclose.py      # #29's forward paper test (research/FORWARD_POSTCLOSE.md): does the US session's
+    bidsfwd.py        # #31's forward paper test (research/FORWARD_BIDS2.md): resting bids two ATRs under
+    settlefwd.py      # #38's forward test (research/FORWARD_SHORTSPAY.md): does the price fall in the 30
+    liqhold.py        # #45's forward paper test (research/FORWARD_LIQHOLD.md): #26's forced down-breaks, held 4 h, 12 …
+    # accounts: paper books and the machinery that holds a position honestly
+    tsmom.py          # Cross-asset TSMOM, run as a paper account.
+    xs.py             # Weekly cross-sectional momentum: top-N of a crypto universe, equal weight.
+    mf.py             # Hypothesis #8 as a weekly paper account: the six-month forward test.
+    carry_paper.py    # The #12 forward paper book: funding carry on live Hyperliquid data, one hour at a time.
+    hlpbook.py        # #58 and #59: HLP's absorbed inventory, as a rule, a ledger and a paper book …
+    paper.py          # Paper trading: the backtest loop, but time moves forward and state is on disk.
+    journal.py        # SQLite journal: every signal, order, fill and equity mark, in order.
+    risk.py           # The gate every order passes through before it can cost money.
+    portfolio.py      # From a ranking to a set of weights that a small account can actually carry.
+    execution.py      # Resting limit orders, simulated against a recorded book, pessimistically.
+    backtest.py       # One long-only position, one bar at a time, filled when it is physically possible.
+    # record: what Hyperliquid and aggr show only in the present, saved so it can be read later
+    hlcollect.py      # Hyperliquid collector: record what Hyperliquid shows only in the present.
+    hlbook.py         # Hyperliquid's order book, recorded: the top 20 levels a side, every 5 minutes, on 10 coins.
+    book.py           # The order book, as a thing you can read, record and replay.
+    manifest.py       # A hash manifest for the folders that cannot be recorded again.
+    # measure: costs on prints, fills on tape, the point-in-time store and the ledger of every trial
+    markout.py        # What a fill costs, measured on prints (#39, research/PREREGISTRATION_MARKOUT.md).
+    execsim.py        # What a fill would have cost, replayed on the venue's own prints and quotes.
+    pit.py            # Point-in-time store over Binance's public archive: Parquet files read through DuckDB.
+    trials.py         # Every test this project has run, counted against itself.
+    factor_eval.py    # How a factor is judged: rank IC, its stability, what the top quantile
+    detector.py       # Does the pipeline find what is there, and nothing when nothing is?
+    audit.py          # Two ways to summarise an event study, and which one a book earns (#44,
+    tca.py            # Transaction cost analysis for the paper accounts.
+    reconcile.py      # Reconcile our record of orders against the exchange's record of fills (#40,
+    hl_exchange.py    # Hyperliquid **testnet** order path. The only code in espero that signs anything.
+    # operate: the commands, the screens, the scheduler and this table
+    cli.py            # Command line entry point: `python -m espero ...` or the `espero` script.
+    ui.py             # `espero` with no arguments: an interactive home screen.
+    runner.py         # `espero daily`: the one command a scheduler runs.
+    loop.py           # One loop runner for every long-running paper (and live) loop.
+    lock.py           # One writer per journal.
+    notify.py         # Tell a human. Two channels, both optional, neither a dependency.
+    dashboard.py      # Static HTML dashboard for the paper accounts.
+    report.py         # Result tables and the equity chart.
+    board.py          # `espero board`: the daily look at #15's trend readings. Read-only.
+    carry_view.py     # `espero carry screen`: #12's forward test on one screen. Read-only.
+    fast.py           # The fast screen: one product, the live book, and proposals a human confirms.
+    broker.py         # Reading `.env`, with no dependency.
+    layers.py         # The package's layers: every module in exactly one, rendered into the README and held there by a …
+  tests/            # one test file per module, mutation-checked; test_layers.py holds this block current
+  research/         # one pre-registration and one results file per test; INDEX.md claims every file
+  data/             # committed fixtures, caches, tick days and recordings, by class (.gitignore says which)
+  state/            # every account, journal, ledger, health.json and the dashboard (not in git)
+  scripts/          # install the loops, move the state, fetch and publish data, scaffold a test
+  deploy/launchd/   # the LaunchAgent templates the install scripts render
+  docs/             # STATUS.md (generated), HOW_IT_WORKS.md, RUNBOOK.md, DATA.md, CHEATSHEET.md
 ```
+<!-- layers:end -->
 
 ## Roadmap
 

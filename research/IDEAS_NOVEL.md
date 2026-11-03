@@ -281,6 +281,103 @@ Hyperliquid alone, with Binance as the signal. It needs second-by-second recordi
   or 2025's.
 - **Status.** Idea. Not pre-registered.
 
+## Around the trade: what a fitted model is for here (added 2026-11-03)
+
+Twelve uses of machine learning that a desk runs beside its rules, none of them a price forecast, ranked on 2026-11-02
+by how much of each the repo already holds. Two were taken the same day: the cost by order size became #68
+([RESULTS_COSTCURVE.md](RESULTS_COSTCURVE.md), a measurement: a square-root curve holds on ten coins, drifts dearer on
+four), and cascade risk became #72 ([RESULTS_CASCADE.md](RESULTS_CASCADE.md), FAIL: open interest, funding and the
+long-short ratio add nothing to a volatility-only cascade forecast). The data check behind #72 found that the
+continuous liquidation history on disk is COIN-M (2023-06 to 2024-10) while the open-interest history is USDⓈ-M
+(2021-01 to 2026-03), so the two never join; anything below that wants liquidations beside positioning has that limit.
+The ten that remain, with what the check found:
+
+### 20. Fill probability and adverse selection for a resting order
+
+- **Mechanism.** The carry-maker book posts limit orders and `espero.execution` fills them pessimistically against a
+  recorded book. A model on the tape that gives the probability a rest fills within N seconds, and the markout when it
+  does, turns maker-or-taker into a number per order. The most common model at any firm that makes markets.
+- **Have.** `espero/execution.py`, #62's replay (`replaysim.py`), `data/hlbook` at 20 levels every 5 minutes (too coarse
+  for fill timing), the raw `l2Book` and trades tape on Hyperliquid since 2026-11-02.
+- **Needs.** Weeks of tape before a fit means anything; then a pre-registration scored on days the fit never saw.
+- **Status.** Idea, data-bound.
+
+### 21. Toxicity: is the flow arriving now informed?
+
+- **Mechanism.** A maker pulls its quotes when the next prints are likely to run through them. `espero/markout.py`
+  already keeps the aggressor sign, the flow window and the liquidation flags that such a model reads.
+- **Have.** #39 and #41's markouts, prints with aggressor sign on five venues since 2026-11-02.
+- **Needs.** The same weeks of tape as 20, and a post-fill markout model keyed on the flow state.
+- **Status.** Idea, data-bound.
+
+### 22. Venue lead-lag and routing
+
+- **Mechanism.** Five venues on one clock. Which leads price discovery, by coin and hour, says where to execute and
+  where to read a signal, and whether Hyperliquid follows, which matters for every rule priced on Binance and traded
+  there (#51's "what this can't show").
+- **Have.** The raw tape since 2026-11-02 and `espero.binance_archive`. Nothing in the repo measures it.
+- **Needs.** A measurement module and weeks of tape. No model to fit: a lead-lag table is a readout.
+- **Status.** Idea, data-bound. Idea 14 is its trading cousin.
+
+### 23. The volatility risk premium
+
+- **Mechanism.** Implied volatility minus the forecast of realized is the premium option sellers collect; #66's HAR is
+  the realized side and `espero deribit` records every option's implied volatility every 5 minutes.
+- **Have.** Realized back to 2020; implied only since 2026-11-02.
+- **Needs.** Months of recording, or Deribit's history bought from a vendor, which needs the account holder's yes on a
+  figure first. Then a pre-registration of the premium's sign and size, before any trade on it (idea 16 is the
+  dealers' side of the same book).
+- **Status.** Idea, data-bound.
+
+### 24. Shrinkage covariance for the sleeves
+
+- **Mechanism.** `espero/sleeves.py` shares a weight between rules whose correlation is above 0.5. A Ledoit-Wolf or
+  factor-model covariance is the standard replacement and changes the weights.
+- **Have.** Every input: the sleeves' daily returns.
+- **Needs.** Only a numbered readout beside #63, because #63 is frozen to 2027-04-01 and cannot be replaced before it.
+- **Status.** Idea, a day's work when wanted.
+
+### 25. The effective number of trials
+
+- **Mechanism.** `FDR_STANDARD.md` divides by the count of judged tests, but correlated tests are not independent
+  bets. Clustering the tests' return streams gives the number of bets actually tried, which moves every q.
+- **Have.** `robustness.deflated_sharpe` takes a trial count as its input; the forward tests' ledgers; `trials.csv`.
+- **Needs.** Each judged test's daily return series saved in one place, which the failed backtests do not do
+  uniformly, then the clustering. Plumbing before modelling. It makes the 2027-03-31 judgment more honest, so it is
+  the one of the ten that pays whether or not any rule passes.
+- **Status.** Idea.
+
+### 26. Feature screening with a locked holdout
+
+- **Mechanism.** Screen many candidate features on a training window, pre-register only the survivors, test them on
+  data the screen never saw. How a desk generates ideas without spending a test number on each.
+- **Have.** More than any other item: `espero/factor_eval.py` (rank IC, purged walk-forward, a correction for the
+  number tried), `espero/ops.py` (the Alpha101 operator set), `features.db`.
+- **Needs.** One standard document that names the holdout window and the rules under which it may be touched, and
+  says what a leak would look like. Without it the machinery is a snooping engine.
+- **Status.** Idea; the standard is a page.
+
+### 27. Data quality on the tape
+
+- **Mechanism.** Gaps, stale books, duplicated prints and venue clock drift, detected as they happen rather than found
+  in a test's "two errors in how this ran". The tape is the one asset that cannot be refetched.
+- **Have.** sha256 manifests in every recording folder; `espero/detector.py` checks synthetic markets, not recordings.
+- **Needs.** A small audit step over each day's files with thresholds fixed in advance. No model needed at first.
+- **Status.** Idea; a short job, and overdue.
+
+### 28. Decay and change-point on the forward ledgers
+
+- **Mechanism.** A CUSUM or SPRT on each forward test's returns says when a rule has stopped working before the fixed
+  judgment date: a stop rule, never a tuning.
+- **Status.** Being written as #70 (edge-watch) by the live-readiness work of 2026-11-02, not an idea for this list.
+
+### 29. Alert triage and log anomaly
+
+- **Mechanism.** `espero/notify.py` fires only on a failed step. The operator protocol (`docs/OPERATOR.md`) now says who
+  answers; a triage model would show the one thing that changed rather than forty lines.
+- **Needs.** Months of operator logs first. Last of the ten.
+- **Status.** Idea, later.
+
 ### Not worth trying here
 
 - **Order-book imbalance and queue games**: firms with servers next to the exchange win that race.

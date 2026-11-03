@@ -369,6 +369,13 @@ def follow(
         if fh is None and path.exists():
             want = path  # begin where asked (an hour back), not at now
         elif fh is not None and want != path:
+            # drain what the recorder wrote to this hour after the last read before leaving it
+            while True:
+                tail = fh.read(1 << 20)
+                if not tail:
+                    break
+                pos += len(tail)
+                yield from (r for r in dec.feed(tail, only=keys) if not r.get("truncated"))
             day, hh = path.parent.name, int(path.stem.split(".")[0])
             t = dt.datetime.strptime(f"{day} {hh:02d}", "%Y-%m-%d %H").replace(tzinfo=dt.timezone.utc)
             following = rr.hour_path(raw, venue, int(t.timestamp() * 1000) + 3_600_000)
@@ -386,14 +393,21 @@ def follow(
             fh = path.open("rb")
             dec, pos = rr.FrameDecoder(), 0
         fh.seek(pos)
-        data = fh.read()
-        pos = fh.tell()
-        if not data:
+        got = False
+        while True:
+            # in pieces, as read_lines does: one read() of an hour fed to the decoder at once held the whole
+            # decompressed hour in memory (gigabytes for Binance's, at the start of every watch and livesig loop)
+            data = fh.read(1 << 20)
+            if not data:
+                break
+            got = True
+            pos += len(data)
+            for rec in dec.feed(data, only=keys):
+                if not rec.get("truncated"):
+                    yield rec
+        if not got:
             yield None
             continue
-        for rec in dec.feed(data, only=keys):
-            if not rec.get("truncated"):
-                yield rec
 
 
 def okx_ct_vals(raw: Path) -> Dict[str, float]:

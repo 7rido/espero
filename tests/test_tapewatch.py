@@ -8,6 +8,7 @@ import io
 import json
 import tempfile
 import unittest
+import unittest.mock
 import zlib
 from pathlib import Path
 
@@ -425,6 +426,51 @@ class TestFollow(unittest.TestCase):
                 if g:
                     seen.append(g["d"]["n"])
             self.assertEqual(seen, [1, 2, 3, 4], "every hour from the start to now, in order")
+
+    def test_follow_reads_the_old_hours_tail_before_moving_on(self):
+        """Lines flushed to an hour after the follower's last read of it, but before the hour turned, were skipped."""
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = Path(tmp)
+            clock = {"now": T}
+            w = rr.HourWriter(raw, "bybit")
+            w.write(rr.line(T, "publicTrade", "BTCUSDT", b'{"n":1}'))
+            w.flush()
+            gen = tw.follow(raw, "bybit", clock=lambda: clock["now"], symbols=["BTCUSDT"])
+            self.assertEqual(next(gen)["d"]["n"], 1)
+            w.write(rr.line(T + 10, "publicTrade", "BTCUSDT", b'{"n":2}'))   # written, not yet read ...
+            w.close()
+            clock["now"] = T + 3_600_000                                       # ... when the hour turns
+            w2 = rr.HourWriter(raw, "bybit")
+            w2.write(rr.line(T + 3_600_000, "publicTrade", "BTCUSDT", b'{"n":3}'))
+            w2.close()
+            seen = [g["d"]["n"] for g in (next(gen) for _ in range(6)) if g]
+            self.assertEqual(seen, [2, 3])
+
+    def test_follow_reads_a_big_hour_in_pieces(self):
+        """One read() of the whole hour fed to the decoder at once held the decompressed hour in memory."""
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = Path(tmp)
+            w = rr.HourWriter(raw, "bybit")
+            for i in range(30_000):
+                w.write(rr.line(T + i, "publicTrade", "BTCUSDT", b'{"n":%d,"pad":"%s"}' % (i, b"x" * 60)))
+            w.close()
+            sizes = []
+            real = rr.FrameDecoder.feed
+
+            def spy(self, chunk, *a, **k):
+                sizes.append(len(chunk))
+                return real(self, chunk, *a, **k)
+
+            with unittest.mock.patch.object(rr.FrameDecoder, "feed", spy):
+                gen = tw.follow(raw, "bybit", clock=lambda: T, symbols=["BTCUSDT"])
+                n = 0
+                while True:
+                    g = next(gen)
+                    if g is None:
+                        break
+                    n += 1
+            self.assertEqual(n, 30_000)
+            self.assertLessEqual(max(sizes), 1 << 20)
 
     def test_watch_renders_without_a_forecast(self):
         with tempfile.TemporaryDirectory() as tmp:

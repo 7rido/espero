@@ -645,7 +645,10 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 *#72 (not in trials.csv)*
 
 - `EXPLORE_CASCADE.md`
+- `PREREGISTRATION_CASCADE.md`
+- `PREREGISTRATION_CASCADE.md.ots`
 - `cascade.py`  (rule: `espero/cascade.py`)
+- `cascade_design_run.txt`
 
 ## Cross-cutting
 

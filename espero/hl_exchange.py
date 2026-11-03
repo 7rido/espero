@@ -24,10 +24,12 @@ import os
 import re
 import sqlite3
 import time
+import urllib.parse
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 TESTNET_URL = "https://api.hyperliquid-testnet.xyz"
+TESTNET_HOST = "api.hyperliquid-testnet.xyz"
 MAX_SIG_FIGS = 5
 MAX_DECIMALS_PERP = 6
 
@@ -45,8 +47,8 @@ def guard(env: Optional[dict] = None) -> str:
     if (env.get("ESPERO_ALLOW_HL_TESTNET") or "").strip() != "1":
         raise TestnetRefused("set ESPERO_ALLOW_HL_TESTNET=1 to allow testnet orders")
     override = (env.get("HL_API_URL") or "").strip()
-    if override and "testnet" not in override:
-        raise TestnetRefused(f"HL_API_URL={override!r} is not a testnet URL; refusing")
+    if override and urllib.parse.urlparse(override).hostname != TESTNET_HOST:
+        raise TestnetRefused(f"HL_API_URL={override!r} is not the testnet ({TESTNET_HOST}); refusing")
     key = (env.get("HL_PRIVATE_KEY") or "").strip()
     if not key:
         raise TestnetRefused("HL_PRIVATE_KEY is empty: create an API wallet in the testnet UI and put its key in .env")

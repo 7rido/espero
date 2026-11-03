@@ -23,7 +23,16 @@ class TestGuard(unittest.TestCase):
                 hx.guard(broken)
 
     def test_testnet_url_override_allowed(self):
-        self.assertTrue(hx.guard({**GOOD, "HL_API_URL": "https://api.hyperliquid-testnet.xyz"}))
+        for url in ("https://api.hyperliquid-testnet.xyz", "https://api.hyperliquid-testnet.xyz/"):
+            self.assertEqual(hx.guard({**GOOD, "HL_API_URL": url}), GOOD["HL_PRIVATE_KEY"])
+
+    def test_the_url_guard_reads_the_host_not_the_word(self):
+        """A URL that merely contains "testnet" is not the testnet."""
+        for url in ("https://api.hyperliquid.xyz/?testnet", "https://api.hyperliquid.xyz#testnet",
+                    "https://testnet.evil.example/", "https://api.hyperliquid-testnet.xyz.evil.example",
+                    "api.hyperliquid-testnet.xyz", "not a url"):
+            with self.subTest(url=url), self.assertRaises(hx.TestnetRefused):
+                hx.guard({**GOOD, "HL_API_URL": url})
 
     def test_building_without_injection_reads_no_key_when_guard_fails(self):
         with self.assertRaises(hx.TestnetRefused):

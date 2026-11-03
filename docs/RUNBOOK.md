@@ -312,6 +312,27 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp
 It reads the tape; it is not a second recorder. Removing it is the same script with `--uninstall`. A replay reads a
 day of Binance tape (about four minutes on this Mac).
 
+## The full-stack replay
+
+`espero replay-stack --day DAY` sends #71's events from a recorded day through the live path in miniature: the
+clock, open breaks, the rule's latency budget (research/LIVE_LATENCY.md), the venue's silence and the book's age,
+the account gate (`risk.check`, on a capital the replay assumes, never the holder's), then a market order walking
+the recorded Hyperliquid book. It prints orders and refusals by reason, and the coins Hyperliquid's tape holds no
+book for. It signs nothing, opens no connection and writes nothing; exits are not replayed. What each injected fault
+must do is written in `espero/replay_stack.py` (`FAULTS`), and `tests/test_replay_stack.py` runs one test per row:
+
+| fault | what the stack does |
+|---|---|
+| dropped frames | a book older than the rule's budget is never traded on: refused as stale |
+| venue silent | no frame for 120 s: no entry there, the silence journaled once, open positions left to their exits |
+| partial fill | the position is what filled; the rest is not chased; the exit sells what was bought |
+| restart | no second order: the client id is fixed by the event, journaled before the send, asked for first |
+| unknown position | a venue position the journal does not know refuses every entry until reconciled; journaled |
+| clock skew | more than a second off the time server: every order refused |
+| stale input | an event older than its rule's budget is refused, never traded late |
+
+Ladder rung 1 (research/DEPLOYMENT_LADDER.md) drills each of these on the testnet before any canary.
+
 ## The silence alarm (watchdog)
 
 `espero watchdog --once` checks everything that should be alive and says so when it is not. Each check has an

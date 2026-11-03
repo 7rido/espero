@@ -1496,6 +1496,13 @@ def _cmd_livesig(args: argparse.Namespace) -> int:
     return livesig.main(argv)
 
 
+def _cmd_replay_stack(args: argparse.Namespace) -> int:
+    """The full-stack replay (espero/replay_stack.py): a recorded day's #71 events through the gate to the book."""
+    from . import replay_stack
+
+    return replay_stack.main(["--day", args.day, "--capital", str(args.capital)])
+
+
 def _cmd_readout(args: argparse.Namespace) -> int:
     print(dash.READOUT.read_text(encoding="utf-8"))
     return 0
@@ -2020,6 +2027,12 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--loop", action="store_true", help="follow the tape as it is written")
     lsg.add_argument("--state-dir", default=None)
     lsg.set_defaults(func=_cmd_livesig)
+
+    rps = sub.add_parser("replay-stack", help="a recorded day's #71 events through the risk gate to the recorded "
+                                              "Hyperliquid book; orders and refusals only, nothing sent")
+    rps.add_argument("--day", required=True, metavar="DAY", help="a day the raw tape holds, YYYY-MM-DD")
+    rps.add_argument("--capital", type=float, default=10_000.0, help="the replay's assumed capital, not the holder's")
+    rps.set_defaults(func=_cmd_replay_stack)
 
     rd = sub.add_parser("readout", help="what the free Hyperliquid data shows, for reading the market; not signals")
     rd.set_defaults(func=_cmd_readout)

@@ -303,6 +303,9 @@ def main(argv=None) -> int:
         except OSError:
             print("no watchdog run yet")
         return 0
+    from .broker import load_env
+
+    load_env(str(ROOT / ".env"))            # launchd passes no .env, and the webhook's URL is there (as run_daily)
     return once(state_dir, data, raw, clock=not a.no_clock)
 
 

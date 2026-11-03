@@ -10,6 +10,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from espero import watchdog as W
 
@@ -192,6 +193,19 @@ class TestDrill(unittest.TestCase):
             r = W.drill_report(since, since + 3_900, data, None)["recorder:hlcollect"]
             self.assertEqual((r["expected_slots"], r["missing_slots"], r["lost_s"]), (12, 3, 900.0))
             self.assertEqual(r["first_missing"], ["2026-11-02 0020"])
+
+
+class TestMain(unittest.TestCase):
+    def test_a_check_loads_the_repo_s_env_for_the_webhook_and_reading_the_status_does_not(self):
+        loaded = []
+        with (tempfile.TemporaryDirectory() as d, contextlib.redirect_stdout(io.StringIO()),
+              mock.patch("espero.broker.load_env", side_effect=lambda path=".env": loaded.append(path)),
+              mock.patch.object(W, "once", return_value=0) as once):
+            self.assertEqual(W.main(["--status", "--state-dir", d]), 0)
+            self.assertEqual(loaded, [])                                 # reading sends nothing, so loads nothing
+            self.assertEqual(W.main(["--once", "--no-clock", "--state-dir", d]), 0)
+            self.assertEqual(loaded, [str(W.ROOT / ".env")])             # launchd gives the process no .env
+            once.assert_called_once()
 
 
 if __name__ == "__main__":

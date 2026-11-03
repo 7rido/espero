@@ -48,13 +48,15 @@ coin-day seen before the registration (SOL 2025-06-01) changes no verdict.
 
 ## What the tables say
 
-1. **The form is free.** On all 14 coins the curve's holdout error is within 0.05 bps of the plain lookup's, and on
-   nine of them within 0.01. The square-root fit neither adds nor loses accuracy against the design-day means
-   themselves. What it adds is interpolation: a cost at $7,000 or $35,000, which no lookup has.
+1. **The form is free.** On all 14 coins the curve's holdout error is within 0.06 bps of the plain lookup's (LINK the
+   widest, 0.033 against 0.084), and on eleven of them within 0.01. The square-root fit neither adds nor loses
+   accuracy against the design-day means themselves. What it adds is interpolation: a cost at $7,000 or $35,000,
+   which no lookup has.
 2. **Every drift is the book getting dearer.** On the four CURVE DRIFTS coins the holdout mean is above the design mean
    at every measured size: BNB's $10,000 cost went from 0.64 to 1.22 bps, XLM's from 2.74 to 4.08, HBAR's from 3.19
-   to 4.75 and kSHIB's from 2.04 to 3.63. ADA, AVAX, TRX and LINK also rose, within tolerance. BTC was unchanged,
-   and ETH, SOL, XRP and LTC got cheaper. The registration said a drift and a bad fit would look the same; here the
+   to 4.75 and kSHIB's from 2.04 to 3.63. ADA and AVAX also rose at every measured size and LINK and TRX at the
+   middle sizes, all within tolerance. BTC moved by at most 0.02 bps at any measured size, and ETH, SOL, XRP and LTC
+   got cheaper. The registration said a drift and a bad fit would look the same; here the
    lookup error settles it, and it was the market, between the two periods, on the smaller coins.
 3. **Reach is the file's limit.** Beyond each coin's reach the unfillable share climbs fast: at $500,000 the visible
    20 levels could not hold the order on more than half the snapshots for every coin but BTC, ETH, SOL and XRP. Costs

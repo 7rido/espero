@@ -156,7 +156,12 @@ class Stack:
         cid = cloid(s.rule, s.coin, s.ts, leg)
         row = self.db.execute("SELECT * FROM stack_orders WHERE cloid=?", (cid,)).fetchone()
         if row is not None:                               # sent before: ask the venue, never send twice
-            st = self.venue.order_status(cid, now_ms)
+            try:
+                st = self.venue.order_status(cid, now_ms)
+            except VenueSilent as exc:                     # still unknown: nothing is resent on a silent venue
+                self._event(now_ms, "no answer", s.rule, s.coin,
+                            f"{leg} {cid}: {exc}; sent before, asked again before any resend")
+                return {"placed": False, "reason": "sent before, no answer yet", "filled": 0.0}
             if st["status"] == "unknownOid":
                 return self._fresh_send(s, cid, leg, side, row["qty"], now_ms, again=True)
             self._record(cid, st, now_ms, s, "recovered after a restart")

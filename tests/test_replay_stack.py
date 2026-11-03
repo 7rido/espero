@@ -185,6 +185,21 @@ class TestSummary(unittest.TestCase):
         self.assertEqual(len(venue.sent), 2)
         self.assertEqual(venue.sent[0], venue.sent[1])                  # the same client order id
 
+    def test_a_silent_venue_after_a_restart_sends_nothing_and_does_not_crash(self):
+        """FAULTS restart + venue_silent together: the order is journaled, the venue goes quiet, the lookup by
+        client id gets no answer. The step refuses, journals it, resends nothing, and asks again later."""
+        venue = R.RecordedVenue(books(), silent=(NOW + 20_000, NOW + 40_000))
+        st = stack(venue)
+        self.assertEqual(st.step(signal(), NOW)["reason"], "filled")
+        quiet = st.step(signal(), NOW + 30_000)                          # the row exists; the venue is silent
+        self.assertFalse(quiet["placed"])
+        self.assertEqual(quiet["reason"], "sent before, no answer yet")
+        self.assertEqual(len(venue.sent), 1)                            # nothing resent blind
+        self.assertIn("no answer", kinds(st))
+        later = st.step(signal(), NOW + 50_000)
+        self.assertEqual(later["reason"], "already sent: recovered from the venue")
+        self.assertEqual(len(venue.sent), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

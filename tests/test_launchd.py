@@ -160,3 +160,29 @@ class TestLivesigAgent(unittest.TestCase):
         r = subprocess.run(["bash", str(ROOT / "scripts" / "install-livesig-launchd.sh"), "--print"],
                            capture_output=True, text=True, env={"PATH": "/usr/bin:/bin", "HOME": "/tmp"})
         self.assertNotEqual(r.returncode, 0)
+
+
+class TestReinstall(unittest.TestCase):
+    """bootout returns before the old job has gone: loading at once can fail (`Bootstrap failed: 5`, livesig's
+    reinstall on 2026-11-03), or the late stop can remove the new job. An installer that reloads waits until launchd
+    no longer knows the label, then checks the new job stayed: hlbook's and rawrec's idiom."""
+    NOT_YET = ("carry", "daily", "deribit", "hlcollect", "hlp", "hlp2", "hlp2-testnet", "paper")   # load at once
+
+    def test_every_reload_waits_for_the_old_job_to_go(self):
+        wait = re.compile(r'for _ in \$\(seq 1 \d+\); do\n\s+(?:launchctl|"\$LAUNCHCTL") print "\$DOMAIN/[^\n]*'
+                          r'>/dev/null 2>&1 \|\| break\n\s+sleep 1\n\s*done\n')
+        checked = set()
+        for p in sorted((ROOT / "scripts").glob("install*launchd.sh")):
+            name = p.name.removeprefix("install-").removesuffix("launchd.sh").rstrip("-") or "daily"
+            text = p.read_text(encoding="utf-8")
+            i = max(text.rfind("launchctl bootout"), text.rfind('"$LAUNCHCTL" bootout'))   # the install's reload
+            j = text.find(" bootstrap ", i)
+            self.assertTrue(0 <= i < j, name)
+            checked.add(name)
+            waits, stays = wait.search(text[i:j]) is not None, "did not stay loaded" in text[j:]
+            if name in self.NOT_YET:
+                self.assertFalse(waits, f"{name} waits now: take it off NOT_YET")
+            else:
+                self.assertTrue(waits, f"{name} loads before the old job has gone")
+                self.assertTrue(stays, f"{name} does not check that the new job stayed")
+        self.assertTrue({"livesig", "watchdog", "rawrec", "hlbook", *self.NOT_YET} <= checked)

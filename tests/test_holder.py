@@ -9,9 +9,20 @@ from espero import holder as H
 from espero import latency, risk
 
 
+def blank() -> str:
+    """The real page with every answer cleared: the tests read this, never the holder's own answers."""
+    lines = H.DOC.read_text(encoding="utf-8").split("\n")
+    for i, line in enumerate(lines):
+        if line.startswith("| `") and line.count("|") == 5:
+            cells = line.split("|")
+            cells[3] = " "
+            lines[i] = "|".join(cells)
+    return "\n".join(lines)
+
+
 def doc(answers: dict) -> Path:
-    """A copy of the real page with some answers filled in."""
-    text = H.DOC.read_text(encoding="utf-8")
+    """A blank copy of the real page with some answers filled in."""
+    text = blank()
     for qid, value in answers.items():
         lines = text.splitlines()
         for i, line in enumerate(lines):
@@ -30,17 +41,18 @@ class TestThePageAsItIs(unittest.TestCase):
         self.assertEqual(H.problems(), [])
         self.assertEqual(set(H.rows()), set(H.QUESTIONS))
 
-    def test_nothing_is_answered_so_every_default_refuses(self):
-        a = H.answers()
-        self.assertEqual(H.allocated_usd(), 0.0)
-        self.assertEqual(H.operator_response_s(), 4 * 3600.0)
+    def test_an_unanswered_page_refuses_on_every_default(self):
+        d = doc({})
+        a = H.answers(d)
+        self.assertEqual(H.allocated_usd(d), 0.0)
+        self.assertEqual(H.operator_response_s(d), 4 * 3600.0)
         self.assertFalse(a["autonomy"] or a["totp_set_up"] or a["tax_and_licensing_checked"])
         self.assertEqual(a["venues_eligible"], ())
         self.assertIsNone(a["mainnet_lift"])
-        self.assertFalse(H.eligible("hyperliquid"))
+        self.assertFalse(H.eligible("hyperliquid", d))
 
     def test_the_gate_refuses_on_the_holders_default(self):
-        acct = risk.Account(capital=H.allocated_usd(), equity=1_000.0, equity_by_venue={"hyperliquid": 1_000.0},
+        acct = risk.Account(capital=H.allocated_usd(doc({})), equity=1_000.0, equity_by_venue={"hyperliquid": 1_000.0},
                             sleeve_scale={"s": 1.0})
         r = risk.check(risk.Order("s", "12", "hyperliquid", "BTC", 1, 100.0), acct)
         self.assertFalse(r.allowed)

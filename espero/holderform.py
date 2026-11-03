@@ -125,11 +125,18 @@ def set_answers(text: str, answers: Dict[str, str]) -> str:
     return text[:a] + "\n".join(lines) + text[b:]
 
 
-def check_lift(statement: str, fields: Dict[str, str], today: date) -> List[str]:
-    """What is wrong with a lift before it is written; empty when it can be."""
+def check_lift(statement: str, fields: Dict[str, str], today: date,
+               eligible: Optional[Sequence[str]] = None) -> List[str]:
+    """What is wrong with a lift before it is written; empty when it can be. Each problem starts with the field it
+    is about, or with "statement", so the form can ask that one again."""
     out = []
     if len(statement.strip()) < MIN_STATEMENT:
-        out.append(f"the statement is yours to write, in at least {MIN_STATEMENT} characters")
+        out.append(f"statement: yours to write, in full sentences, at least {MIN_STATEMENT} characters")
+    venue = str(fields.get("venue", "")).strip().lower()
+    if "," in venue or " " in venue:
+        out.append("venue: the lift covers one venue; a second venue takes a lift of its own")
+    elif venue and eligible is not None and venue not in [v.lower() for v in eligible]:
+        out.append(f"venue: {venue} is not among the venues you marked open to you")
     for k in LIFT_FIELDS:
         v = str(fields.get(k, "")).strip()
         if not v:
@@ -139,14 +146,14 @@ def check_lift(statement: str, fields: Dict[str, str], today: date) -> List[str]
     try:
         order, position = float(fields.get("max_order_usd", "")), float(fields.get("max_position_usd", ""))
         if not 0 < order <= position:
-            out.append("the largest order must be above 0 and no larger than the largest position")
+            out.append("max_order_usd: above 0 and no larger than the largest position")
     except ValueError:
-        out.append("the largest order and position are numbers of dollars")
+        out.append("max_order_usd: the largest order and position are numbers of dollars")
     try:
         if date.fromisoformat(str(fields.get("expiry", ""))) <= today:
-            out.append("the expiry must be after today")
+            out.append("expiry: a date after today")
     except ValueError:
-        out.append("expiry: a date, YYYY-MM-DD")
+        out.append("expiry: a date, YYYY-MM-DD, like 2027-01-31")
     return out
 
 
@@ -250,21 +257,39 @@ def run(root: Path = H.ROOT, today: Optional[date] = None) -> int:
                            style=style).ask():
         console.print("\nThe lift is yours: write in your own words that you lift the rule, why, and what the canary "
                       "may do. Nothing is filled in for you. Finish with Esc then Enter.")
-        statement = questionary.text("Your statement:", multiline=True, style=style).ask() or ""
         old = lift_answers((root / LIFT).read_text()) if (root / LIFT).is_file() else {}
-        fields: Dict[str, str] = {}
-        for k, hint in LIFT_FIELDS.items():
-            default = old.get(k, "")
-            if k == "machine" and not default:
-                try:
-                    default = machine_hash()
-                except OSError:
-                    default = ""
-            fields[k] = (questionary.text(f"{k}: {hint}", default=default, style=style).ask() or "").strip()
-        problems = check_lift(statement, fields, today)
-        if problems:
-            console.print("[red]The lift was not written:[/red] " + "; ".join(problems))
-        else:
+        statement = ""
+        fields: Dict[str, str] = {k: old.get(k, "") for k in LIFT_FIELDS}
+        if not fields["machine"]:
+            try:
+                fields["machine"] = machine_hash()
+            except OSError:
+                pass
+        eligible = [v.strip() for v in new.get("venues_eligible", "").split(",") if v.strip()]
+        ask = ["statement"] + list(LIFT_FIELDS)
+        while ask:
+            for k in ask:
+                if k == "statement":
+                    statement = questionary.text("Your statement:", default=statement, multiline=True,
+                                                 style=style).ask() or ""
+                else:
+                    fields[k] = (questionary.text(f"{k}: {LIFT_FIELDS[k]}", default=fields[k],
+                                                  style=style).ask() or "").strip()
+            problems = check_lift(statement, fields, today, eligible)
+            if not problems:
+                break
+            console.print("\n[red bold]The lift is not written yet.[/red bold] Fix these, or choose to leave it:")
+            for p in problems:
+                console.print(f"  [red]-[/red] {p}")
+            if not questionary.confirm("Fix them now?", default=True, style=style).ask():
+                console.print("[red]The lift is left unwritten.[/red] Your other answers can still be saved.")
+                break
+            ask = []
+            for k in (p.split(":", 1)[0] for p in problems):     # a size problem asks both sizes again
+                for again in (("max_order_usd", "max_position_usd") if k == "max_order_usd" else (k,)):
+                    if again not in ask:
+                        ask.append(again)
+        if not problems:
             lift_text = lift_document(statement, fields, today)
             new["mainnet_lift"] = LIFT.as_posix()
 
@@ -276,6 +301,8 @@ def run(root: Path = H.ROOT, today: Optional[date] = None) -> int:
     console.print(table)
     if lift_text:
         console.print("\n[bold]Your lift, as it will be written:[/bold]\n" + lift_text)
+    else:
+        console.print("\n[bold]No lift in this save.[/bold] The no-mainnet rule stands.")
     if not questionary.confirm("Save these?", default=True, style=style).ask():
         console.print("nothing saved")
         return 1

@@ -15,9 +15,18 @@ STATEMENT = "I lift the no-mainnet rule for a canary at the venue's minimum size
 
 
 def page() -> str:
-    """The page as the last commit holds it, so a holder's uncommitted answers never change a test."""
-    return subprocess.run(["git", "-C", str(H.ROOT), "show", "HEAD:docs/HOLDER_INPUTS.md"], capture_output=True,
+    """The page as the last commit holds it with every answer cleared, so no answer of the holder's, committed or
+    not, ever changes a test. Cleared here by hand, not by the module under test."""
+    text = subprocess.run(["git", "-C", str(H.ROOT), "show", "HEAD:docs/HOLDER_INPUTS.md"], capture_output=True,
                           text=True, check=True).stdout
+    out = []
+    for line in text.split("\n"):
+        if line.startswith("| `") and line.count("|") == 5:
+            cells = line.split("|")
+            cells[3] = " "
+            line = "|".join(cells)
+        out.append(line)
+    return "\n".join(out)
 
 
 class TestToStored(unittest.TestCase):
@@ -114,6 +123,25 @@ class TestLift(unittest.TestCase):
             short[k] = " "
             self.assertTrue(any(p.startswith(f"{k}:") for p in F.check_lift(STATEMENT, short, TODAY)), k)
 
+    def test_every_problem_names_a_field_the_form_can_ask_again(self):
+        for bad in (dict(FIELDS, venue="hyperliquid, coinbase", max_order_usd="60", expiry="0"),
+                    dict(FIELDS, venue="alpaca", max_order_usd="x", expiry="2026-11-01")):
+            problems = F.check_lift("too short", bad, TODAY, ["hyperliquid"])
+            self.assertEqual(len(problems), 4, problems)
+            for p in problems:
+                self.assertIn(p.split(":", 1)[0], ["statement"] + list(F.LIFT_FIELDS), p)
+
+    def test_the_lift_covers_one_venue_the_holder_marked_open(self):
+        def venue_problems(v, eligible=("hyperliquid", "coinbase")):
+            return [p for p in F.check_lift(STATEMENT, dict(FIELDS, venue=v), TODAY, eligible) if p.startswith("venue")]
+        self.assertEqual(venue_problems("hyperliquid"), [])
+        self.assertEqual(venue_problems("Hyperliquid"), [])
+        self.assertTrue(venue_problems("hyperliquid, coinbase"))
+        self.assertTrue(venue_problems("hyperliquid coinbase"))
+        self.assertTrue(venue_problems("alpaca"))
+        self.assertEqual(venue_problems("alpaca", eligible=None), [])       # no list given: only the one-venue rule
+        self.assertTrue(venue_problems("hyperliquid coinbase", eligible=None))   # two venues, whatever the list
+
     def test_sizes_and_expiry_are_checked(self):
         bigger = dict(FIELDS, max_order_usd="30")
         self.assertTrue(F.check_lift(STATEMENT, bigger, TODAY))
@@ -180,10 +208,36 @@ class TestTheFormEndToEnd(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual((self.root / "docs" / "HOLDER_INPUTS.md").read_text(), page())
 
+    def test_a_refused_lift_is_asked_again_not_dropped(self):
+        # first pass: a one-line statement and an expiry of 0, as typed on 2026-11-03; second pass fixes both
+        first = ["i lift the rules"] + [("0" if k == "expiry" else FIELDS[k]) for k in F.LIFT_FIELDS]
+        again = [STATEMENT, FIELDS["expiry"]]
+        code, commit = self.walk(self.TEXTS + first + again + ["a plumbing canary"], self.SELECTS, ["hyperliquid"],
+                                 [True, True, True, True])
+        self.assertEqual(code, 0)
+        doc = (self.root / F.LIFT).read_text()
+        self.assertIn(STATEMENT, doc)
+        self.assertEqual(F.lift_answers(doc), FIELDS)
+        self.assertEqual(commit.call_args[0][1], ["docs/HOLDER_INPUTS.md", "research/MAINNET_LIFT.md"])
+
+    def test_a_size_problem_asks_both_sizes_again_and_a_venue_not_marked_open_is_asked_again(self):
+        first = [STATEMENT] + [{"venue": "alpaca", "max_order_usd": "60", "max_position_usd": "50"}.get(k, FIELDS[k])
+                               for k in F.LIFT_FIELDS]
+        again = ["hyperliquid", "12", "24"]        # in the order the problems name them: venue, then both sizes
+        code, _ = self.walk(self.TEXTS + first + again + ["a plumbing canary"], self.SELECTS, ["hyperliquid"],
+                            [True, True, True, True])
+        self.assertEqual(code, 0)
+        self.assertEqual(F.lift_answers((self.root / F.LIFT).read_text()), FIELDS)
+
+    def test_declining_to_fix_a_refused_lift_saves_the_answers_without_it(self):
+        first = ["i lift the rules"] + [FIELDS[k] for k in F.LIFT_FIELDS]
+        code, commit = self.walk(self.TEXTS + first, self.SELECTS, ["hyperliquid"], [True, False, True, False])
+        self.assertEqual(code, 0)
+        self.assertFalse((self.root / F.LIFT).exists())
+        self.assertIsNone(H.answers(self.root / "docs" / "HOLDER_INPUTS.md")["mainnet_lift"])
+
     def test_the_lift_is_written_from_the_holder_s_words_and_named_on_the_page(self):
-        lift_texts = [STATEMENT] + [FIELDS[k] for k in F.LIFT_FIELDS if k != "machine"] + [""]
-        # the machine field's default is the hash; an empty reply would clear it, so the scripted reply repeats it
-        lift_texts[-1] = "2fe1955570d2c740"
+        lift_texts = [STATEMENT] + [FIELDS[k] for k in F.LIFT_FIELDS]
         reason = ["a plumbing canary"]
         code, commit = self.walk(self.TEXTS + lift_texts + reason, self.SELECTS, ["hyperliquid"], [True, True, True])
         self.assertEqual(code, 0)

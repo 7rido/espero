@@ -79,6 +79,7 @@ the verdict.
 | 64 | the liquidator vault's side, 4 h | a 15-minute HLP slot where a liquidator vault holds a new position of $50k+; signal at A = ts + 120 s | hlcollect's HLP slots and read records, candles | 5 min | hlcollect, 60 s | nothing before its verdict (espero liqvault --verdict) | **live-from-tape** |
 | 65 | a sharp 5-minute fall read by open interest | a 5-minute context slot: a fall in the coin's 2 % tail with open interest down 1 % (long) or up 1 % (short), day volume $5M+; known at A = ts + 120 s | hlcollect's context slots, candles | 5 min | hlcollect, 60 s | nothing before its verdict (espero oi5m --verdict) | **live-from-tape** |
 | 66 | HAR volatility forecast | Sunday's forecast of next week's variance | Binance 5-minute bars | — | — | done once | **not tradable live** |
+| 69 | operator alpha | each override of an operator-paced proposal, against the paper twin | the approvals ledger, the twin | — | — | nothing until a sleeve is live | **not tradable live** |
 
 **Why each class, and what stands between a PASS and a live order, rule by rule.** The steps every tradable rule shares are listed after this table; these are its own.
 
@@ -90,13 +91,13 @@ the verdict.
 | 12 | operator-paced | an hourly decision on a trade held for days | fill at the settled hour's close + 5 % of the registered 7-day minimum hold | its verdict on 2026-11-27, then a confirmation window of 153 days or more (FORWARD_FAMILY rule 5); a spot venue for the long leg: Coinbase spot is not a candidate at 60-90 bps (VENUE_NONUS.md); both legs priced and placed together: the paper book prices them at different moments; the maker fill rate, measured by #62 and the testnet mirror, not assumed; an operator with a TOTP code (docs/OPERATOR.md) during the hours the holder gives |
 | 22 | next-day-batch | the tape lacks Binance's liquidations (forceOrder is silent from this Mac), so only aggr's day has them | the document: entry at the close 'assumes acting within a minute' | Binance's liquidation stream on a tape (a recorder where it is not silent, or a vendor); it fills at the spike bar's own close, which a live order cannot: the testnet rung measures the gap; a live evaluator for hourly liquidation bars; its inputs on a tape: today only the 07:30 batch carries them, later than its budget |
 | 23 | next-day-batch | as #22: Binance's liquidations are not on this Mac's tape | #22's: 'acting within a minute' | Binance's liquidation stream on a tape; it fills at the spike bar's own close; its inputs on a tape: today only the 07:30 batch carries them, later than its budget |
-| 24 | live-from-tape | 5-minute bars rebuilt from the tape's Binance trades | fill at the next bar's open + 5 % of 4 h | 29 of its 42 coins are not recorded: the tape carries 13 Binance symbols; the streaming engine's events agreeing with the batch's (#70); the next-open fill after a crash bar 'is optimistic' (FORWARD_LOWS.md): the testnet rung measures it; auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
+| 24 | live-from-tape | 5-minute bars rebuilt from the tape's Binance trades | fill at the next bar's open + 5 % of 4 h | 29 of its 42 coins are not recorded: the tape carries 13 Binance symbols; the streaming engine's events agreeing with the batch's (#71); the next-open fill after a crash bar 'is optimistic' (FORWARD_LOWS.md): the testnet rung measures it; auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
 | 26 | not tradable live | the 'forced' label ranks the break's forced share within its whole UTC day (liq.py, terciles on days with 6+ breaks), so it is not known when the break happens; COIN-M is not where the bot would trade (RESULTS_LIQ2.md) | fill at the next bar's open + 5 % of 1 h | — |
 | 27 | not tradable live | the 'forced' label ranks the break's forced share within its whole UTC day (liq.py, terciles on days with 6+ breaks), so it is not known when the break happens | fill at the next bar's open + 5 % of 1 h | — |
-| 29 | live-from-tape | the 15:55 bar closes at 16:00 ET on the tape | fill at the 16:00 bar's open + 5 % of 15 min | the streaming engine's events agreeing with the batch's (#70); the NYSE calendar in espero/levetf.py extended through the live period; auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
-| 31 | live-from-tape | 5-minute bars rebuilt from the tape's Binance trades | the bid placed at the next bar's open + 5 % of its 1-hour life | 29 of its 42 coins are not recorded; the streaming engine's events agreeing with the batch's (#70); resting maker orders on the order path, their queue position measured (#62), testnet first; auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
+| 29 | live-from-tape | the 15:55 bar closes at 16:00 ET on the tape | fill at the 16:00 bar's open + 5 % of 15 min | the streaming engine's events agreeing with the batch's (#71); the NYSE calendar in espero/levetf.py extended through the live period; auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
+| 31 | live-from-tape | 5-minute bars rebuilt from the tape's Binance trades | the bid placed at the next bar's open + 5 % of its 1-hour life | 29 of its 42 coins are not recorded; the streaming engine's events agreeing with the batch's (#71); resting maker orders on the order path, their queue position measured (#62), testnet first; auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
 | 32 | not tradable live | it inherits #27's label: the 'forced' label ranks the break's forced share within its whole UTC day (liq.py, terciles on days with 6+ breaks), so it is not known when the break happens | fill at the next bar's open + 5 % of 1 h | — |
-| 34 | live-from-tape | the 15:40 bar closes at 15:45 ET on the tape | fill at the 15:45 bar's open + 5 % of 15 min | Tier B: a confirmation window before any order (FORWARD_FAMILY rule 3); the streaming engine's events agreeing with the batch's (#70); auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
+| 34 | live-from-tape | the 15:40 bar closes at 15:45 ET on the tape | fill at the 15:45 bar's open + 5 % of 15 min | Tier B: a confirmation window before any order (FORWARD_FAMILY rule 3); the streaming engine's events agreeing with the batch's (#71); auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
 | 38 | next-day-batch | the rate is not live here: Binance's markPrice stream is silent and its REST answers 451 from this Mac | fill at the open of the bar at t + 5 % of 30 min | Binance's funding rate live, from a machine where it is reachable; it enters at P(t) with the rate settled at t: a live order comes after the settlement; Tier B: a confirmation window before any order; its inputs on a tape: today only the 07:30 batch carries them, later than its budget |
 | 40 | not tradable live | plumbing with no edge: the testnet rung's evidence, not a strategy | plumbing, not a rule | — |
 | 42 | not tradable live | plumbing with no edge | plumbing, not a rule | — |
@@ -112,6 +113,7 @@ the verdict.
 | 64 | live-from-tape | the slot is on disk before A | the entry candle must start within 5 min of the signal time (hlpbook.FILL_TOLERANCE_S, the rule's own drop clause), from A | a live evaluator: today it is computed only at the verdict; the vault is seen 0 to 15 minutes after it is handed the position (FORWARD_LIQVAULT.md); auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
 | 65 | live-from-tape | the slot is on disk before A | the entry candle must start within 5 min of the signal time (hlpbook.FILL_TOLERANCE_S, the rule's own drop clause), from A | a live evaluator: today it is computed only at the verdict; auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
 | 66 | not tradable live | a forecast: 'No trade'; it changes no running book unless a new number says so | a forecast, no trade | — |
+| 69 | not tradable live | a measurement, information only | a measurement | — |
 
 **Shared by every tradable rule, in the order they would be met:**
 
@@ -121,9 +123,9 @@ the verdict.
 4. a venue the holder has checked as eligible, with its costs measured (research/VENUE_NONUS.md)
 5. the ladder's rungs: paper twin, testnet mechanics, then a mainnet canary
 6. the holder's written lift of the no-mainnet rule and a mainnet module built from DESIGN_MAINNET_PATH.md
-7. edgewatch's parameters from its verdict window (#69)
+7. edgewatch's parameters from its verdict window (#70)
 
-Counts: live-from-tape 9, operator-paced 4, next-day-batch 3, not tradable live 12.
+Counts: live-from-tape 9, operator-paced 4, next-day-batch 3, not tradable live 13.
 <!-- latency:end -->
 
 ## What the audit found, information only
@@ -174,7 +176,7 @@ on the distance list of the rule it touches.
   the table says; the testnet rung measures placement against the budget for each sleeve.
 - Feed delays are measured where the repo measures them (the tape's one-second flush, the HLP books' two to
   three minutes, the carry loop's publish grace); a daily close's hour from Yahoo is assumed.
-- live-from-tape says the inputs could arrive in time. It needs a live evaluator: #70's streaming engine for the
+- live-from-tape says the inputs could arrive in time. It needs a live evaluator: #71's streaming engine for the
   Binance bar rules, the HLP books for #58 and #59, none yet for #60, #64 and #65.
 - An operator-paced rule trades only the events whose window meets the operator's hours: silence means no
-  entry, so the live sleeve is a subsample of the registered one. #68 reports what silence cost.
+  entry, so the live sleeve is a subsample of the registered one. #69 reports what silence cost.

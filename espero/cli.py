@@ -1445,6 +1445,30 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_approve(args: argparse.Namespace) -> int:
+    """List what waits for the operator, or leave a reply with the one-time code for the sleeve runner.
+    The reply counts only once the runner takes it and the code checks out (docs/OPERATOR.md)."""
+    from . import approvals as ap
+
+    state = Path(args.state_dir)
+    if args.proposal is None:
+        db = state / ap.LEDGER
+        if not db.exists():
+            print("nothing waits: no operator-paced sleeve is running (docs/OPERATOR.md)")
+            return 0
+        waiting = ap.Ledger.read_only(db).pending(int(time.time()))
+        print("\n".join(ap.describe(p) for p in waiting) if waiting else "nothing waits for an answer")
+        return 0
+    if args.answer is None or args.code is None:
+        print("usage: espero approve ID ANSWER CODE [--reason TEXT] [--notional USD]", file=sys.stderr)
+        return 2
+    reply = ap.Reply(args.proposal, args.answer, args.code, args.reason, args.notional, "cli", int(time.time()))
+    path = ap.post(state, reply)
+    print(f"left for the sleeve runner: {path.name}. It is journaled when the runner takes it; a wrong or "
+          "reused code is refused there and counts as silence.")
+    return 0
+
+
 def _cmd_readout(args: argparse.Namespace) -> int:
     print(dash.READOUT.read_text(encoding="utf-8"))
     return 0
@@ -1941,6 +1965,16 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--mf-db", default="mf.db")
     d.add_argument("--open", action="store_true")
     d.set_defaults(func=_cmd_dashboard)
+
+    apv = sub.add_parser("approve",
+                         help="answer a proposal with your one-time code, or list what waits (docs/OPERATOR.md)")
+    apv.add_argument("proposal", nargs="?", help="the proposal's id; omit it to list what waits")
+    apv.add_argument("answer", nargs="?", choices=("approve", "reject", "modify"))
+    apv.add_argument("code", nargs="?", help="the 6-digit code your authenticator app shows now")
+    apv.add_argument("--reason", default="", help="why: required for a reject or a modify, and journaled")
+    apv.add_argument("--notional", type=float, help="modify: the smaller size in USD")
+    apv.add_argument("--state-dir", default=None)
+    apv.set_defaults(func=_cmd_approve)
 
     rd = sub.add_parser("readout", help="what the free Hyperliquid data shows, for reading the market; not signals")
     rd.set_defaults(func=_cmd_readout)

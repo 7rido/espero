@@ -765,6 +765,40 @@ def act_readout(console, state):
     _page(console, RESEARCH / "OPERATOR_READOUT.md")
 
 
+def act_approvals(console, state):
+    """Proposals waiting for the operator (docs/OPERATOR.md). A reply goes with the code the authenticator app
+    shows; the sleeve runner checks it and journals the answer."""
+    import time
+
+    from . import approvals as ap
+
+    db = state / ap.LEDGER
+    waiting = ap.Ledger.read_only(db).pending(int(time.time())) if db.exists() else []
+    if not waiting:
+        console.print(Text("nothing waits for an answer: no operator-paced sleeve is running (docs/OPERATOR.md)",
+                           style=MUTED))
+        return
+    labels = [ap.describe(p) for p in waiting]
+    pick = questionary.select("Answer which?", choices=labels + ["back"], style=STYLE, pointer="❯").ask()
+    if not pick or pick == "back":
+        return
+    p = waiting[labels.index(pick)]
+    answer = questionary.select("Answer", choices=["approve", "reject", "modify"], style=STYLE, pointer="❯").ask()
+    if not answer:
+        return
+    reason = "" if answer == "approve" else (questionary.text("Why (journaled):", style=STYLE).ask() or "")
+    notional = None
+    if answer == "modify":
+        try:
+            notional = float(questionary.text("The smaller size in USD:", style=STYLE).ask())
+        except (TypeError, ValueError):
+            console.print(Text("not a number", style="red"))
+            return
+    code = questionary.password("Code from your authenticator app:", style=STYLE).ask() or ""
+    path = ap.post(state, ap.Reply(p.id, answer, code, reason, notional, "tui", int(time.time())))
+    console.print(Text(f"left for the sleeve runner ({path.name}); journaled when it takes it", style="green"))
+
+
 def act_factors(console, state):
     console.print(Text("builds or reuses data/panel, then evaluates the zoo (a minute or two)", style=MUTED))
     _run(console, ["factors"], state)
@@ -805,6 +839,7 @@ MENU: List[Tuple[str, Callable]] = [
      "judged after March 2027", act_forward),
     ("Reading the market: what usually follows, and what orders cost (#51-#57, context, not signals)", act_readout),
     ("Research results: measured costs and every test's verdict (reads files only)", act_findings),
+    ("Approvals: proposals waiting for your answer and one-time code (docs/OPERATOR.md)", act_approvals),
     ("Factor IC table (research)", act_factors),
     ("Run the tests", act_tests),
     ("Quit", None),

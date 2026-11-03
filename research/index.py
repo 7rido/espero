@@ -154,6 +154,8 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
     "68": ("A cost curve by order size on Hyperliquid, from #51's book files", ["PREREGISTRATION_COSTCURVE.md", "costcurve.py",
                                                                                   "costcurve_run.txt", "costcurve_days.csv",
                                                                                   "costcurve_buckets.csv", "RESULTS_COSTCURVE.md"]),
+    "69": ("Operator alpha: what the operator's overrides earned against the rule", ["PREREGISTRATION_OPALPHA.md",
+                                                                                    "PREREGISTRATION_OPALPHA.md.ots"]),
 }
 
 # files that belong to the project as a whole, not to one test

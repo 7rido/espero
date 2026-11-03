@@ -61,7 +61,7 @@ COMMON_DISTANCE = (
     "a venue the holder has checked as eligible, with its costs measured (research/VENUE_NONUS.md)",
     "the ladder's rungs: paper twin, testnet mechanics, then a mainnet canary",
     "the holder's written lift of the no-mainnet rule and a mainnet module built from DESIGN_MAINNET_PATH.md",
-    "edgewatch's parameters from its verdict window (#69)",
+    "edgewatch's parameters from its verdict window (#70)",
 )
 CLASS_DISTANCE = {
     LIVE_FROM_TAPE: ("auto-only: its budget is shorter than an operator's answer, so it needs the holder's "
@@ -172,7 +172,7 @@ ROWS: Tuple[Row, ...] = (
         _today_batch("Binance's archive can add days; lowsfwd gives up after 7"), BATCH_WORST_S, True,
         "5-minute bars rebuilt from the tape's Binance trades", LIVE_FROM_TAPE,
         ("29 of its 42 coins are not recorded: the tape carries 13 Binance symbols",
-         "the streaming engine's events agreeing with the batch's (#70)",
+         "the streaming engine's events agreeing with the batch's (#71)",
          "the next-open fill after a crash bar 'is optimistic' (FORWARD_LOWS.md): the testnet rung measures it")),
     Row("26", "#18's rule on Binance COIN-M liquidations", "research/PREREGISTRATION_LIQ2.md",
         "a 5-minute break whose COIN-M forced share is in the day's top tercile", "COIN-M liquidations, USD-M bars",
@@ -188,14 +188,14 @@ ROWS: Tuple[Row, ...] = (
         f"{B5} for BTC and ETH", "Binance USD-M", 0.05 * 15 * MIN, "fill at the 16:00 bar's open + 5 % of 15 min",
         "rawrec", TAPE_S, True, "the 07:30 New York batch after 16:00 ET", 15.5 * HOUR, True,
         "the 15:55 bar closes at 16:00 ET on the tape", LIVE_FROM_TAPE,
-        ("the streaming engine's events agreeing with the batch's (#70)",
+        ("the streaming engine's events agreeing with the batch's (#71)",
          "the NYSE calendar in espero/levetf.py extended through the live period")),
     Row("31", "bids 2 ATR under breakdowns", "research/FORWARD_BIDS2.md",
         "#20's 5-minute breakdown; a maker bid 2 ATR under its close rests 12 bars", f"{B5} for 42 coins",
         "Hyperliquid (maker)", 0.05 * 12 * 5 * MIN, "the bid placed at the next bar's open + 5 % of its 1-hour life",
         "rawrec", TAPE_S, True, _today_batch("Binance's archive can add days"), BATCH_WORST_S, True,
         "5-minute bars rebuilt from the tape's Binance trades", LIVE_FROM_TAPE,
-        ("29 of its 42 coins are not recorded", "the streaming engine's events agreeing with the batch's (#70)",
+        ("29 of its 42 coins are not recorded", "the streaming engine's events agreeing with the batch's (#71)",
          "resting maker orders on the order path, their queue position measured (#62), testnet first")),
     Row("32", "forced down-breaks after crowded funding", "research/FORWARD_FUNDSPLIT.md",
         "#27's forced down-breaks, split by the last settled funding", "#27's ledger, Binance's funding archive",
@@ -208,7 +208,7 @@ ROWS: Tuple[Row, ...] = (
         "the 07:30 New York batch after 15:45 ET", 15.75 * HOUR, True,
         "the 15:40 bar closes at 15:45 ET on the tape", LIVE_FROM_TAPE,
         ("Tier B: a confirmation window before any order (FORWARD_FAMILY rule 3)",
-         "the streaming engine's events agreeing with the batch's (#70)")),
+         "the streaming engine's events agreeing with the batch's (#71)")),
     Row("38", "after settlements where shorts pay hard", "research/FORWARD_SHORTSPAY.md",
         "a 00/08/16 UTC Binance settlement at a rate of -0.0005 or below: short at P(t), 30 min",
         f"{B5} and the settled funding rate", "Binance USD-M", 0.05 * 30 * MIN,
@@ -289,6 +289,10 @@ ROWS: Tuple[Row, ...] = (
         "Sunday's forecast of next week's variance", "Binance 5-minute bars", "none", None, "a forecast, no trade",
         "none", None, False, "done once", None, False,
         "a forecast: 'No trade'; it changes no running book unless a new number says so", NOT_TRADABLE),
+    Row("69", "operator alpha", "research/PREREGISTRATION_OPALPHA.md",
+        "each override of an operator-paced proposal, against the paper twin", "the approvals ledger, the twin",
+        "none", None, "a measurement", "none", None, False, "nothing until a sleeve is live", None, False,
+        "a measurement, information only", NOT_TRADABLE),
 )
 
 

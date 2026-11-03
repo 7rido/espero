@@ -633,6 +633,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `costcurve_days.csv`
 - `costcurve_run.txt`
 
+## #69 — Operator alpha: what the operator's overrides earned against the rule
+
+*#69 forward_pending*
+
+- `PREREGISTRATION_OPALPHA.md`
+- `PREREGISTRATION_OPALPHA.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

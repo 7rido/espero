@@ -22,7 +22,7 @@ copy outside a git checkout, allocates nothing and makes no venue eligible.
 <!-- answers:start -->
 | id | the question | answer | default until answered |
 |---|---|---|---|
-| `capital_usd` | How much capital do you allocate to this system, in USD? | 100 | 0: the risk gate refuses every entry |
+| `capital_usd` | How much capital do you allocate to this system, in USD? | 50 | 0: the risk gate refuses every entry |
 | `stop_drawdown` | At what drawdown from the peak would you stop everything? | -3% | none, and with no capital it never matters |
 | `venues_eligible` | Which venues have you checked as open to you, against their current terms? | coinbase, hyperliquid | none: no venue may be used |
 | `tax_and_licensing_checked` | Have you checked your own country's tax and licensing rules for perpetual futures? | yes | no: no venue may be used |
@@ -33,7 +33,7 @@ copy outside a git checkout, allocates nothing and makes no venue eligible.
 | `data_budget_usd_month` | How much a month will you pay for data or an always-on machine? | 0 | 0: nothing is bought |
 | `totp_set_up` | Have you set up the operator's one-time-code secret (docs/OPERATOR.md)? | yes | no: no approval can be given |
 | `autonomy` | May the machine place orders unattended for rules too fast for a person (auto-only)? | yes | no: auto-only rules are not traded |
-| `mainnet_lift` | The path of your committed document lifting the no-mainnet rule, if you choose to | | none: there is no mainnet order path |
+| `mainnet_lift` | The path of your committed document lifting the no-mainnet rule, if you choose to | research/MAINNET_LIFT.md | none: there is no mainnet order path |
 <!-- answers:end -->
 
 ## Each question, why it matters, and what happens until it is answered

@@ -2,8 +2,7 @@
 
 **Written 2026-11-03 on branch `liq-breakout` at `221d111`, by an agent, read-only except for the fixes listed in
 section 4.** "Production" here means real orders by the account holder under the repo's own discipline (AGENTS.md).
-Nothing in this audit lifts the no-mainnet rule, re-tunes a frozen test, or weakens a guard. The audit was cut short
-by a usage limit: section 5 says what was not finished.
+Nothing in this audit lifts the no-mainnet rule, re-tunes a frozen test, or weakens a guard.
 
 Severity: **critical** (money or a key at risk now), **high** (an order path or a forward test can go wrong),
 **medium** (wrong under a plausible fault), **low**, **info**. "VERIFIED" means reproduced by running code.
@@ -67,16 +66,16 @@ Findings:
 | sev | where | finding | fix |
 |---|---|---|---|
 | high, VERIFIED, **fixed** (74c761b) | `espero/markout.py:290` `q3` | Under pandas 3 an empty filtered frame maps the venue to a `str` Series and `s["mean"] - fee` raises `TypeError`; `research/markout.py:505` and `markout_small.py:172` call it. Hidden because the test that covers it was never run (section 3). | `.astype(float)`; equal on every non-empty frame (checked on #39's fixture), so no registered number moves. |
-| high, VERIFIED | `espero/replay_stack.py:203` `Stack.step` | A last frame older than `replaysim.MAX_BOOK_AGE_MS` (60 s) but inside the silence limit (120 s) and the rule's budget: `book_at` returns None and `book["bids"]` raises `TypeError`; a one-sided frame raises `IndexError`. `espero replay-stack --day` aborts the day. | Refuse "no usable book" when `book is None` or a side is empty. **Not fixed (usage limit).** |
+| high, VERIFIED, **fixed** (781ba0f) | `espero/replay_stack.py:203` `Stack.step` | A last frame older than `replaysim.MAX_BOOK_AGE_MS` (60 s) but inside the silence limit (120 s) and the rule's budget: `book_at` returns None and `book["bids"]` raises `TypeError`; a one-sided frame raises `IndexError`. `espero replay-stack --day` aborts the day. | The decision reads the last book inside the rule's own budget (its stale-book rule already allows that age) and refuses "no usable book" on none or an empty side. |
 | medium, VERIFIED, **fixed** (ef70e50) | `espero/replay_stack.py` `_send` | The "sent before" branch asked the venue without catching `VenueSilent`: a restart during a silent window raised out of `step()`, against the `restart` and `venue_silent` rows of `FAULTS`. | Journals "no answer", sends nothing, asks again next step; a test holds both faults together. |
-| medium, VERIFIED | `espero/replay_stack.py:211` `Stack.exit` | The exit skips `watchdog.clock_ok`: with the clock 5 s off an exit is still sent, against `FAULTS["clock_skew"]`. | Check the clock first in `exit` too. **Not fixed.** |
-| medium, VERIFIED | `espero/rungs.py:48,57` `breach`, `step` | `breach` says a block too small to judge is not a breach, but `Block(fills=0, median=nan)` is one (`not isfinite`), and two empty blocks in a row send a canary back to testnet; a NaN `budget_bps` is never a breach. | In `step`, return `state` for a short block unless the breach is a break or an edgewatch alarm; a non-finite budget is a breach. **Not fixed.** |
-| low, VERIFIED | `espero/risk.py:261,267` `check` | A NaN sigma gives `max(0.25, nan) == 0.25`, the same as a missing coin ($39,216 cap on $10k venue equity instead of $20,619 at sigma 0.06); a negative `mmr` equal to `-need` divides by zero. | Refuse on a non-finite sigma and a negative mmr. **Not fixed.** |
-| low, VERIFIED | `espero/risk.py:246` `check` | `sleeve_scale` above 1 is not clamped: scale 3 gives a per-sleeve cap of $30,000 on $10k (leverage and per-venue still bind, so nothing exceeds capital). | `scale = min(1.0, scale)`, as RISK_POLICY.md's wording intends. **Not fixed.** |
+| medium, VERIFIED, **fixed** (781ba0f) | `espero/replay_stack.py:211` `Stack.exit` | The exit skips `watchdog.clock_ok`: with the clock 5 s off an exit is still sent, against `FAULTS["clock_skew"]`. | The clock is checked first in `exit` too. |
+| medium, VERIFIED, **fixed** (59b3b87) | `espero/rungs.py:48,57` `breach`, `step` | `breach` says a block too small to judge is not a breach, but `Block(fills=0, median=nan)` is one (`not isfinite`), and two empty blocks in a row send a canary back to testnet; a NaN `budget_bps` is never a breach. | An empty block is not judged unless it carries a break or an alarm (the ladder's "at once" cases, which `tests/test_rungs.py` already held for short blocks); a non-finite budget is a breach. |
+| low, VERIFIED, **fixed** (d0516d0) | `espero/risk.py:261,267` `check` | A NaN sigma gives `max(0.25, nan) == 0.25`, the same as a missing coin ($39,216 cap on $10k venue equity instead of $20,619 at sigma 0.06); a negative `mmr` equal to `-need` divides by zero. | Refused on a non-finite or negative sigma or mmr; a coin with no sigma still takes the floor, as the policy says. |
+| low, VERIFIED, **fixed** (d0516d0) | `espero/risk.py:246` `check` | `sleeve_scale` above 1 is not clamped: scale 3 gives a per-sleeve cap of $30,000 on $10k (leverage and per-venue still bind, so nothing exceeds capital). | `scale = min(1.0, scale)`, as RISK_POLICY.md's wording says. |
 | low, VERIFIED | `espero/risk.py:225` `check` reduce-only | Ignores `order.min_notional`: a $3 flatten is allowed and the venue rejects it, so dust can keep a week or holder stop's "flatten everything" from completing. | Say so in the ruling; the executor rounds dust up to the venue minimum where the venue clips reduce-only. Left. |
 | low | `espero/replay_stack.py:85,203` | Decision-side checks select frames by exchange time `t`, not receive time `rt`: a frame with `t <= now < rt` is seen before it arrived (feed lag, up to `LATENCY_INFO_MS`). Fill side is right. | Filter by `rt <= now_ms` on the decision side. Left; replay only. |
-| low, VERIFIED | `espero/replay_stack.py:191` | A rule with no latency row gets budget 0 and is refused only by strict `>`; with `emitted_ms` None in `main()` the stale check passes at 0 ms. | Refuse "no latency budget" outright. **Not fixed.** |
-| low, VERIFIED | `espero/hl_exchange.py:171` `limit` | The rounded size is checked but not the rounded price: a buy below one price step rounds to 0.0 and is sent (the venue rejects it). | `if px <= 0: raise ValueError` after rounding. Left. |
+| low, VERIFIED, **fixed** (781ba0f) | `espero/replay_stack.py:191` | A rule with no latency row gets budget 0 and is refused only by strict `>`; with `emitted_ms` None in `main()` the stale check passes at 0 ms. | Refused "no latency budget" outright. |
+| low, VERIFIED, **fixed** (0a2998a) | `espero/hl_exchange.py:171` `limit` | The rounded size is checked but not the rounded price: a buy below one price step rounds to 0.0 and is sent (the venue rejects it). | `ValueError` after rounding; no guard touched. |
 | low | `espero/sleeves.py:94` via `portfolio.vol_scaled` | A sleeve whose trailing 90 days are literally 0 has vol 0, weight `inf` clipped to the cap: the largest weight for the quietest sleeve. Bites only if non-trading days are fed as 0 rather than NaN. | #63 is frozen; record in ERRATA and feed NaN, not 0. Left. |
 | low | `espero/watchdog.py:108` `check_daily` | A run paused by `KILL` writes `ok: false` with no steps, so the alarm reads "the last run had a failed step: " with an empty list. | Say "paused by KILL" instead. Left. |
 | info | `espero/risk.py:130` `Account` | `day_start`/`week_start` default 0 switch the day and week stops off: the live account builder must set them (`replay_account` does). | Hold it in the sleeve runner's tests when it exists. |
@@ -108,6 +107,10 @@ The untested-failure-path review of `hl_exchange`, `hlp_testnet`, `watchdog`, `l
 | 9502a38 | `test_no_mainnet` pattern catches every signer spelling | old pattern misses 3 of 3 |
 | 84bf725 | `holder` reads the page only as HEAD holds it | `committed` forced True → 2 failures; gate removed → 2 failures |
 | 1459048 | approvals inbox file `0600` | revert → failure |
+| 781ba0f | `replay_stack`: no usable book, exit's clock, no-budget rule | revert → 2 failures, 2 errors |
+| d0516d0 | `risk.check`: NaN sigma, negative mmr, scale above 1 | revert → 2 failures |
+| 0a2998a | `hl_exchange.limit`: a price that rounds to zero | revert → failure |
+| 59b3b87 | `rungs`: an empty block is not judged; a NaN budget is a breach | revert → failure, error |
 
 No frozen test's rule, data, criteria or result changed; no guard was weakened; `docs/STATUS.md` was not
 regenerated (the ledger did not change).
@@ -136,9 +139,9 @@ paper twin waits for a PASS judged after 2027-03-31.
 
 **Blocked on code (in order):**
 
-1. Fix the four open replay-stack and gate findings above (`book_at` None, `exit` clock, no-budget refusal, NaN
-   sigma and negative mmr, scale clamp), each with a test; then fix `rungs.step` for short blocks.
-2. Finish the three unfinished reviews (forward-step day handling, recorders, test gaps) and act on them.
+1. Finish the three unfinished reviews (forward-step day handling, recorders, test gaps) and act on them.
+2. The decision side of `replay_stack` reads frames by receive time (`rt`), not exchange time, so a replay never
+   sees a frame before it arrived; and `risk.check`'s reduce-only ruling says when dust is under the venue minimum.
 3. The sleeve runner (docs/OPERATOR.md, "What is not built"): consumes the inbox, builds `risk.Account` with
    `day_start`, `week_start`, `peak`, `sigma_daily` and `breaks` from `reconcile.startup`, runs `attribution`, and
    is drilled through `replay_stack` on recorded days.
@@ -147,7 +150,7 @@ paper twin waits for a PASS judged after 2027-03-31.
 5. The mainnet module from research/DESIGN_MAINNET_PATH.md, only after the holder's lift, with `tests/test_no_mainnet`
    rewritten to hold the new guards rather than the absence of the module.
 
-**The first five steps, ordered:** the holder answers HOLDER_INPUTS (1 above); the five open code findings are fixed
-and the unfinished reviews completed; the sleeve runner is built and drilled on tape through `replay_stack`; the
+**The first five steps, ordered:** the holder answers HOLDER_INPUTS (1 above); the unfinished reviews are completed
+and their findings fixed; the sleeve runner is built and drilled on tape through `replay_stack`; the
 `hl` extra is pinned and hash-checked and the installers' bootout race fixed; rung 1 (testnet mechanics: 50 round
 trips, every fault drilled, the kill switch drilled) for the first sleeve whose verdict passes.

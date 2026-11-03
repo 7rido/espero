@@ -10,7 +10,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SIGNER = ROOT / "espero" / "hl_exchange.py"
 SDK = r"(hyperliquid\.exchange|eth_account)\b"
-SIGNING = re.compile(rf"^\s*(from\s+{SDK}|import\s+{SDK})|\bExchange\(\s*wallet", re.M)
+SIGNING = re.compile(
+    rf"^\s*(from\s+{SDK}|import\s+{SDK})"                           # the SDK's signer or the account library
+    rf"|^\s*from\s+hyperliquid\s+import\b[^\n]*\bexchange\b"        # the signer's module by its short name
+    rf"|\b(import_module|__import__)\(\s*['\"](hyperliquid|eth_account)"  # imported by name at run time
+    r"|\bExchange\(",                                                  # the signer built, whatever it is called
+    re.M)
 
 
 def sources():
@@ -47,10 +52,17 @@ class TestNoMainnetPath(unittest.TestCase):
         self.assertIn("This is a design document. There is no mainnet order path in this repo", text)
 
     def test_the_pattern_would_catch_a_signer(self):
-        self.assertTrue(SIGNING.search("from hyperliquid.exchange import Exchange\n"))
-        self.assertTrue(SIGNING.search("import eth_account\n"))
-        self.assertTrue(SIGNING.search("x = Exchange(wallet, base_url=URL)\n"))
-        self.assertIsNone(SIGNING.search("MAINNET_URL = 'https://api.hyperliquid.xyz'\n"))
+        for spelling in ("from hyperliquid.exchange import Exchange\n", "import eth_account\n",
+                         "x = Exchange(wallet, base_url=URL)\n", "ex = exchange.Exchange(acct, base_url=U)\n",
+                         "from hyperliquid import exchange\n", "from hyperliquid import info, exchange as ex\n",
+                         "import hyperliquid.exchange as hx\n", "m = importlib.import_module('hyperliquid.exchange')\n",
+                         'm = __import__("hyperliquid.exchange")\n', "__import__('eth_account')\n",
+                         "from eth_account.signers.local import LocalAccount\n"):
+            self.assertTrue(SIGNING.search(spelling), spelling)
+        for innocent in ("MAINNET_URL = 'https://api.hyperliquid.xyz'\n", "from hyperliquid import info\n",
+                         "ex = TestnetExchange(env)\n", "from . import hyperliquid as hl\n",
+                         '__import__("espero.cash", fromlist=["x"])\n', "class FakeExchange:\n"):
+            self.assertIsNone(SIGNING.search(innocent), innocent)
 
 
 if __name__ == "__main__":

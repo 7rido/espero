@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 import sys
 from dataclasses import asdict, dataclass, field
@@ -246,6 +247,7 @@ def check(order: Order, account: Account, policy: Policy = POLICY) -> Ruling:
     scale = account.sleeve_scale.get(order.sleeve, 0.0)
     if scale <= 0:
         return refuse(f"sleeve {order.sleeve!r} has no allocation (its #63 weight, rung or states are 0)")
+    scale = min(1.0, scale)                 # the per-sleeve cap stops a scale above 1 (RISK_POLICY.md); it never adds
     perp = order.leg == "perp"
     room: Dict[str, Tuple[float, float]] = {
         "per venue": (policy.per_venue * base - _gross(pos, venue=order.venue), policy.per_venue * base),
@@ -258,7 +260,11 @@ def check(order: Order, account: Account, policy: Policy = POLICY) -> Ruling:
                                   policy.venue_leverage * venue_eq)
         room["per coin"] = (policy.per_coin * base - _gross(pos, coin=order.coin, perp_only=True),
                             policy.per_coin * base)
-        need = max(policy.liq_floor, policy.liq_sigmas * account.sigma_daily.get(order.coin, 0.0))
+        sigma = account.sigma_daily.get(order.coin, 0.0)
+        if not math.isfinite(sigma) or sigma < 0 or not math.isfinite(order.mmr) or order.mmr < 0:
+            return refuse(f"{order.coin}: its daily sigma ({sigma}) or margin rate ({order.mmr}) is not a number "
+                          "the gate can size on")
+        need = max(policy.liq_floor, policy.liq_sigmas * sigma)
         for p in pos:
             if p.venue == order.venue and p.leg == "perp" and p.liq_px and p.mark:
                 if abs(p.liq_px / p.mark - 1) < need:

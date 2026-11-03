@@ -193,6 +193,19 @@ class TestLiquidationAndFunding(unittest.TestCase):
         self.assertAlmostEqual(wild.notional, 1_000.0 / (8 * 0.06 + 0.005))     # eight daily sigmas bind
         self.assertTrue(any(x.startswith("liquidation distance") for x in wild.reasons))
 
+    def test_a_sigma_or_margin_rate_that_is_not_a_number_is_refused(self):
+        nan = float("nan")
+        r = R.check(order(coin="BTC"), account(sigma_daily={"BTC": nan}))
+        self.assertFalse(r.allowed)
+        self.assertIn("not a number", r.reasons[0])
+        self.assertFalse(R.check(order(mmr=-0.25), account()).allowed)          # would divide by zero
+        self.assertFalse(R.check(order(mmr=nan), account()).allowed)
+        self.assertTrue(R.check(order(coin="XYZ"), account()).allowed)          # a coin with no sigma: the floor
+
+    def test_a_sleeve_scale_above_one_is_one(self):
+        r = R.check(order(notional=100_000.0), account(sleeve_scale={"s": 3.0}))
+        self.assertEqual(r.checks["per sleeve"][1], R.POLICY.per_sleeve * 10_000.0)
+
     def test_a_position_already_near_liquidation_blocks_entries_there(self):
         near = account(positions=(pos(coin="ETH", liq_px=1_800.0, mark=2_000.0),))
         r = R.check(order(), near)

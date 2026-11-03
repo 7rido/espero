@@ -1,0 +1,66 @@
+#72 HOLDOUT run: 42 coins, origins through 2026-03-30
+  coin=BTC, symbol=BTCUSDT, status=ok, first=2020-01-02, complete_days=2281, oi_days=1696, targets=2251, events=132
+  coin=ETH, symbol=ETHUSDT, status=ok, first=2020-01-02, complete_days=2281, oi_days=1404, targets=2251, events=130
+  coin=SOL, symbol=SOLUSDT, status=ok, first=2020-09-15, complete_days=2017, oi_days=1386, targets=1927, events=84
+  coin=BNB, symbol=BNBUSDT, status=ok, first=2020-02-11, complete_days=2241, oi_days=1396, targets=2211, events=127
+  coin=XRP, symbol=XRPUSDT, status=ok, first=2020-01-07, complete_days=2269, oi_days=1388, targets=2179, events=129
+  coin=ADA, symbol=ADAUSDT, status=ok, first=2020-02-01, complete_days=2251, oi_days=1373, targets=2221, events=94
+  coin=DOGE, symbol=DOGEUSDT, status=ok, first=2020-07-11, complete_days=2090, oi_days=1386, targets=2060, events=110
+  coin=AVAX, symbol=AVAXUSDT, status=ok, first=2020-09-24, complete_days=2015, oi_days=1387, targets=1985, events=88
+  coin=LINK, symbol=LINKUSDT, status=ok, first=2020-01-18, complete_days=2265, oi_days=1389, targets=2235, events=90
+  coin=DOT, symbol=DOTUSDT, status=ok, first=2020-08-23, complete_days=2047, oi_days=1375, targets=2017, events=87
+  coin=TRX, symbol=TRXUSDT, status=ok, first=2020-01-16, complete_days=2260, oi_days=1357, targets=2170, events=132
+  coin=SHIB, symbol=1000SHIBUSDT, status=ok, first=2021-05-11, complete_days=1786, oi_days=1369, targets=1756, events=77
+  coin=LTC, symbol=LTCUSDT, status=ok, first=2020-01-10, complete_days=2266, oi_days=1376, targets=2176, events=111
+  coin=BCH, symbol=BCHUSDT, status=ok, first=2020-01-02, complete_days=2281, oi_days=1376, targets=2251, events=122
+  coin=ATOM, symbol=ATOMUSDT, status=ok, first=2020-02-08, complete_days=2244, oi_days=1358, targets=2214, events=79
+  coin=ETC, symbol=ETCUSDT, status=ok, first=2020-01-17, complete_days=2266, oi_days=1362, targets=2236, events=110
+  coin=XLM, symbol=XLMUSDT, status=ok, first=2020-01-21, complete_days=2255, oi_days=1332, targets=2165, events=102
+  coin=NEAR, symbol=NEARUSDT, status=ok, first=2020-10-16, complete_days=1986, oi_days=1355, targets=1896, events=70
+  coin=ARB, symbol=ARBUSDT, status=ok, first=2023-03-24, complete_days=1104, oi_days=959, targets=1074, events=48
+  coin=OP, symbol=OPUSDT, status=ok, first=2022-06-02, complete_days=1399, oi_days=1195, targets=1369, events=50
+  coin=FIL, symbol=FILUSDT, status=ok, first=2020-10-17, complete_days=1985, oi_days=1383, targets=1895, events=87
+  coin=INJ, symbol=INJUSDT, status=ok, first=2022-08-18, complete_days=1322, oi_days=1123, targets=1292, events=37
+  coin=SEI, symbol=SEIUSDT, status=ok, first=2023-08-18, complete_days=957, oi_days=815, targets=927, events=24
+  coin=TIA, symbol=TIAUSDT, status=ok, first=2023-11-01, complete_days=882, oi_days=770, targets=852, events=20
+  coin=RUNE, symbol=RUNEUSDT, status=ok, first=2020-09-05, complete_days=2034, oi_days=1319, targets=2004, events=83
+  coin=AAVE, symbol=AAVEUSDT, status=ok, first=2020-10-17, complete_days=1992, oi_days=1348, targets=1962, events=74
+  coin=MKR, symbol=MKRUSDT, status=ok, first=2020-08-14, complete_days=1845, oi_days=1161, targets=1755, events=73
+  coin=CRV, symbol=CRVUSDT, status=ok, first=2020-09-02, complete_days=2037, oi_days=1005, targets=2007, events=65
+  coin=SNX, symbol=SNXUSDT, status=ok, first=2020-08-15, complete_days=2055, oi_days=1208, targets=2025, events=72
+  coin=SUSHI, symbol=SUSHIUSDT, status=ok, first=2020-09-05, complete_days=2027, oi_days=1309, targets=1937, events=81
+  coin=YFI, symbol=YFIUSDT, status=ok, first=2020-09-01, complete_days=2031, oi_days=1366, targets=1941, events=87
+  coin=ALGO, symbol=ALGOUSDT, status=ok, first=2020-06-17, complete_days=2114, oi_days=1285, targets=2084, events=83
+  coin=XTZ, symbol=XTZUSDT, status=ok, first=2020-02-07, complete_days=2245, oi_days=1029, targets=2215, events=94
+  coin=EOS, symbol=EOSUSDT, status=ok, first=2020-01-09, complete_days=1959, oi_days=914, targets=1929, events=103
+  coin=ZEC, symbol=ZECUSDT, status=ok, first=2020-02-06, complete_days=2239, oi_days=1309, targets=2149, events=97
+  coin=DASH, symbol=DASHUSDT, status=ok, first=2020-02-05, complete_days=2247, oi_days=1294, targets=2217, events=106
+  coin=KSM, symbol=KSMUSDT, status=ok, first=2020-10-15, complete_days=1987, oi_days=1296, targets=1897, events=88
+  coin=ICP, symbol=ICPUSDT, status=ok, first=2021-05-12, complete_days=1676, oi_days=1069, targets=1616, events=59
+  coin=HBAR, symbol=HBARUSDT, status=ok, first=2021-03-18, complete_days=1833, oi_days=1353, targets=1743, events=72
+  coin=VET, symbol=VETUSDT, status=ok, first=2020-02-15, complete_days=2230, oi_days=1345, targets=2140, events=93
+  coin=THETA, symbol=THETAUSDT, status=ok, first=2020-05-28, complete_days=2134, oi_days=1344, targets=2104, events=96
+  coin=WLD, symbol=WLDUSDT, status=ok, first=2023-07-25, complete_days=981, oi_days=858, targets=951, events=27
+
+event rate over every row with a target: 0.0448 on 80286 rows, 3593 cascades; k = 1.25 -> registered k would be 1.25
+squeeze rate: 0.0390 on 80286 rows
+first forecast origin 2022-08-03; scored cells 36007, cascades among them 1572, origins 991
+
+== The registered comparison: FULL against VOL, log loss, positive when FULL is better
+FULL vs VOL: mean gap +0.00070 over 991 origins (36007 cells), NW t 0.49; halves -0.00119 / +0.00258; coins with mean gap > 0: 28 of 42
+   p (two-sided) 0.624; BH q 1 over 36 tests
+   VERDICT: FAIL
+
+== Information only
+(a) VOL vs BASE rate: mean gap +0.00828 over 1185 origins (48315 cells), NW t 4.36; halves +0.00930 / +0.00725; coins with mean gap > 0: 42 of 42
+(b) FULL vs BASE rate: mean gap +0.00964 over 991 origins (36007 cells), NW t 4.39; halves +0.00912 / +0.01016; coins with mean gap > 0: 42 of 42
+(c) calibration of FULL by decile: n, mean forecast, observed rate
+   1:3601/0.0148/0.0058 2:3601/0.0245/0.0158 3:3600/0.0301/0.0236 4:3601/0.0352/0.0269 5:3601/0.0402/0.0369 6:3600/0.0459/0.0428 7:3601/0.0525/0.0508 8:3600/0.0608/0.0531 9:3601/0.0733/0.0697 10:3601/0.1098/0.1111
+(d) lift: top-decile observed rate 0.1111 against the scored base rate 0.0437 = 2.54x; bottom decile 0.0058
+    VOL's top decile 0.1252, bottom 0.0061
+(e) FULL's standardized coefficients at the last fit (2026-02-28): const -3.245, d1 +0.473, d7 -0.027, d30 -0.622, oi1 +0.035, oi7 +0.087, oivol +0.123, f1 +0.039, f7 +0.107, fa7 +0.105, ls +0.114, m7 -0.068
+    VOL's: const -3.135, d1 +0.510, d7 +0.014, d30 -0.601
+(f) FULL vs VOL by year: 2023 -0.00514 (305), 2024 +0.00304 (306), 2025 +0.00339 (305), 2026 +0.00390 (75)
+(g) BTC and ETH +0.00043; the rest +0.00070
+(h) the squeeze day, FULL vs VOL: mean gap +0.00038 over 991 origins (36007 cells), NW t 0.51; halves -0.00110 / +0.00187; coins with mean gap > 0: 24 of 42
+(i) the gap's daily sd 0.04245, so the holdout's t at n origins is about mean / sd * sqrt(n) if dependence matches: n=1185 -> 0.56

@@ -642,13 +642,17 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #72 — Open interest as a next-day cascade forecast, beyond volatility
 
-*#72 (not in trials.csv)*
+*#72 fail*
 
 - `EXPLORE_CASCADE.md`
 - `PREREGISTRATION_CASCADE.md`
 - `PREREGISTRATION_CASCADE.md.ots`
+- `RESULTS_CASCADE.md`
 - `cascade.py`  (rule: `espero/cascade.py`)
+- `cascade_cells.csv.gz`
 - `cascade_design_run.txt`
+- `cascade_run.txt`
+- `cascade_series.csv`
 
 ## Cross-cutting
 

@@ -41,7 +41,7 @@ def webhook(title: str, message: str, url: str = "") -> bool:
         http_get(url, headers={"Content-Type": "application/json", "User-Agent": "espero/0.2"},
                  data=body, retries=1)
         return True
-    except FetchError as exc:
+    except (FetchError, ValueError) as exc:          # ValueError: urllib refuses a malformed URL before any request
         log.warning("webhook failed: %s", str(exc).replace(url, redact(url)))
         return False
 

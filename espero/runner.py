@@ -212,7 +212,10 @@ def _step(name: str, fn: Callable[[], dict], result: DailyResult, notify: bool) 
         message = out.get("message") if isinstance(out, dict) else None
         if not message:
             message = f"equity ${equity:,.2f}" if isinstance(equity, (int, float)) else note
-        notifier.notify(f"espero {name}: {note}", str(message))
+        try:
+            notifier.notify(f"espero {name}: {note}", str(message))
+        except Exception as exc:  # noqa: BLE001 - a notification that fails must never fail the run that sent it
+            log.warning("notification for %s failed: %s", name, exc)
     return out
 
 

@@ -76,6 +76,15 @@ class TestWebhook(unittest.TestCase):
         self.assertEqual(get.call_args.kwargs["retries"], 1)        # never sent twice
 
 
+class TestWebhookMalformedUrl(unittest.TestCase):
+    def test_a_malformed_url_is_a_failed_notification_not_a_crash(self):
+        """urllib raises ValueError before any request on a URL with no scheme; the daily run must not die on it."""
+        logging.disable(logging.NOTSET)
+        self.addCleanup(logging.disable, logging.CRITICAL)
+        with self.assertLogs("espero.notify", logging.WARNING):
+            self.assertFalse(notify.webhook("t", "m", url="hooks.example.com/no/scheme"))
+
+
 class TestRunnerLock(unittest.TestCase):
     def test_a_held_lock_refuses_and_a_stale_one_is_taken(self):
         with tempfile.TemporaryDirectory() as d:

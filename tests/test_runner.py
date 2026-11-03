@@ -60,6 +60,10 @@ class RunnerCase(unittest.TestCase):
         board = mock.patch.object(brd, "fetch_frames", return_value=({}, {}))
         board.start()
         self.addCleanup(board.stop)
+        # run_daily loads the checkout's .env: a test never reads the operator's real configuration
+        env = mock.patch("espero.broker.load_env")
+        env.start()
+        self.addCleanup(env.stop)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -138,6 +142,15 @@ class TestIsolation(RunnerCase):
             self.run_daily(notify=True)
         self.assertTrue(any("rebalance" in t for t in sent))
         self.assertTrue(any("failed" in t for t in sent))
+
+    def test_a_notification_that_raises_on_a_trade_note_does_not_fail_the_run(self):
+        """The trade note is sent outside the step's own try: a webhook that raises must still leave the step ok."""
+        with mock.patch.object(runner.notifier, "notify", side_effect=ValueError("unknown url type")), \
+             mock.patch.object(runner.tsm, "run", return_value={"note": "rebalance", "equity": 1.0}):
+            res = self.run_daily(notify=True)
+        self.assertTrue(res.steps["tsmom"].ok)
+        self.assertTrue(res.ok)
+        self.assertTrue((self.state / "health.json").exists())
 
     def test_mf_runs_twice_once_on_hyperliquid_prices(self):
         from espero import hyperliquid as hl

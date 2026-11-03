@@ -622,6 +622,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `listdrift_run.txt`
 - `listdrift_series.csv`
 
+## #68 — A cost curve by order size on Hyperliquid, from #51's book files
+
+*#68 (not in trials.csv)*
+
+- `PREREGISTRATION_COSTCURVE.md`
+- `costcurve.py`  (rule: `espero/costcurve.py`)
+
 ## Cross-cutting
 
 **The ledger of every test**

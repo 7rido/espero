@@ -7,6 +7,7 @@ answer can raise above the protocol's 4 hours but never lower.
 """
 from __future__ import annotations
 
+import math
 import re
 import subprocess
 import sys
@@ -57,11 +58,13 @@ def parse(kind: str, raw: str):
         return None
     if kind in ("usd", "number"):
         v = float(raw.replace(",", "").replace("$", ""))
-        if v < 0:
-            raise ValueError("a negative amount")
+        if not math.isfinite(v) or v < 0:
+            raise ValueError("an amount is a finite number, not negative")
         return v
     if kind == "fraction":
         v = float(raw.rstrip("%")) / (100.0 if raw.endswith("%") else 1.0)
+        if not math.isfinite(v):
+            raise ValueError("a drawdown is a finite number")
         if not -1.0 < v < 0.0:
             raise ValueError("a drawdown is a loss between 0 and -100 %")
         return v

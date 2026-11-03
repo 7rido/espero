@@ -82,6 +82,14 @@ class TestAnswers(unittest.TestCase):
         self.assertEqual(H.allocated_usd(d), 0.0)
         self.assertIsNone(H.answers(d)["stop_drawdown"])
 
+    def test_an_infinite_or_nan_amount_is_not_an_answer(self):
+        """capital=inf would make Account.base the whole equity: an allocation the holder never made."""
+        for bad in ("inf", "1e999", "nan", "-inf"):
+            d = doc({"capital_usd": bad, "stop_drawdown": "-15%"})
+            self.assertIn("capital_usd", " ".join(H.problems(d)), bad)
+            self.assertEqual(H.allocated_usd(d), 0.0, bad)
+        self.assertIn("stop_drawdown", " ".join(H.problems(doc({"stop_drawdown": "nan"}))))
+
     def test_a_lift_must_point_at_a_committed_file(self):
         self.assertIn("does not exist", " ".join(H.problems(doc({"mainnet_lift": "research/NO_SUCH_LIFT.md"}))))
         self.assertEqual(H.problems(doc({"mainnet_lift": "AGENTS.md"})), [])

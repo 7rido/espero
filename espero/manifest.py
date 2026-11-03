@@ -17,9 +17,13 @@ of a day is allowed to differ from the release's.
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
+import io
+import os
+import zipfile
 from pathlib import Path
-from typing import Dict, List
+from typing import Callable, Dict, List, Optional
 
 NAME = "MANIFEST.sha256"
 
@@ -41,13 +45,46 @@ def hashes(folder: Path) -> Dict[str, str]:
     return out
 
 
+def write_atomic(path: Path, data: bytes, check: Optional[Callable[[bytes], None]] = None) -> Path:
+    """Write `data` to `path` so a reader, or the next run, sees the whole file or none of it: a temporary file
+    beside it, flushed to disk, read back through `check` (which raises on a bad file), then renamed into place.
+    A crash or a failed check leaves the old file, or no file, never half of one: the recorders skip a day whose
+    file exists, so a truncated one used to stop every later run until someone deleted it by hand."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    try:
+        with open(tmp, "wb") as fh:
+            fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
+        if check is not None:
+            check(tmp.read_bytes())
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+    return path
+
+
+def gzip_whole(blob: bytes) -> None:
+    """A `check` for write_atomic: the gzip stream decompresses to its end."""
+    gzip.decompress(blob)
+
+
+def zip_whole(blob: bytes) -> None:
+    """A `check` for write_atomic: every member of the zip reads back with its CRC."""
+    with zipfile.ZipFile(io.BytesIO(blob)) as z:
+        bad = z.testzip()
+    if bad is not None:
+        raise zipfile.BadZipFile(f"member {bad} fails its CRC")
+
+
 def write(folder: Path) -> Path:
     """Write `folder/MANIFEST.sha256` and return its path. Lines are `<sha256>  <path>`, sorted."""
     folder = Path(folder)
     lines = [f"{h}  {rel}\n" for rel, h in sorted(hashes(folder).items())]
-    path = folder / NAME
-    path.write_text("".join(lines))
-    return path
+    return write_atomic(folder / NAME, "".join(lines).encode())
 
 
 def read(path: Path) -> Dict[str, str]:

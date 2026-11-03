@@ -37,6 +37,22 @@ class TestRecord(unittest.TestCase):
             self.assertEqual(len(calls), 3)
             self.assertEqual(len(pd.read_csv(lf.day_path(Path(d), pd.Timestamp("2026-10-31")))), 24)
 
+    def test_a_day_aggr_returns_empty_is_not_saved_and_the_step_says_so(self):
+        """An empty answer saved as the day's file would mark the day done for ever; a gap must stay visible."""
+        def fetch(start, end):
+            if start == pd.Timestamp("2026-10-31", tz="UTC"):
+                return pd.DataFrame(columns=aggr.COLUMNS)
+            return fake_fetch([])(start, end)
+        with tempfile.TemporaryDirectory() as d:
+            now = pd.Timestamp("2026-11-02 10:00", tz="UTC")
+            empty = []
+            saved = lf.record(Path(d), now, fetch, empty=empty)
+            self.assertEqual(saved, ["2026-10-30", "2026-11-01"])
+            self.assertEqual(empty, ["2026-10-31"])
+            self.assertFalse(lf.day_path(Path(d), pd.Timestamp("2026-10-31")).exists())
+            calls = []
+            self.assertEqual(lf.record(Path(d), now, fake_fetch(calls)), ["2026-10-31"])   # asked again, then saved
+
 
 class TestLedger(unittest.TestCase):
     def test_spike_bought_at_close_sold_4_hours_later(self):

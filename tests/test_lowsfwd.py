@@ -32,12 +32,23 @@ class TestRecord(unittest.TestCase):
         now = pd.Timestamp("2026-11-12 09:00", tz="UTC")
         published = {"2026-10-29", "2026-10-30", "2026-11-10"}
         with tempfile.TemporaryDirectory() as d, unittest.mock.patch.object(lf, "UNIVERSE", ["BTC"]):
-            c = lf.record(Path(d), now, lambda url: b"z" if url.rsplit("-5m-", 1)[1][:10] in published else None)
+            blob = zipped(pd.DataFrame())
+            c = lf.record(Path(d), now, lambda url: blob if url.rsplit("-5m-", 1)[1][:10] in published else None)
             self.assertEqual(c["saved"], 3)
             self.assertEqual(c["waiting"], 6)             # Nov 5-9 and 11: a week old or less, tried again tomorrow
             self.assertEqual(c["missing"], 5)             # Oct 31 - Nov 4: more than a week, given up on
             again = lf.record(Path(d), now, lambda url: None)
             self.assertEqual((again["saved"], again["waiting"], again["missing"]), (0, 6, 0))
+
+    def test_a_download_that_is_not_a_whole_zip_is_never_saved(self):
+        """A truncated download saved as the day's file would be skipped by every later run and break every
+        step that reads it; it is refused before it lands, and the day is asked again next run."""
+        now = pd.Timestamp("2026-11-12 09:00", tz="UTC")
+        with tempfile.TemporaryDirectory() as d, unittest.mock.patch.object(lf, "UNIVERSE", ["BTC"]):
+            whole = zipped(pd.DataFrame())
+            with self.assertRaises(zipfile.BadZipFile):
+                lf.record(Path(d), now, lambda url: whole[: len(whole) // 2])
+            self.assertEqual(list(Path(d).rglob("*.zip")) + list(Path(d).rglob("*.tmp")), [])
 
 
 class TestLedger(unittest.TestCase):

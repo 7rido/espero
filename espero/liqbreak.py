@@ -15,7 +15,7 @@ from typing import Callable, List, Optional
 
 import pandas as pd
 
-from . import aggr, liq, lowsfwd
+from . import aggr, liq, lowsfwd, manifest
 
 FORWARD_FROM = pd.Timestamp("2026-10-30", tz="UTC")
 FORWARD_TO = pd.Timestamp("2027-03-31", tz="UTC")
@@ -23,7 +23,8 @@ DATA = Path(__file__).resolve().parents[1] / "data" / "aggr" / "forward5m"
 LEDGER = "liqbreak_trades.csv"
 
 
-def record(data: Path = DATA, now: Optional[pd.Timestamp] = None, fetch: Callable = aggr.fetch) -> List[str]:
+def record(data: Path = DATA, now: Optional[pd.Timestamp] = None, fetch: Callable = aggr.fetch,
+           empty: Optional[List[str]] = None) -> List[str]:
     """Save each complete UTC day of aggr 5-minute bars not on disk yet."""
     now = pd.Timestamp.now(tz="UTC") if now is None else now
     saved, day = [], FORWARD_FROM
@@ -31,10 +32,15 @@ def record(data: Path = DATA, now: Optional[pd.Timestamp] = None, fetch: Callabl
         path = data / f"{day:%Y-%m-%d}.csv.gz"
         if not path.exists():
             df = fetch(day, day + pd.Timedelta(days=1), bar_ms=300_000)
-            path.parent.mkdir(parents=True, exist_ok=True)
+            if df.empty:
+                # aggr answered with no bars: saving it would mark the day done and never ask again
+                if empty is not None:
+                    empty.append(f"{day:%Y-%m-%d}")
+                day += pd.Timedelta(days=1)
+                continue
             buf = io.StringIO()
             df.sort_values(["market", "time"]).to_csv(buf, index=False)
-            path.write_bytes(gzip.compress(buf.getvalue().encode(), mtime=0))
+            manifest.write_atomic(path, gzip.compress(buf.getvalue().encode(), mtime=0), manifest.gzip_whole)
             saved.append(f"{day:%Y-%m-%d}")
         day += pd.Timedelta(days=1)
     return saved
@@ -80,7 +86,8 @@ def ledger(data: Path = DATA, bars_data: Path = lowsfwd.DATA) -> pd.DataFrame:
 
 
 def run(state_dir: Path, data: Path = DATA, now: Optional[pd.Timestamp] = None, fetch: Callable = aggr.fetch) -> dict:
-    saved = record(data, now, fetch)
+    empty: List[str] = []
+    saved = record(data, now, fetch, empty=empty)
     led = ledger(data)
     led.to_csv(Path(state_dir) / LEDGER, index=False, float_format="%.8g")
     note = f"mark: {len(led)} breaks on {led['day'].nunique() if len(led) else 0} days"
@@ -89,4 +96,8 @@ def run(state_dir: Path, data: Path = DATA, now: Optional[pd.Timestamp] = None, 
         if len(fd):
             mean = -float(fd.groupby("day")["y60"].mean().mean())
             note += f"; forced down-breaks bought: {len(fd)}, {1e4 * mean:+.1f} bps an hour (decides nothing)"
+    if empty:
+        # the ledger above is rebuilt from what is on disk; the step still fails, so the day is seen and retried
+        raise RuntimeError(f"aggr returned no bars for {', '.join(empty)}: not saved, asked again next run "
+                           f"(a day aggr no longer serves stays a gap; research/ERRATA.md, 2026-11-03). {note}")
     return {"note": note, "equity": None, "saved": saved}

@@ -937,8 +937,8 @@ class Recorder:
         lists = self.lists()
         try:
             inst = await asyncio.to_thread(okx_instruments, self.get)
-            (self.raw / "okx").mkdir(parents=True, exist_ok=True)
-            (self.raw / "okx" / "instruments.json").write_text(json.dumps({"ts": self.clock(), "instruments": inst}))
+            manifest.write_atomic(self.raw / "okx" / "instruments.json",
+                                  json.dumps({"ts": self.clock(), "instruments": inst}).encode())
         except Exception as exc:  # noqa: BLE001
             log.warning("okx instruments: %s", exc)
         self.books = self.free(self.raw) > FREE_FLOOR_GB

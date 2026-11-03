@@ -27,6 +27,8 @@ import urllib.request
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional
 
+from . import manifest
+
 BASE = "https://data.binance.vision/data/futures/um/daily/"
 LISTING = "https://s3-ap-northeast-1.amazonaws.com/data.binance.vision?delimiter=/&prefix=data/futures/um/{period}/"
 DATASETS = {
@@ -85,7 +87,7 @@ def fetch_one(raw: Path, dataset: str, symbol: str, day: str, get: Callable[[str
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_bytes(blob)
     tmp.replace(path)
-    (path.parent / (path.name + ".CHECKSUM")).write_text(f"{want}  {path.name}\n")
+    manifest.write_atomic(path.parent / (path.name + ".CHECKSUM"), f"{want}  {path.name}\n".encode())
     return "fetched"
 
 
@@ -139,8 +141,7 @@ def record_listing(raw: Path, get: Callable[[str], bytes] = _get, now: Optional[
     doc = {"checked_ts": now or int(time.time()), "datasets": found,
            "liquidation_dataset": any("liq" in d.lower() or "force" in d.lower() for v in found.values() for d in v)}
     path = Path(raw) / FOLDER / "datasets.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(doc, indent=1))
+    manifest.write_atomic(path, json.dumps(doc, indent=1).encode())
     return doc
 
 

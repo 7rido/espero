@@ -18,7 +18,7 @@ from typing import Callable, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from . import aggr, liqspike
+from . import aggr, liqspike, manifest
 
 FORWARD_FROM = pd.Timestamp("2026-10-30 00:00", tz="UTC")
 FORWARD_TO = pd.Timestamp("2027-03-31 23:00", tz="UTC")
@@ -32,7 +32,8 @@ def day_path(data: Path, day: pd.Timestamp) -> Path:
 
 
 def record(data: Path = DATA, now: Optional[pd.Timestamp] = None,
-           fetch: Callable = aggr.fetch, first: pd.Timestamp = FORWARD_FROM) -> List[str]:
+           fetch: Callable = aggr.fetch, first: pd.Timestamp = FORWARD_FROM,
+           empty: Optional[List[str]] = None) -> List[str]:
     """Save each complete UTC day from `first` to yesterday that is not on disk yet."""
     now = pd.Timestamp.now(tz="UTC") if now is None else now
     saved = []
@@ -41,10 +42,15 @@ def record(data: Path = DATA, now: Optional[pd.Timestamp] = None,
         path = day_path(data, day)
         if not path.exists():
             df = fetch(day, day + pd.Timedelta(days=1))
-            path.parent.mkdir(parents=True, exist_ok=True)
+            if df.empty:
+                # aggr answered with no bars: saving it would mark the day done and never ask again
+                if empty is not None:
+                    empty.append(f"{day:%Y-%m-%d}")
+                day += pd.Timedelta(days=1)
+                continue
             buf = io.StringIO()
             df.sort_values(["market", "time"]).to_csv(buf, index=False)
-            path.write_bytes(gzip.compress(buf.getvalue().encode(), mtime=0))
+            manifest.write_atomic(path, gzip.compress(buf.getvalue().encode(), mtime=0), manifest.gzip_whole)
             saved.append(day.strftime("%Y-%m-%d"))
         day += pd.Timedelta(days=1)
     return saved
@@ -80,7 +86,8 @@ def ledger(p: Dict[str, pd.DataFrame], side: str = "long") -> pd.DataFrame:
 
 def run(state_dir: Path, data: Path = DATA, now: Optional[pd.Timestamp] = None,
         fetch: Callable = aggr.fetch) -> dict:
-    saved = record(data, now, fetch)
+    empty: List[str] = []
+    saved = record(data, now, fetch, empty=empty)
     p = aggr.panel(load(data))
     parts = []
     for side, name in LEDGERS.items():
@@ -92,4 +99,8 @@ def run(state_dir: Path, data: Path = DATA, now: Optional[pd.Timestamp] = None,
             part += f" ({1e4 * float(led.groupby('day')['ret'].mean().mean()):+.1f} bps a day)"
         parts.append(part)
     note = "mark: " + "; ".join(parts) + " (paper, gross; decides nothing)"
+    if empty:
+        # the ledger above is rebuilt from what is on disk; the step still fails, so the day is seen and retried
+        raise RuntimeError(f"aggr returned no bars for {', '.join(empty)}: not saved, asked again next run "
+                           f"(a day aggr no longer serves stays a gap; research/ERRATA.md, 2026-11-03). {note}")
     return {"note": note, "equity": None, "saved": saved}

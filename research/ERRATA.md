@@ -5,6 +5,24 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
+## 2026-11-03: #22, #23, #27 and #32's recordings and joins: an empty aggr day is not saved; a stale funding rate is not "the last settlement"
+
+**No rule, threshold or criterion changes; plumbing fixes from the production-readiness audit (docs/AUDIT_PROD.md),
+before any verdict.** (1) `liqfwd.record` and `liqbreak.record` saved whatever aggr returned for a day, so an answer
+with no bars (aggr keeps 5-minute bars only for days, and may answer a day it no longer holds with nothing) was
+written as the day's file and never asked for again; its breaks then read zero liquidations and `liq.tag` ranked
+them "forced" on a day with one or two breaks. An empty answer is now not saved: the step fails, says which day, and
+asks again next run, so a day aggr no longer serves stays a visible gap, as AGENTS.md requires. No such day has been
+found on disk. (2) Every recording is now written whole or not at all (`manifest.write_atomic`): a file truncated by
+a crash used to be skipped by every later run and break every step that read it. (3) `fundsplit.attach` (#32) took
+"the last settlement at or before the break" with no bound, so until Binance's archive publishes the current month
+every break in it carried last month's final rate. The join now looks back at most one funding interval (9 hours
+covers the 8-hour and 4-hour coins), so such a break has no rate yet and is dropped, as FORWARD_FUNDSPLIT.md's
+"a break whose funding is missing is dropped" says, until the month is published; with the archive complete the
+reading is unchanged. **Not changed, for #45's owner:** `liqhold` charges no funding when the archive has no
+settlement inside a hold (`horizons.funding_over`, #43's frozen code), so a current-month trade's net reads high
+until the month is published; the final ledger is rebuilt after the window and is right then.
+
 ## 2026-11-03: #4's paper account rolled its share counts from a forming bar; anchored on a closed bar from now on
 
 **No rule, weight, cost or criterion changes; a plumbing fix to the running paper account, found by the

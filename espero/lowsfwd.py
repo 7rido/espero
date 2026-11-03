@@ -18,7 +18,7 @@ from typing import Callable, Dict, List, Optional
 
 import pandas as pd
 
-from . import liq, lows
+from . import liq, lows, manifest
 from .xs import UNIVERSE
 
 FORWARD_FROM = "2026-10-30"
@@ -61,7 +61,7 @@ def record(data: Path = DATA, now: Optional[pd.Timestamp] = None, fetch: Callabl
             blob = fetch(URL.format(sym=sym, day=day))
             path.parent.mkdir(parents=True, exist_ok=True)
             if blob is not None:
-                path.write_bytes(blob)
+                manifest.write_atomic(path, blob, manifest.zip_whole)
                 counts["saved"] += 1
             elif (now.tz_convert(None) - pd.Timestamp(day)).days > GIVE_UP_DAYS:
                 none.write_text("")

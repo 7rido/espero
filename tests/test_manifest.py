@@ -91,6 +91,23 @@ class TestProvenance(unittest.TestCase):
             self.assertIn(folder, paths, folder)
         self.assertIn("espero.manifest write", script)
 
+    def test_write_atomic_leaves_the_old_file_or_none_never_half(self):
+        import gzip
+        import zipfile
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "sub" / "day.csv.gz"
+            manifest.write_atomic(path, gzip.compress(b"a,b\n1,2\n"), manifest.gzip_whole)
+            self.assertEqual(gzip.decompress(path.read_bytes()), b"a,b\n1,2\n")
+            whole = gzip.compress(b"x" * 10_000)
+            with self.assertRaises(EOFError):
+                manifest.write_atomic(path, whole[: len(whole) // 2], manifest.gzip_whole)
+            self.assertEqual(gzip.decompress(path.read_bytes()), b"a,b\n1,2\n")     # the old file stands
+            self.assertEqual([p.name for p in path.parent.iterdir()], ["day.csv.gz"])  # no .tmp left behind
+            fresh = Path(d) / "new.zip"
+            with self.assertRaises(zipfile.BadZipFile):
+                manifest.write_atomic(fresh, b"PK\x03\x04 not a zip", manifest.zip_whole)
+            self.assertFalse(fresh.exists())
+
     @unittest.skipUnless(shutil.which("bash") and shutil.which("tar"), "needs bash and tar")
     def test_fetch_script_refuses_a_release_with_a_file_outside_the_live_folders(self):
         """A release is integrity-checked against its own sha256, never authenticated: a member outside data/'s

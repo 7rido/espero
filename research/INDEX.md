@@ -640,6 +640,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `PREREGISTRATION_OPALPHA.md`
 - `PREREGISTRATION_OPALPHA.md.ots`
 
+## #70 — Edgewatch: the live stop rule, is this sleeve still the registered edge?
+
+*#70 forward_pending*
+
+- `PREREGISTRATION_EDGEWATCH.md`
+- `PREREGISTRATION_EDGEWATCH.md.ots`
+
 ## #72 — Open interest as a next-day cascade forecast, beyond volatility
 
 *#72 fail*

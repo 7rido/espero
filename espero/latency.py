@@ -293,6 +293,10 @@ ROWS: Tuple[Row, ...] = (
         "each override of an operator-paced proposal, against the paper twin", "the approvals ledger, the twin",
         "none", None, "a measurement", "none", None, False, "nothing until a sleeve is live", None, False,
         "a measurement, information only", NOT_TRADABLE),
+    Row("70", "edgewatch, the live stop rule", "research/PREREGISTRATION_EDGEWATCH.md",
+        "each live observation of a sleeve, against its registered edge", "the sleeve's net series",
+        "none", None, "a rule acting through the risk gate", "none", None, False, "nothing until a sleeve is live",
+        None, False, "a rule, not a trade: it halves or flattens a live sleeve through its scale", NOT_TRADABLE),
 )
 
 

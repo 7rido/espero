@@ -80,6 +80,7 @@ the verdict.
 | 65 | a sharp 5-minute fall read by open interest | a 5-minute context slot: a fall in the coin's 2 % tail with open interest down 1 % (long) or up 1 % (short), day volume $5M+; known at A = ts + 120 s | hlcollect's context slots, candles | 5 min | hlcollect, 60 s | nothing before its verdict (espero oi5m --verdict) | **live-from-tape** |
 | 66 | HAR volatility forecast | Sunday's forecast of next week's variance | Binance 5-minute bars | — | — | done once | **not tradable live** |
 | 69 | operator alpha | each override of an operator-paced proposal, against the paper twin | the approvals ledger, the twin | — | — | nothing until a sleeve is live | **not tradable live** |
+| 70 | edgewatch, the live stop rule | each live observation of a sleeve, against its registered edge | the sleeve's net series | — | — | nothing until a sleeve is live | **not tradable live** |
 
 **Why each class, and what stands between a PASS and a live order, rule by rule.** The steps every tradable rule shares are listed after this table; these are its own.
 
@@ -114,6 +115,7 @@ the verdict.
 | 65 | live-from-tape | the slot is on disk before A | the entry candle must start within 5 min of the signal time (hlpbook.FILL_TOLERANCE_S, the rule's own drop clause), from A | a live evaluator: today it is computed only at the verdict; auto-only: its budget is shorter than an operator's answer, so it needs the holder's separate decision to let the machine place orders unattended |
 | 66 | not tradable live | a forecast: 'No trade'; it changes no running book unless a new number says so | a forecast, no trade | — |
 | 69 | not tradable live | a measurement, information only | a measurement | — |
+| 70 | not tradable live | a rule, not a trade: it halves or flattens a live sleeve through its scale | a rule acting through the risk gate | — |
 
 **Shared by every tradable rule, in the order they would be met:**
 
@@ -125,7 +127,7 @@ the verdict.
 6. the holder's written lift of the no-mainnet rule and a mainnet module built from DESIGN_MAINNET_PATH.md
 7. edgewatch's parameters from its verdict window (#70)
 
-Counts: live-from-tape 9, operator-paced 4, next-day-batch 3, not tradable live 13.
+Counts: live-from-tape 9, operator-paced 4, next-day-batch 3, not tradable live 14.
 <!-- latency:end -->
 
 ## What the audit found, information only

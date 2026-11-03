@@ -58,6 +58,19 @@ class TestStep(unittest.TestCase):
         self.assertEqual(s, G.State("canary", 0.0, 1))
         self.assertEqual(G.step(s, block(breaks=1)), G.State("testnet", 0.0, 0))
 
+    def test_an_empty_block_is_not_judged(self):
+        """No fills means no median (NaN): that is nothing measured, not a breach, so two empty blocks in a row
+        must not send a canary back to testnet. A break or an alarm in an empty block still counts."""
+        s = G.State("canary")
+        empty = block(fills=0, shortfall=float("nan"))
+        self.assertEqual(G.step(s, empty), s)
+        self.assertEqual(G.step(G.step(s, empty), empty), s)
+        self.assertEqual(G.step(s, block(fills=0, shortfall=float("nan"), breaks=1)), G.State("canary", 0.0, 1))
+
+    def test_a_block_with_no_budget_is_a_breach(self):
+        self.assertIn("no budget", G.breach(block(budget=float("nan"))))
+        self.assertIn("no budget", G.breach(block(shortfall=50.0, budget=float("nan"))))
+
     def test_paper_and_testnet_move_by_the_holders_decision_only(self):
         for r in ("paper", "testnet"):
             with self.assertRaises(ValueError):

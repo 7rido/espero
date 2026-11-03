@@ -45,6 +45,8 @@ def breach(block: Block) -> Optional[str]:
         return f"{block.breaks} reconciliation break(s)"
     if block.edgewatch_alarm:
         return "an edgewatch alarm (#70)"
+    if not math.isfinite(block.budget_bps):
+        return f"no budget to judge the shortfall against ({block.budget_bps})"
     if not math.isfinite(block.median_shortfall_bps) or block.median_shortfall_bps > block.budget_bps:
         return f"median shortfall {block.median_shortfall_bps:.1f} bps over the {block.budget_bps:.1f} bps budget"
     return None
@@ -54,6 +56,8 @@ def step(state: State, block: Block) -> State:
     """The rung after one block. Paper and testnet are left by the holder's decision, not by this rule."""
     if state.rung not in ("canary", "scaled", "target"):
         raise ValueError(f"{state.rung}: only the mainnet rungs move by blocks of fills")
+    if block.fills <= 0 and block.breaks == 0 and not block.edgewatch_alarm:
+        return state                                   # nothing measured yet: no median to judge, no move
     why = breach(block)
     if why is None and block.fills < CANARY_FILLS:
         return state                                   # not a full block yet: no move

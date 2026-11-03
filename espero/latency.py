@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from . import carry_paper, hlpbook, rawrec
+from . import carry_paper, hlpbook, holder, rawrec
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "research" / "LIVE_LATENCY.md"
@@ -306,9 +306,11 @@ def ledger_numbers(trials: Path = TRIALS, statuses=("pass", "provisional", "forw
 
 
 def problems(rows: Iterable[Row] = ROWS, trials: Path = TRIALS, root: Path = ROOT,
-             operator_s: float = OPERATOR_RESPONSE_S) -> List[str]:
+             operator_s: Optional[float] = None) -> List[str]:
     """Everything that would make the table wrong: a forward rule or pass without a row, a class that does not
-    follow from the numbers, a feed that is not one, a document that does not exist."""
+    follow from the numbers, a feed that is not one, a document that does not exist. The operator is the holder's
+    (docs/HOLDER_INPUTS.md): the protocol's 4 hours, or slower if the holder says so."""
+    operator_s = holder.operator_response_s() if operator_s is None else operator_s
     rows = list(rows)
     out = []
     have = by_test(rows)

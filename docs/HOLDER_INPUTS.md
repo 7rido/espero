@@ -28,7 +28,7 @@ copy outside a git checkout, allocates nothing and makes no venue eligible.
 | `tax_and_licensing_checked` | Have you checked your own country's tax and licensing rules for perpetual futures? | yes | no: no venue may be used |
 | `operator_hours_per_week` | How many hours a week will you give the operator's role? | 40 | 0: operator-paced rules are not traded |
 | `operator_response_hours` | When you are on duty, how fast do you answer a proposal, in hours? | 0.1667 | 4 hours, the protocol's |
-| `min_capital_usd` | Below what capital is running this not worth it to you? | | not given: no sizing document can say it is worth running |
+| `min_capital_usd` | Below what capital is running this not worth it to you? | 0 | not given: no sizing document can say it is worth running |
 | `venue_loss_usd` | How much could you lose to one venue failing outright? | 5 | not given: research/RISK_POLICY.md's 50 % per venue stands alone |
 | `data_budget_usd_month` | How much a month will you pay for data or an always-on machine? | 0 | 0: nothing is bought |
 | `totp_set_up` | Have you set up the operator's one-time-code secret (docs/OPERATOR.md)? | yes | no: no approval can be given |

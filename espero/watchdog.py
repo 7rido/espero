@@ -245,6 +245,14 @@ def write_state(state_dir: Path, checks: List[Check], memory: dict, now: float) 
     return path
 
 
+def read_checks(state_dir: Path) -> List[Check]:
+    try:
+        rows = json.loads((state_dir / STATE).read_text(encoding="utf-8")).get("checks", [])
+        return [Check(**r) for r in rows]
+    except (OSError, ValueError, TypeError):
+        return []
+
+
 def read_memory(state_dir: Path) -> dict:
     try:
         return json.loads((state_dir / STATE).read_text(encoding="utf-8")).get("alarms", {})
@@ -322,7 +330,7 @@ def main(argv=None) -> int:
         if not ack(memory, a.ack):
             print(f"no alarm named {a.ack}", file=sys.stderr)
             return 2
-        write_state(state_dir, [], memory, time.time())
+        write_state(state_dir, read_checks(state_dir), memory, time.time())   # --status still shows the last pass
         return 0
     if a.drill_report:
         since = calendar.timegm(time.strptime(a.drill_report, "%Y-%m-%dT%H:%M"))

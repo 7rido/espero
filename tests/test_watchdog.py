@@ -148,6 +148,18 @@ class TestEscalation(unittest.TestCase):
         sends, st = W.escalate(self.failing(), st, NOW + 3_600)
         self.assertEqual(sorted(s[0] for s in sends), ["macos", "webhook"])
 
+    def test_the_ack_command_keeps_the_last_checks(self):
+        """`--ack` rewrote watchdog.json with no checks, so --status showed none until the next pass."""
+        with tempfile.TemporaryDirectory() as d:
+            state = Path(d)
+            checks = [W.Check("rawrec:okx", False, "newest 900 s ago", 900.0, 120.0)]
+            W.write_state(state, checks, {"rawrec:okx": {"since": 1.0, "macos": 1.0, "webhook": None,
+                                                         "acked": False}}, 2.0)
+            self.assertEqual(W.main(["--ack", "rawrec:okx", "--state-dir", d]), 0)
+            doc = json.loads((state / W.STATE).read_text())
+            self.assertTrue(doc["alarms"]["rawrec:okx"]["acked"])
+            self.assertEqual([c["name"] for c in doc["checks"]], ["rawrec:okx"])
+
     def test_an_acknowledged_alarm_is_quiet_until_it_recovers(self):
         _, st = W.escalate(self.failing(), {}, NOW)
         self.assertTrue(W.ack(st, "rawrec:okx"))

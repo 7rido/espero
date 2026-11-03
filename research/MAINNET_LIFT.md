@@ -2,7 +2,7 @@
 
 **Written by the account holder on 2026-11-03, in their own words, and committed with their signature.** research/DESIGN_MAINNET_PATH.md, guard 3, reads the block below; the words above it are the holder's and nobody else's.
 
-lifting the rule for a plumbing canary on rule 8
+lift the no-mainnet rule for a plumbing canary on rule 8, Hyperliquid only
 
 <!-- answers:start -->
 | id | answer |

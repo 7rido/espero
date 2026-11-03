@@ -139,11 +139,18 @@ mirror, behind three guards that refuse anything but a testnet URL. A real order
 holder's own act, placed outside this repo with their own keys. `.env.example` lists every variable
 the repo reads, and none of them can move money.
 
+What a pass would still need before any live order is built and tested without one: the path is
+[docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md#from-a-verdict-to-an-order), how size would grow is
+[research/DEPLOYMENT_LADDER.md](research/DEPLOYMENT_LADDER.md), and the mainnet order module is
+[research/DESIGN_MAINNET_PATH.md](research/DESIGN_MAINNET_PATH.md), a design only, not built unless the
+holder lifts the rule in a committed document in their own words.
+
 ## What it does not do (yet)
 
-No reconciliation against a venue on boot, no exchange-side stop orders, no funding, no partial
-fills. That is deliberate: those belong *below* the strategy layer, and the roadmap adds them with
-tests instead of adding them as decoration. See [Roadmap](#roadmap).
+No exchange-side stop orders, and no order on a live account. Reconciliation on start
+(`reconcile.startup`), partial fills and restarts (`espero/replay_stack.py`) and funding in the P&L
+(`espero/attribution.py`) are built, below the strategy layer, and tested on recorded books and the
+testnet only. See [Roadmap](#roadmap).
 
 ## Factor research
 
@@ -705,10 +712,14 @@ espero/
 - [x] SQLite journal: bars, signals, orders, fills, positions, equity
 - [x] Restart-safe paper trader on live candles, with a pre-trade risk gate
 - [x] Broker interface behind one protocol, with `client_order_id` idempotency
-- [x] Live path with dry-run, kill switch, notional cap and daily loss limit
-- [ ] Reconciliation against a real venue on boot
+- [ ] A live path: `espero live` was removed on 2026-11-01, never reconciled against a venue. Its
+  replacement is built and tested without a mainnet order: latency classes, the operator protocol, the
+  account gate, the ladder, the watchdog and the full-stack replay (docs/HOW_IT_WORKS.md)
+- [x] Reconciliation on start against the venue's positions and open orders (`reconcile.startup`); no
+  live account yet
 - [ ] Exchange-side stop orders (so the stop survives a crash)
-- [ ] Kill switch: daily loss cap, max open risk, max orders/minute
+- [ ] Kill switch: the day and week stops, the caps and the KILL file are in the account gate
+  (`risk.check`, research/RISK_POLICY.md); a cap on orders per minute is not
 - [x] TCA report per paper account (`tca.py`, on the dashboard)
 - [x] Scheduled run with health file, lock and notifications (launchd on a Mac, Docker anywhere)
 - [x] Retrying HTTP with a cached fallback; degraded-universe guard
@@ -731,8 +742,20 @@ your actual fee tier.
 - [docs/DATA.md](docs/DATA.md) — getting the data: what's committed, what each script downloads,
   and what can only be recorded live.
 - [docs/CHEATSHEET.md](docs/CHEATSHEET.md) — the two commands you need, and the drawers you don't.
+- [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) — how a recording becomes a verdict, and what stands
+  between a verdict and an order.
 - [research/FORWARD_FAMILY.md](research/FORWARD_FAMILY.md) — what a forward test's pass leads to.
 - [research/VENUE_NONUS.md](research/VENUE_NONUS.md) — venues for an account holder outside the US.
+- [docs/HOLDER_INPUTS.md](docs/HOLDER_INPUTS.md) — the account holder's answers (capital, drawdown stop,
+  venues, hours, the no-mainnet rule); until answered, every order is refused.
+- [docs/OPERATOR.md](docs/OPERATOR.md) — the operator's protocol: proposals, one-time codes, timeouts.
+- [docs/API_KEYS.md](docs/API_KEYS.md) — how the holder makes and keeps venue keys, never in the repo.
+- [research/LIVE_LATENCY.md](research/LIVE_LATENCY.md) — how late each forward rule may act, and its class.
+- [research/RISK_POLICY.md](research/RISK_POLICY.md) — the account's caps and stops, as the gate enforces them.
+- [research/DEPLOYMENT_LADDER.md](research/DEPLOYMENT_LADDER.md) — paper twin, testnet, canary, scaled,
+  target; [research/TEMPLATE_SIZING.md](research/TEMPLATE_SIZING.md) is the sizing document a pass needs.
+- [research/DESIGN_MAINNET_PATH.md](research/DESIGN_MAINNET_PATH.md) — the mainnet order module, as a
+  design only.
 
 ## License
 

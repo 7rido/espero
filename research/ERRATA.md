@@ -5,6 +5,14 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
+## 2026-11-02: #69 reads its overrides from `state/approvals.db`, not "the sleeve's journal"
+
+**No unit, rule or reading changes; written before any sleeve exists, so before any override.**
+`PREREGISTRATION_OPALPHA.md` (#69, stamped) takes the overrides from "`approval_events` in the sleeve's journal".
+As built (`espero/approvals.py`, `LEDGER`; docs/OPERATOR.md), `approval_events` is one ledger for every
+operator-paced sleeve, `state/approvals.db`, append-only and hash-chained as registered; each event's proposal
+names its sleeve, and #69 reads that sleeve's events from it.
+
 ## 2026-11-02: Binance's trade stream carries zero-price records; #71's engine skips them, #61's rebuild counts them
 
 **No tolerance or criterion changes; written while building #71's engine, before any day was compared.** Binance's

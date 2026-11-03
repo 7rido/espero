@@ -54,7 +54,70 @@ capacity), reported, not decisive; and #63 fixes, before any two passes exist, h
 account (`research/PREREGISTRATION_SLEEVES.md`).
 
 What is deliberately **not** on the path: a mainnet order. The only signing code is the Hyperliquid
-testnet mirror for #12's maker book. A real order is the account holder's act, outside this repo.
+testnet mirror for #12's maker book. A real order is the account holder's act, outside this repo. The next
+section is what stands between a verdict and that act.
+
+## From a verdict to an order
+
+A PASS is not an order. Every step between a verdict and a sized order is built and tested before any verdict
+exists, on recorded tape and the testnet, so a pass changes numbers in documents, not code. None of it can place
+a mainnet order; research/DESIGN_MAINNET_PATH.md describes the module that would, as a design only.
+
+```mermaid
+flowchart LR
+    V["a PASS<br/>research/trials.csv"] --> Z["sizing document<br/>research/TEMPLATE_SIZING.md"]
+    Z --> C{"latency class<br/>research/LIVE_LATENCY.md"}
+    C -->|operator-paced| P["proposal, answered with a one-time code<br/>espero/approvals.py, docs/OPERATOR.md"]
+    C -->|live-from-tape| E["streaming engine, #71<br/>espero/livesig.py"]
+    C -->|next-day batch, not tradable live| X[no live order]
+    P --> G["account gate<br/>risk.check, research/RISK_POLICY.md"]
+    E --> G
+    G --> R["the ladder's rung<br/>research/DEPLOYMENT_LADDER.md"]
+    R -->|rungs 0 and 1| T["paper twin, testnet<br/>espero/hl_exchange.py"]
+    R -.->|"rung 2 on: the holder's written lift first<br/>research/DESIGN_MAINNET_PATH.md, not built"| M[mainnet order]
+    T --> W["watchdog, reconcile.startup, attribution, edgewatch #70<br/>scale down, never up"]
+    W -.-> G
+```
+
+1. **The sizing document.** A pass leads, as research/FORWARD_FAMILY.md says, to a sizing-and-execution
+   document written from research/TEMPLATE_SIZING.md: the verdict and its cluster, the latency class, the
+   operator mode, the venue and its measured costs, #62's fill error, #63's weight, the readouts at size
+   (research/ROBUSTNESS_LIVE.md), edgewatch's parameters, the caps, the ladder plan and the holder's sign-off.
+2. **How late it may act.** research/LIVE_LATENCY.md gives each forward rule a budget (the document's own
+   tolerance, else the entry delay plus 5 % of the hold) and derives its class from the feeds that exist
+   (`espero/latency.py`, `classify`): *operator-paced* when a human has time (the feed plus four hours fits the
+   budget), *live-from-tape* when only the machine reading the recorder's tape does, *next-day batch* when only
+   the 07:30 run can, *not tradable live* when the event is not knowable at its decision time. Each row lists
+   what still stands between a PASS and a live order. A new forward rule cannot be added without its row.
+3. **Who decides.** An operator-paced rule goes through docs/OPERATOR.md: the machine proposes (rule, size from
+   the gate, price, costs, stop, expiry), the operator answers with a one-time code (`espero approve`),
+   silence means no entry, and an exit never waits for an answer. Every proposal and answer is an event in a
+   hash-chained ledger (`espero/approvals.py`); what the overrides earn against the rule is #69. A
+   live-from-tape rule is the streaming engine's (#71, `espero/livesig.py`): the operator watches, kills and
+   answers alarms.
+4. **The account gate.** Every order a venue would see passes `risk.check` (research/RISK_POLICY.md): the
+   capital from docs/HOLDER_INPUTS.md (0 until the holder answers, so every order is refused today), leverage
+   1, 20 % per coin, 50 % per venue, the distance to liquidation, the funding paid, the day and week stops, open
+   breaks and the KILL and `.pause` files. Each ruling carries the policy's hash.
+5. **The ladder.** research/DEPLOYMENT_LADDER.md, with `espero/rungs.py`: the paper twin from the day after the
+   verdict, then the testnet (50 round trips, every fault below drilled), then a canary at the venue's minimum,
+   then 10 % of the target, doubled after each clean block of 30 fills, up to the target the sizing document
+   fixed. The canary needs the holder's committed lift of the no-mainnet rule; until then the ladder stops at
+   the testnet.
+6. **Watching it run.** `espero watchdog` alarms on silence (the recorders, the daily run, the loops, the
+   disk, and the clock: past one second off, trading is refused); `reconcile.startup` sets the journal against
+   the venue before the first order after any start; `espero/attribution.py` splits each sleeve's P&L into
+   fees, funding and slippage against its paper twin and pauses entries on an equity break; from the canary,
+   #70's edgewatch (`espero/edgewatch.py`) halves a sleeve whose edge has gone and flattens it on a second
+   alarm. Nothing on this path raises size.
+7. **Rehearsed first.** `espero/replay_stack.py` runs the path in miniature on recorded books with seven
+   faults injected (dropped frames, a silent venue, a partial fill, a restart mid-order, an unknown position,
+   clock skew, stale input), each held by a test; `espero replay-stack --day DAY` runs a recorded day's #71
+   events through it.
+
+What only the holder decides is in docs/HOLDER_INPUTS.md: the capital, the drawdown at which they stop, the
+venues they may use, the hours for the operator role, the machine's autonomy for live-from-tape rules, and
+whether to lift the no-mainnet rule, in their own words.
 
 ## Where a thing lives
 
@@ -71,6 +134,7 @@ testnet mirror for #12's maker book. A real order is the account holder's act, o
 | the raw tape | `$ESPERO_RAW_DIR/<venue>/<day>/` | `espero rawrec`, `MANIFEST.sha256` per day; not in the release |
 | the ledger of tests | `research/trials.csv` | `espero/trials.py`, `research/fdr_rescore.py` |
 | the current state of everything | `docs/STATUS.md` | `scripts/status.py` (generated) |
+| a step from a verdict to an order | `espero/<name>.py` in the `live` layer, its document in `docs/` or `research/` | `espero/layers.py` ("live"), `tests/test_<name>.py` |
 
 ## Adding a test, a signal or a finding
 

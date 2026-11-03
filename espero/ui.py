@@ -765,6 +765,13 @@ def act_readout(console, state):
     _page(console, RESEARCH / "OPERATOR_READOUT.md")
 
 
+def act_holder(console, state):
+    """docs/HOLDER_INPUTS.md as a guided form: capital, venues, the operator's hours, and the lift if chosen."""
+    from . import holderform
+
+    holderform.run()
+
+
 def act_approvals(console, state):
     """Proposals waiting for the operator (docs/OPERATOR.md). A reply goes with the code the authenticator app
     shows; the sleeve runner checks it and journals the answer."""
@@ -839,6 +846,7 @@ MENU: List[Tuple[str, Callable]] = [
      "judged after March 2027", act_forward),
     ("Reading the market: what usually follows, and what orders cost (#51-#57, context, not signals)", act_readout),
     ("Research results: measured costs and every test's verdict (reads files only)", act_findings),
+    ("Your answers: capital, venues, your hours, the lift (docs/HOLDER_INPUTS.md)", act_holder),
     ("Approvals: proposals waiting for your answer and one-time code (docs/OPERATOR.md)", act_approvals),
     ("Factor IC table (research)", act_factors),
     ("Run the tests", act_tests),

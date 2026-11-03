@@ -1469,6 +1469,17 @@ def _cmd_approve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_holder(args: argparse.Namespace) -> int:
+    """The holder's answers: what the code reads, or the guided form that fills them."""
+    if args.fill:
+        from . import holderform
+
+        return holderform.run()
+    from . import holder
+
+    return holder.main([])
+
+
 def _cmd_watchdog(args: argparse.Namespace) -> int:
     """The silence alarm (espero/watchdog.py): check once and escalate, or show, acknowledge, or report a drill."""
     from . import watchdog
@@ -2009,6 +2020,10 @@ def build_parser() -> argparse.ArgumentParser:
     apv.add_argument("--notional", type=float, help="modify: the smaller size in USD")
     apv.add_argument("--state-dir", default=None)
     apv.set_defaults(func=_cmd_approve)
+
+    hd = sub.add_parser("holder", help="your answers (capital, venues, the lift): what the code reads, or --fill")
+    hd.add_argument("--fill", action="store_true", help="the guided form: one question at a time, checked, signed")
+    hd.set_defaults(func=_cmd_holder)
 
     wd = sub.add_parser("watchdog",
                         help="the silence alarm: recorders, loops, the daily run, disk and clock (never trades)")

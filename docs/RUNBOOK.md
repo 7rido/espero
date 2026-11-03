@@ -300,17 +300,20 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-deribit-la
 
 `espero livesig --loop` reads the Binance tape the recorder writes and, as each 5-minute bar closes, emits the
 events of #24, #29, #31 and #34 that the batch would find a day later: rule, coin, side, time, and when the engine
-knew. It appends them to `state/livesig_events.csv` and keeps no return. It opens no connection to any venue, places
-nothing, and is information only (research/PREREGISTRATION_LIVESIG.md). `espero livesig --replay DAY` shows what a
-running engine emitted on a recorded day, and `--compare DAY` sets those events against the next-day batch's. The
-account holder installs the loop:
+knew. It appends them to `state/livesig_events.csv` and keeps no return. Since nothing else is written until an event
+fires, it also writes where it is to `state/livesig.heartbeat.json` every 30 seconds, which the watchdog reads (the
+`livesig` check below). It opens no connection to any venue, places nothing, and is information only
+(research/PREREGISTRATION_LIVESIG.md). `espero livesig --replay DAY` shows what a running engine emitted on a recorded
+day, and `--compare DAY` sets those events against the next-day batch's. The account holder installs the loop:
 
 ```bash
 cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp/Espero Trading QuantBot/espero-raw" ./scripts/install-livesig-launchd.sh
 ```
 
 It reads the tape; it is not a second recorder. Removing it is the same script with `--uninstall`. A replay reads a
-day of Binance tape (about four minutes on this Mac).
+day of Binance tape (about four minutes on this Mac). A running engine keeps the code it started with; the install
+line, run again, restarts it on the current code. Each start reads yesterday's whole tape first: about five minutes
+at full CPU, and a peak near 1 GB while it catches up with the current hour.
 
 ## The full-stack replay
 
@@ -344,6 +347,7 @@ allowance:
 | `recorder:hlcollect`, `hlbook`, `deribit` | the newest file in that folder's latest day | 15 minutes |
 | `daily` | `health.json`'s `last_run`, and every step `ok` | 26 hours |
 | `agent:<label>` | launchd's own state for each always-on agent | must say `running` |
+| `livesig` | #71's engine's heartbeat, `state/livesig.heartbeat.json`, written every 30 s | 10 minutes without one, or its last frame 10 minutes behind a Binance tape still being written; 15 minutes after a start |
 | `disk` | free space where the tape is written | 30 GB, the recorder's own floor |
 | `clock` | this Mac against `time.apple.com` (SNTP) | 250 ms warns; past 1 s **trading is refused** |
 

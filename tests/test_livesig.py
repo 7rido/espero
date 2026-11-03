@@ -1,5 +1,7 @@
 """#71's streaming engine on synthetic trades only: it emits exactly what the batch functions find on the same bars."""
+import csv
 import datetime as dt
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -219,6 +221,44 @@ class TestReplayFromTape(unittest.TestCase):
             self.assertEqual(sorted(e.key for e in live), sorted(e.key for e in want))
             closed = L.tape_bars(raw, ["2026-11-10"])["BTC"]
             pd.testing.assert_frame_equal(closed, bars, check_dtype=False, check_names=False)
+
+
+class TestLoop(unittest.TestCase):
+    def test_it_appends_what_the_engine_emits(self):
+        bars = crash_bars(crash_at=119)                                  # the trigger is the last bar, so only ...
+        trades = trades_of(bars, "BTC")
+        end = (int(bars.index[-1]) + 3_600) * 1000                       # ... a quiet tape's clock closes it
+        _, want = run(trades + [{"rt": end}], coins=L.COINS)
+        ticks = iter([trades[0]["rt"]] + [r["rt"] for r in trades] + [end])
+        with tempfile.TemporaryDirectory() as d:
+            L.loop(Path(d), Path(d), clock=lambda: next(ticks), records=trades + [None], warm={},
+                   pause=lambda s: None)
+            with open(Path(d) / L.EVENTS, newline="", encoding="utf-8") as fh:
+                got = [(r["rule"], r["coin"], r["side"], int(r["ts"])) for r in csv.DictReader(fh)]
+            hb = json.loads((Path(d) / L.HEARTBEAT).read_text(encoding="utf-8"))
+        self.assertIn("24", {k[0] for k in got})
+        self.assertEqual(sorted(got), sorted(e.key for e in want))
+        self.assertEqual(hb["tape_ms"], trades[-1]["rt"])               # a quiet tape moves the clock, not the tape
+
+    def test_it_says_where_it_is_before_the_warm_up_and_every_30_seconds(self):
+        t = (T0 + 100) * 1000                                            # mid-bar: nothing closes
+        ticks = iter(range(t, t + 100_000, 10_000))                      # each look at the clock is 10 s later
+        seen, paused = [], []
+        with tempfile.TemporaryDirectory() as d:
+            heart = Path(d) / L.HEARTBEAT
+
+            class Warm(dict):
+                def items(self):
+                    seen.append(json.loads(heart.read_text(encoding="utf-8")))
+                    return super().items()
+
+            records = [{"rt": t + 5_000, "ch": "depth"}, None, {"rt": t + 25_000, "ch": "depth"}, None, None]
+            L.loop(Path(d), Path(d), clock=lambda: next(ticks), records=records, warm=Warm(), pause=paused.append)
+            last = json.loads(heart.read_text(encoding="utf-8"))
+            self.assertFalse((Path(d) / L.EVENTS).exists())
+        self.assertEqual(seen, [{"started_ms": t, "tape_ms": None, "written_ms": t}])
+        self.assertEqual(last, {"started_ms": t, "tape_ms": t + 25_000, "written_ms": t + 30_000})
+        self.assertEqual(paused, [0.5, 0.5, 0.5])
 
 
 if __name__ == "__main__":

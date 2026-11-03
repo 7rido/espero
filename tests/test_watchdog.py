@@ -205,6 +205,68 @@ class TestDrill(unittest.TestCase):
             self.assertEqual(r["first_missing"], ["2026-11-02 0020"])
 
 
+class TestLivesig(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.state = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def beat(self, started, written, tape):
+        hb = {"started_ms": started * 1000, "written_ms": written * 1000,
+              "tape_ms": None if tape is None else tape * 1000}
+        (self.state / W.LIVESIG_HEARTBEAT).write_text(json.dumps(hb))
+
+    def ok(self, tape_newest):
+        return W.check_livesig(NOW, self.state, tape_newest).ok
+
+    def test_the_file_is_the_one_the_engine_writes(self):
+        from espero import livesig
+        self.assertEqual(W.LIVESIG_HEARTBEAT, livesig.HEARTBEAT)
+
+    def test_no_heartbeat_is_an_engine_from_before_it_and_no_alarm(self):
+        self.assertTrue(self.ok(NOW))
+
+    def test_an_unreadable_heartbeat_is_an_alarm(self):
+        (self.state / W.LIVESIG_HEARTBEAT).write_text("{")
+        self.assertFalse(self.ok(NOW))
+
+    def test_a_start_has_fifteen_minutes(self):
+        self.beat(NOW - 900, NOW - 900, None)
+        self.assertTrue(self.ok(NOW))
+        self.beat(NOW - 901, NOW - 901, None)
+        self.assertFalse(self.ok(NOW))
+
+    def test_a_loop_that_stops_reporting_is_stuck_or_gone(self):
+        self.beat(NOW - 3_600, NOW - 601, NOW - 601)
+        self.assertFalse(self.ok(None))                                  # with no tape to compare, too
+        self.beat(NOW - 3_600, NOW - 600, NOW - 30)
+        self.assertTrue(self.ok(NOW - 1))
+
+    def test_an_engine_behind_a_tape_being_written_is_stuck(self):
+        self.beat(NOW - 3_600, NOW - 10, NOW - 601)
+        self.assertFalse(self.ok(NOW - 1))
+        self.assertFalse(self.ok(NOW - 120))
+        self.assertTrue(self.ok(NOW - 121))                              # a silent tape: rawrec's alarm, not this one
+        self.beat(NOW - 3_600, NOW - 10, NOW - 600)
+        self.assertTrue(self.ok(NOW - 1))
+
+    def test_no_frame_read_while_the_tape_is_written_is_stuck(self):
+        self.beat(NOW - 3_600, NOW - 10, None)
+        self.assertFalse(self.ok(NOW - 1))
+        self.assertTrue(self.ok(None))
+
+    def test_the_pass_compares_the_engine_with_the_binance_tape(self):
+        with tempfile.TemporaryDirectory() as r:
+            raw = Path(r)
+            touch(raw / "binance" / "2026-11-02" / "03.ndjson.zst", NOW - 1)
+            self.beat(NOW - 3_600, NOW - 10, NOW - 601)
+            got = {c.name: c.ok for c in W.run_checks(NOW, self.state, self.state, raw, clock=False,
+                                                      state_of=lambda label: "running")}
+        self.assertFalse(got["livesig"])
+
+
 class TestMain(unittest.TestCase):
     def test_a_check_loads_the_repo_s_env_for_the_webhook_and_reading_the_status_does_not(self):
         loaded = []

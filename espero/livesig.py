@@ -40,6 +40,8 @@ REPRODUCES = 0.90
 FIRST_COMPARABLE = "2026-11-04"
 EVENTS = "livesig_events.csv"
 FIELDS = ["rule", "coin", "side", "ts", "emitted_ms"]
+HEARTBEAT = "livesig.heartbeat.json"   # where the loop is, for the watchdog (watchdog.check_livesig)
+BEAT_EVERY_MS = 30_000
 
 
 @dataclass(frozen=True)
@@ -349,24 +351,44 @@ def append_events(path: Path, events: Sequence[Event]) -> None:
             w.writerow([e.rule, e.coin, e.side, e.ts, e.emitted_ms])
 
 
-def loop(raw: Path, state_dir: Path, clock: Callable[[], int] = lambda: int(time.time() * 1000)) -> None:
-    """Follow the Binance tape as it is written (tapewatch.follow) and append each event as it is known."""
+def beat(path: Path, started_ms: int, tape_ms: Optional[int], now_ms: int) -> None:
+    """When the loop started, the receive time of the last tape frame it read, and when it said so. Written whole
+    and renamed into place, so the watchdog never reads half of it."""
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps({"started_ms": started_ms, "tape_ms": tape_ms, "written_ms": now_ms}), encoding="utf-8")
+    tmp.replace(path)
+
+
+def loop(raw: Path, state_dir: Path, clock: Callable[[], int] = lambda: int(time.time() * 1000),
+         records: Optional[Iterable[Optional[dict]]] = None, warm: Optional[Dict[str, pd.DataFrame]] = None,
+         pause: Callable[[float], None] = time.sleep) -> None:
+    """Follow the Binance tape as it is written (tapewatch.follow) and append each event as it is known. Nothing
+    else is written until an event fires, so the loop says where it is (`HEARTBEAT`): once before the warm-up,
+    which reads yesterday's whole tape first, then every 30 seconds. `records` and `warm` stand in for the tape."""
     from . import tapewatch
 
-    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    started = clock()
+    heart = state_dir / HEARTBEAT
+    beat(heart, started, None, started)
+    today = dt.datetime.fromtimestamp(started / 1000, dt.timezone.utc).date().isoformat()
     eng = Engine()
-    cut = (clock() - CLOSE_GRACE_MS) // BAR_MS * BAR_S        # only bars that have closed seed the panel
-    for c, frame in tape_bars(raw, warm_days(today) + [today]).items():
+    cut = (started - CLOSE_GRACE_MS) // BAR_MS * BAR_S        # only bars that have closed seed the panel
+    for c, frame in (warm if warm is not None else tape_bars(raw, warm_days(today) + [today])).items():
         eng.bars.seed(c, frame[frame.index < cut])
-    path = state_dir / EVENTS
-    for rec in tapewatch.follow(raw, "binance", clock=clock, start_ms=None):
+    path, tape, last = state_dir / EVENTS, None, started
+    for rec in records if records is not None else tapewatch.follow(raw, "binance", clock=clock, start_ms=None):
+        now = clock()
         if rec is None:
-            evs = eng.feed({"rt": clock()})
-            time.sleep(0.5)
+            evs = eng.feed({"rt": now})
+            pause(0.5)
         else:
+            tape = rec.get("rt", tape)
             evs = eng.feed(rec)
         if evs:
             append_events(path, evs)
+        if now - last >= BEAT_EVERY_MS:
+            beat(heart, started, tape, now)
+            last = now
 
 
 def main(argv=None) -> int:

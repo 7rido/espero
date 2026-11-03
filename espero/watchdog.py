@@ -41,6 +41,9 @@ AGENTS = ("com.espero.rawrec", "com.espero.hlcollect", "com.espero.hlbook", "com
           "com.espero.carry-maker", "com.espero.carry-taker", "com.espero.hlp", "com.espero.hlp2",
           "com.espero.hlp2-testnet", "com.espero.paper",
           "com.espero.livesig")                                # KeepAlive: launchd should say "running"
+LIVESIG_HEARTBEAT = "livesig.heartbeat.json"   # livesig.HEARTBEAT, not imported: that loads pandas every minute
+LIVESIG_LAG_S = 600.0                  # the engine's last frame may trail a tape being written by two bars
+LIVESIG_START_S = 900.0                # a start reads yesterday's whole tape first: about five minutes on this Mac
 DISK_FLOOR_GB = rawrec.FREE_FLOOR_GB
 CLOCK_WARN_S, CLOCK_REFUSE_S = 0.25, 1.0
 NTP_SERVER = "time.apple.com"
@@ -125,6 +128,32 @@ def check_agents(state_of: Callable[[str], str] = launchd_state, agents: Iterabl
     return out
 
 
+def check_livesig(now: float, state: Path, tape_newest: Optional[float]) -> Check:
+    """#71's engine writes nothing until an event fires, so it says where it is (livesig.beat). It is stuck when it
+    has not said so for ten minutes, or when the Binance tape is being written and its last frame trails it by
+    more; a silent tape is rawrec:binance's alarm, not this one. A start gets fifteen minutes. No heartbeat at all
+    is an engine that has not run since it began writing one; launchd's word on it (AGENTS) still holds."""
+    try:
+        hb = json.loads((state / LIVESIG_HEARTBEAT).read_text(encoding="utf-8"))
+        started, written, tape = hb["started_ms"] / 1000, hb["written_ms"] / 1000, hb["tape_ms"]
+    except FileNotFoundError:
+        return Check("livesig", True, "no heartbeat yet")
+    except (OSError, ValueError, KeyError, TypeError):
+        return Check("livesig", False, "the heartbeat cannot be read")
+    if now - started <= LIVESIG_START_S:
+        return Check("livesig", True, f"started {now - started:,.0f} s ago, reading the tape so far",
+                     now - started, LIVESIG_START_S)
+    if now - written > LIVESIG_LAG_S:
+        return Check("livesig", False, f"no heartbeat for {now - written:,.0f} s: the engine is stuck or gone",
+                     now - written, LIVESIG_LAG_S)
+    lag = None if tape is None else now - tape / 1000
+    if tape_newest is not None and now - tape_newest <= RAW_MAX_AGE_S and (lag is None or lag > LIVESIG_LAG_S):
+        behind = "has read no frame" if lag is None else f"is {lag:,.0f} s behind it"
+        return Check("livesig", False, f"the tape is being written but the engine {behind}", lag, LIVESIG_LAG_S)
+    return Check("livesig", True, "no frame read yet" if lag is None else f"last frame {lag:,.0f} s ago",
+                 lag, LIVESIG_LAG_S)
+
+
 def check_disk(path: Path, free_gb: Callable[[Path], float] = rawrec.free_gb) -> Check:
     try:
         gb = free_gb(path)
@@ -200,6 +229,7 @@ def ack(state: Dict[str, dict], name: str) -> bool:
 def run_checks(now: float, data: Path, state: Path, raw: Optional[Path], clock: bool = True,
                state_of: Callable[[str], str] = launchd_state) -> List[Check]:
     out = check_recorders(now, data, raw) + [check_daily(now, state)] + check_agents(state_of)
+    out.append(check_livesig(now, state, newest_mtime(raw / "binance") if raw is not None else None))
     out.append(check_disk(raw if raw is not None else data))
     if clock:
         out.append(check_clock())

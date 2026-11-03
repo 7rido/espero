@@ -191,6 +191,41 @@ class TestTotalReturn(unittest.TestCase):
         res = T.run(self.state, 100.0, now=self.wed, fetch=total_return_fetch("2026-10-28", uso_split=8.0))
         self.assertAlmostEqual(res["positions"]["USO"], self.grown("USO", np.exp(0.001)), places=9)
 
+    def test_a_forming_bar_does_not_move_the_share_counts(self):
+        """Yahoo serves the current day's bar while it is forming. The old roll took the last run's mark price as
+        the bar's close, so every run moved the counts by (partial / final) with no trade."""
+        final = {sym: 100 * np.exp(0.001 * np.arange(400)) for sym in T.UNIVERSE}
+        days = pd.date_range(end="2026-11-10", periods=400, tz="UTC")
+        state = {"today": None, "partial": 1.0}
+
+        def fetch(symbol, span):
+            hist = pd.Series(final[symbol], index=days)
+            done = hist[hist.index < state["today"]]
+            forming = hist[hist.index == state["today"]] * state["partial"]
+            s = pd.concat([done, forming])
+            return pd.DataFrame({"dt": s.index, "close": s.to_numpy(), "adj_close": s.to_numpy()})
+
+        db = str(Path(self.tmp.name) / "forming.db")
+        counts = []
+        for k, partial in enumerate((0.98, 1.03, 0.97, 1.02, 0.99)):
+            state["today"] = pd.Timestamp("2026-11-03", tz="UTC") + pd.Timedelta(days=k)
+            state["partial"] = partial
+            res = T.run(db, 100.0, now=state["today"].to_pydatetime(), fetch=fetch)
+            counts.append(dict(res["account"].units))
+        self.assertEqual(counts[0]["BTC"] > 0, True)
+        for later in counts[1:]:
+            for a, u in counts[0].items():
+                self.assertAlmostEqual(later[a], u, places=9, msg=a)
+
+    def test_a_row_without_an_anchor_rolls_as_before(self):
+        """The first run after the upgrade: the last row has no stored closes, so the old roll applies once."""
+        acc = T.Account(self.state)
+        acc.db.execute("UPDATE account SET closes=NULL")
+        acc.db.commit()
+        res = T.run(self.state, 100.0, now=self.wed, fetch=total_return_fetch("2026-10-28", spy_dividend=2.0))
+        p27, p28 = 100 * np.exp(0.001 * 298), 100 * np.exp(0.001 * 299)
+        self.assertAlmostEqual(res["positions"]["SPY"], self.grown("SPY", (p28 - 2) / (p27 - 2)), places=9)
+
     def test_a_rerun_on_the_same_data_changes_nothing(self):
         again = T.run(self.state, 100.0, now=self.wed, fetch=total_return_fetch("2026-10-27"))
         for a, v in self.day1["positions"].items():

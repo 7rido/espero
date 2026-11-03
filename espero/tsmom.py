@@ -117,7 +117,7 @@ class Account:
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.executescript(SCHEMA)
         cols = {r["name"] for r in self.db.execute("PRAGMA table_info(account)")}
-        for col in ("positions", "signals", "deposit", "vehicle", "carry", "traded"):  # old databases
+        for col in ("positions", "signals", "deposit", "vehicle", "carry", "traded", "closes"):  # old databases
             if col not in cols:
                 self.db.execute(f"ALTER TABLE account ADD COLUMN {col} TEXT")
                 self.db.commit()
@@ -129,23 +129,54 @@ class Account:
             self.carry_total = float(row["carry"] or 0.0)
 
     def roll_forward(self, frames: Dict[str, pd.DataFrame], latest: pd.Series) -> None:
-        """Each held asset's dollar value at the last run, grown by its total return since
-        (adjusted close now / adjusted close then, both from today's fetch, so a later
-        restatement cancels out), re-expressed as shares at today's raw close."""
+        """Dividends and restatements since the last run, applied to the share counts before any mark.
+
+        Anchored on a bar that was already closed at the last run (`anchor_closes`, stored with that run): the
+        share count is scaled by the restatement of that bar's raw close since (a split moves every past price,
+        so the stored close against today's fetch of the same bar gives the factor) and by the dividend factor
+        between that bar and now, (adj/close now) / (adj/close then), both from today's fetch. The bar the last
+        run marked at is not used: Yahoo serves the current day's bar while it is still forming, and a count
+        rolled from that bar's price drifted by (partial / final) every run with no trade (docs/AUDIT_PROD.md).
+        A row written before the anchor existed falls back to the old roll from the marked dollar value."""
         prev = self.last()
         if not prev or not self.units:
             return
+        anchors = json.loads(prev.get("closes") or "{}")
         then = pd.Timestamp(int(prev["ts"]), unit="s", tz="UTC")
         marked = json.loads(prev.get("positions") or "{}")
         for a in list(self.units):
-            f, value = frames.get(a), marked.get(a)
-            if f is None or value is None or a not in latest or pd.isna(latest[a]):
+            f = frames.get(a)
+            if f is None or a not in latest or pd.isna(latest[a]):
                 continue
-            adj = f["adj_close"].dropna()
-            old = adj[adj.index <= then]
-            if adj.empty or old.empty:
+            adj, close = f["adj_close"], f["close"]
+            anchor = anchors.get(a)
+            if anchor:
+                at = pd.Timestamp(int(anchor["ts"]), unit="s", tz="UTC")
+                if at not in f.index or pd.isna(adj.loc[at]) or pd.isna(close.loc[at]) or not close.loc[at]:
+                    continue
+                restated = float(close.loc[at]) / float(anchor["close"])
+                dividends = (float(adj.iloc[-1]) / float(close.iloc[-1])) / (float(adj.loc[at]) / float(close.loc[at]))
+                self.units[a] = self.units[a] / restated * dividends
                 continue
-            self.units[a] = value * float(adj.iloc[-1] / old.iloc[-1]) / float(latest[a])
+            value = marked.get(a)
+            old = adj.dropna()
+            old = old[old.index <= then]
+            if value is None or old.empty:
+                continue
+            self.units[a] = value * float(adj.dropna().iloc[-1] / old.iloc[-1]) / float(latest[a])
+
+    @staticmethod
+    def anchor_closes(frames: Dict[str, pd.DataFrame], today: datetime) -> Dict[str, dict]:
+        """Per asset, the last bar dated before today's UTC date and its raw close: a bar that has closed, so a
+        later fetch returns the same number unless the history is restated."""
+        day = pd.Timestamp(today.astimezone(timezone.utc).date(), tz="UTC")
+        out = {}
+        for a, f in frames.items():
+            done = f["close"].dropna()
+            done = done[done.index < day]
+            if not done.empty and done.iloc[-1]:
+                out[a] = {"ts": int(done.index[-1].timestamp()), "close": float(done.iloc[-1])}
+        return out
 
     def last(self) -> Optional[dict]:
         row = self.db.execute("SELECT * FROM account ORDER BY ts DESC, id DESC LIMIT 1").fetchone()
@@ -186,15 +217,17 @@ class Account:
     def save(self, ts: int, equity: float, weights: Dict[str, float], note: str,
              positions: Optional[Dict[str, float]] = None,
              signals: Optional[Dict[str, float]] = None,
-             deposit: float = 0.0, carry_this: float = 0.0, traded: float = 0.0) -> None:
+             deposit: float = 0.0, carry_this: float = 0.0, traded: float = 0.0,
+             closes: Optional[Dict[str, dict]] = None) -> None:
         """`signals` is what the bot SAW when it decided, kept separately from the
-        weights so a later viewer can audit the decision instead of re-deriving it."""
+        weights so a later viewer can audit the decision instead of re-deriving it.
+        `closes` are the anchor bars the next run rolls the share counts from."""
         self.db.execute(
             "INSERT OR REPLACE INTO account(ts, cash, units, equity, weights, note, positions,"
-            " signals, deposit, vehicle, carry, traded) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            " signals, deposit, vehicle, carry, traded, closes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (ts, self.cash, json.dumps(self.units), equity, json.dumps(weights), note,
              json.dumps(positions or {}), json.dumps(signals or {}), deposit,
-             self.vehicle, carry_this, traded),
+             self.vehicle, carry_this, traded, json.dumps(closes or {})),
         )
         self.db.commit()
 
@@ -266,8 +299,9 @@ def run(state: str, cash: float, force: bool = False, span: str = "2y",
 
     equity = acc.equity(latest)
     marked = {a: u * float(latest[a]) for a, u in acc.units.items()}
+    anchors = Account.anchor_closes(frames, now or datetime.now(timezone.utc))
     acc.save(ts, equity, weights, note, positions=marked, signals=sig, deposit=deposit,
-             carry_this=carry_this, traded=traded)
+             carry_this=carry_this, traded=traded, closes=anchors)
     return {
         "ts": px.index[-1], "signals": sig, "weights": weights, "cash_weight": cash_w,
         "equity": equity, "traded": traded, "note": note,

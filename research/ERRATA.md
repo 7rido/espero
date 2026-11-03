@@ -5,7 +5,19 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
-## 2026-11-02: #69 reads its overrides from `state/approvals.db`, not "the sleeve's journal"
+## 2026-11-03: #4's paper account rolled its share counts from a forming bar; anchored on a closed bar from now on
+
+**No rule, weight, cost or criterion changes; a plumbing fix to the running paper account, found by the
+production-readiness audit (docs/AUDIT_PROD.md).** `tsmom.Account.roll_forward` (added 2026-10-28, 62a545e) carried
+each position's dollar value at the last run forward by the adjusted close now over the adjusted close of the bar
+at that run, both read from today's fetch. Yahoo serves the current day's bar while it is still forming, so the
+last run's mark price and today's reading of that same bar differ, and the count moved by (partial / final) every
+run with no trade: `state/tsmom.db`'s 2026-10-30 mark shows SPY, GLD and USO units moving with no trade and no
+ex-dividend date, and a synthetic run drifts 4 to 11 % over seven marks. From this commit the roll is anchored on
+the last bar dated before the run's UTC date, stored with the row (`closes`), so restatements and dividends are
+still credited and a forming bar never enters. Past rows are not repaired: the account's history before
+2026-11-03 carries the drift, and the first run after this commit rolls once as before (no anchor stored yet).
+
 
 **No unit, rule or reading changes; written before any sleeve exists, so before any override.**
 `PREREGISTRATION_OPALPHA.md` (#69, stamped) takes the overrides from "`approval_events` in the sleeve's journal".

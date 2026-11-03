@@ -276,6 +276,17 @@ class TestInbox(unittest.TestCase):
             self.assertEqual(A.take(d), [])
 
 
+class TestInboxFileMode(unittest.TestCase):
+    def test_a_posted_reply_is_readable_by_its_owner_only(self):
+        """The inbox file carries a live one-time code until the runner takes it."""
+        import stat
+
+        with tempfile.TemporaryDirectory() as d:
+            path = A.post(d, A.Reply("p1", "approve", "123456", at=NOW))
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+            self.assertEqual(len(A.take(d)), 1)
+
+
 class TestTheCommand(unittest.TestCase):
     def run_cli(self, *argv):
         from espero import cli

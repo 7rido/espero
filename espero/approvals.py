@@ -392,7 +392,9 @@ def post(state: Union[str, Path], item: Union[Reply, OperatorOrder]) -> Path:
     kind = "reply" if isinstance(item, Reply) else "order"
     name = f"{item.at:012d}-{kind}-{secrets.token_hex(3)}.json"
     tmp = box / (name + ".tmp")
-    tmp.write_text(json.dumps({"type": kind, **asdict(item)}), encoding="utf-8")   # "kind" is an order's field
+    # the file carries a live one-time code until the runner takes it: readable by its owner only
+    with os.fdopen(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w", encoding="utf-8") as fh:
+        fh.write(json.dumps({"type": kind, **asdict(item)}))                     # "kind" is an order's field
     os.replace(tmp, box / name)
     return box / name
 

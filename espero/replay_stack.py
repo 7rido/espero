@@ -194,7 +194,9 @@ class Stack:
         if self.breaks:
             return self._refuse(s, now_ms, f"an open break: {self.breaks[0]}")
         row = latency.by_test().get(s.rule)
-        budget_ms = int((row.budget_s if row and row.budget_s else 0) * 1000)
+        if row is None or not row.budget_s:
+            return self._refuse(s, now_ms, f"no latency budget for #{s.rule} (research/LIVE_LATENCY.md): not traded")
+        budget_ms = int(row.budget_s * 1000)
         if now_ms - s.ts * 1000 > budget_ms:
             return self._refuse(s, now_ms, f"stale: {now_ms - s.ts * 1000} ms after the event, budget {budget_ms} ms")
         last = self.venue.last_frame_ms(s.coin, now_ms)
@@ -205,7 +207,9 @@ class Stack:
             return self._refuse(s, now_ms, "venue silent")
         if now_ms - last > budget_ms:
             return self._refuse(s, now_ms, f"stale book: {now_ms - last} ms old, budget {budget_ms} ms")
-        book = replaysim.book_at(self.venue.books[s.coin], now_ms)
+        book = replaysim.book_at(self.venue.books[s.coin], now_ms, max_age_ms=max(budget_ms, 1))
+        if book is None or not book["bids"] or not book["asks"]:
+            return self._refuse(s, now_ms, "no usable book: none inside the budget, or one side empty")
         mid = (book["bids"][0][0] + book["asks"][0][0]) / 2
         ruling = risk.check(risk.Order(s.sleeve, s.rule, "replay", s.coin, s.side, s.notional), self.account(),
                             self.policy)
@@ -214,7 +218,10 @@ class Stack:
         return self._send(s, "entry", s.side, ruling.notional / mid, now_ms)
 
     def exit(self, s: Signal, now_ms: int) -> dict:
-        """The registered exit: sells exactly what the entry bought (a partial fill exits partially)."""
+        """The registered exit: sells exactly what the entry bought (a partial fill exits partially). The clock check
+        holds here too: an order on a clock a second off the time server's is refused, entry or exit."""
+        if not watchdog.clock_ok(self.offset()):
+            return self._refuse(s, now_ms, f"clock off by {self.offset():+.2f} s")
         entry = self.db.execute("SELECT filled FROM stack_orders WHERE cloid=?",
                                 (cloid(s.rule, s.coin, s.ts, "entry"),)).fetchone()
         if entry is None or not entry["filled"]:

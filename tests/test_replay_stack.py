@@ -185,6 +185,44 @@ class TestSummary(unittest.TestCase):
         self.assertEqual(len(venue.sent), 2)
         self.assertEqual(venue.sent[0], venue.sent[1])                  # the same client order id
 
+    def test_a_book_older_than_a_minute_but_inside_the_budget_is_refused_not_a_crash(self):
+        """The window between replaysim's 60 s default book age and the 120 s silence limit, inside #24's 720 s
+        budget: book_at found no book and the step raised TypeError. The decision now reads the last book inside
+        the rule's budget, as the step's own stale-book rule says, and the recorded venue answers for the fill."""
+        venue = R.RecordedVenue(books(end_ms=NOW - 90_000))
+        st = stack(venue)
+        out = st.step(signal(), NOW)
+        self.assertTrue(out["placed"])
+        self.assertEqual(out["reason"], "rejected")                      # no frame within a minute of arrival
+        self.assertEqual(len(venue.sent), 1)
+        self.assertNotIn("refused", kinds(st))
+
+    def test_a_one_sided_book_is_refused(self):
+        b = books()
+        for frame in b["BTC"]:
+            frame["asks"] = []
+        st = stack(R.RecordedVenue(b))
+        self.assertIn("no usable book", st.step(signal(), NOW)["reason"])
+
+    def test_the_exit_refuses_on_a_skewed_clock_too(self):
+        off = [0.0]
+        st = R.Stack(sqlite3.connect(":memory:"), R.RecordedVenue(books()), R.replay_account(10_000, "s"),
+                     clock_offset_s=lambda: off[0])
+        st.startup(NOW)
+        self.assertEqual(st.step(signal(), NOW)["reason"], "filled")
+        off[0] = 5.0
+        out = st.exit(signal(), NOW + 10_000)
+        self.assertFalse(out["placed"])
+        self.assertIn("clock off", out["reason"])
+        off[0] = 0.0
+        self.assertEqual(st.exit(signal(), NOW + 20_000)["reason"], "filled")
+
+    def test_a_rule_with_no_latency_budget_is_refused_outright(self):
+        st = stack()
+        out = st.step(R.Signal("zz", "s", "BTC", 1, T, 1_000.0), T * 1000)
+        self.assertFalse(out["placed"])
+        self.assertIn("no latency budget", out["reason"])
+
     def test_a_silent_venue_after_a_restart_sends_nothing_and_does_not_crash(self):
         """FAULTS restart + venue_silent together: the order is journaled, the venue goes quiet, the lookup by
         client id gets no answer. The step refuses, journals it, resends nothing, and asks again later."""

@@ -122,8 +122,22 @@ class TestRefusals(unittest.TestCase):
             self.assertIn(text, r.reasons[0])
 
     def test_an_order_needs_a_side_and_a_size(self):
-        self.assertFalse(R.check(order(side=0), account()).allowed)
-        self.assertFalse(R.check(order(notional=0.0), account()).allowed)
+        """By the guard itself: a zero or negative size was otherwise refused by the minimum, for another reason."""
+        for o in (order(side=0), order(notional=0.0), order(notional=-50.0), order(notional=float("nan"))):
+            r = R.check(o, account())
+            self.assertFalse(r.allowed)
+            self.assertEqual(r.reasons[0], "an order needs a side and a size")
+
+    def test_reduce_only_passes_every_pause_and_stop(self):
+        """A flatten must go through whatever stopped the entries: no capital, a pause, a break, an ack awaited."""
+        held = (pos(side=1, notional=1_000.0),)
+        for kw in (dict(capital=0.0), dict(paused=True), dict(breaks=("x: off",)), dict(awaiting_ack=True),
+                   dict(equity=9_400.0)):
+            r = R.check(order(side=-1, notional=5_000.0, reduce_only=True), account(positions=held, **kw))
+            self.assertTrue(r.allowed, kw)
+            self.assertEqual(r.notional, 1_000.0, kw)
+        spot = R.check(order(side=-1, reduce_only=True, leg="spot"), account(positions=held))
+        self.assertFalse(spot.allowed)                       # the perp is held, not a spot leg
 
 
 class TestCaps(unittest.TestCase):

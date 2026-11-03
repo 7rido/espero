@@ -271,6 +271,18 @@ class TestInbox(unittest.TestCase):
             self.assertEqual(A.take(d), [])
             self.assertEqual(len(list(A.inbox(d).glob("*.unreadable"))), 1)
 
+    def test_a_file_the_runner_cannot_read_is_set_aside_not_a_crash(self):
+        import os
+        if os.geteuid() == 0:
+            self.skipTest("root reads any file")
+        with tempfile.TemporaryDirectory() as d:
+            a = A.post(d, A.Reply("abc", "approve", "123456", at=2))
+            locked = A.post(d, A.Reply("def", "approve", "654321", at=1))
+            locked.chmod(0)
+            self.addCleanup(lambda: locked.exists() and locked.chmod(0o600))
+            self.assertEqual([r.proposal for r in A.take(d)], ["abc"])
+            self.assertFalse(a.exists())
+
     def test_an_empty_state_has_nothing_waiting(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(A.take(d), [])

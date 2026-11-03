@@ -410,8 +410,11 @@ def take(state: Union[str, Path]) -> List[Union[Reply, OperatorOrder]]:
             d: Dict = json.loads(f.read_text(encoding="utf-8"))
             kind = d.pop("type")
             out.append(Reply(**d) if kind == "reply" else OperatorOrder(**d))
-        except (ValueError, TypeError, KeyError):
-            f.rename(f.with_suffix(".unreadable"))
+        except (ValueError, TypeError, KeyError, OSError):   # OSError: a file the runner may not read
+            try:
+                f.rename(f.with_suffix(".unreadable"))
+            except OSError:
+                pass
             continue
         f.unlink()
     return out

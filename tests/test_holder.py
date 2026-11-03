@@ -1,4 +1,6 @@
 """The holder's answers: read from the document, defaults that refuse, and an operator never made faster."""
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -97,6 +99,54 @@ class TestAnswers(unittest.TestCase):
         d.write_text("no table here\n", encoding="utf-8")
         self.assertEqual(H.rows(d), {})
         self.assertEqual(H.allocated_usd(d), 0.0)
+
+
+@unittest.skipUnless(shutil.which("git"), "needs git")
+class TestOnlyACommittedAnswerCounts(unittest.TestCase):
+    """The page says an answer is given in a commit; the code reads nothing an uncommitted edit says."""
+
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        (self.root / "docs").mkdir()
+        self.doc = self.root / "docs" / "HOLDER_INPUTS.md"
+        self.doc.write_bytes(doc({"capital_usd": "25000", "venues_eligible": "hyperliquid",
+                                  "tax_and_licensing_checked": "yes"}).read_bytes())
+        git = ["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
+        subprocess.run(git + ["init", "-q"], check=True)
+        subprocess.run(git + ["add", "docs/HOLDER_INPUTS.md"], check=True)
+        subprocess.run(git + ["commit", "-q", "-m", "the holder answers"], check=True)
+        self._real = H.DOC, H.ROOT
+        H.DOC, H.ROOT = self.doc, self.root
+
+    def tearDown(self):
+        H.DOC, H.ROOT = self._real
+
+    def test_the_committed_page_counts(self):
+        self.assertTrue(H.committed(self.doc, self.root))
+        self.assertEqual(H.allocated_usd(), 25_000.0)
+        self.assertTrue(H.eligible("hyperliquid"))
+        self.assertEqual(H.problems(self.doc, self.root), [])
+
+    def test_an_uncommitted_edit_counts_for_nothing(self):
+        self.doc.write_text(self.doc.read_text(encoding="utf-8").replace("| 25000 |", "| 50000 |"), encoding="utf-8")
+        self.assertFalse(H.committed(self.doc, self.root))
+        self.assertEqual(H.allocated_usd(), 0.0)
+        self.assertFalse(H.eligible("hyperliquid"))
+        self.assertTrue(any("not what HEAD holds" in p for p in H.problems(self.doc, self.root)))
+        self.assertEqual(H.answers(self.doc)["capital_usd"], 50_000.0)     # the raw read still says what it says
+
+    def test_a_page_outside_a_checkout_counts_for_nothing(self):
+        loose = Path(tempfile.mkdtemp()) / "HOLDER_INPUTS.md"
+        loose.write_bytes(self.doc.read_bytes())
+        self.assertFalse(H.committed(loose, loose.parent))
+        H.DOC, H.ROOT = loose, loose.parent
+        self.assertEqual(H.allocated_usd(), 0.0)
+
+    def test_a_copy_given_explicitly_is_read_as_before(self):
+        """tests and tools read a copy by path; only the real page is held to HEAD."""
+        copy = Path(tempfile.mkdtemp()) / "x.md"
+        copy.write_bytes(self.doc.read_bytes())
+        self.assertEqual(H.allocated_usd(copy), 25_000.0)
 
 
 class TestTheLatencyAuditFollowsTheHolder(unittest.TestCase):

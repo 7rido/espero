@@ -16,7 +16,8 @@ operator, `holder.eligible(venue)` the venue check. `python -m espero.holder` pr
 Edit the **answer** column below, in a commit of your own, with a short reason in the commit message. Leave a
 cell empty for "not answered". Amounts are USD; a drawdown is a negative percentage such as `-15%`; a list is
 comma-separated; yes or no is `yes` or `no`. A change later is a new commit, and the old answer stays in the
-history.
+history. The code reads this page only as `HEAD` holds it (`holder.committed`): an edit not yet committed, or a
+copy outside a git checkout, allocates nothing and makes no venue eligible.
 
 <!-- answers:start -->
 | id | the question | answer | default until answered |

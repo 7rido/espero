@@ -8,6 +8,7 @@ answer can raise above the protocol's 4 hours but never lower.
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -93,6 +94,8 @@ def answers(doc: Path = DOC) -> Dict[str, object]:
 def problems(doc: Path = DOC, root: Path = ROOT) -> List[str]:
     raw = rows(doc)
     out = [f"{qid}: not a question here" for qid in raw if qid not in QUESTIONS]
+    if doc == DOC and not committed(doc, root):
+        out.append(f"{doc.name}: not what HEAD holds (or no git): an answer counts only once it is committed")
     out += [f"{qid}: missing from the answers table" for qid in QUESTIONS if qid not in raw]
     for qid, (kind, _) in QUESTIONS.items():
         try:
@@ -105,8 +108,22 @@ def problems(doc: Path = DOC, root: Path = ROOT) -> List[str]:
     return out
 
 
-def allocated_usd(doc: Path = DOC) -> float:
-    """The capital the risk gate may size against: 0 until the holder writes a number."""
+def committed(doc: Path = DOC, root: Path = ROOT) -> bool:
+    """True when the page on disk is byte for byte what HEAD holds. An answer counts only in the holder's own
+    commit, so an edit not yet committed, a page outside a git checkout, or no git at all count as unanswered."""
+    try:
+        rel = Path(doc).resolve().relative_to(Path(root).resolve()).as_posix()
+        r = subprocess.run(["git", "-C", str(root), "show", f"HEAD:{rel}"], capture_output=True, timeout=30)
+        return r.returncode == 0 and r.stdout == Path(doc).read_bytes()
+    except (ValueError, OSError, subprocess.SubprocessError):
+        return False
+
+
+def allocated_usd(doc: Optional[Path] = None) -> float:
+    """The capital the risk gate may size against: 0 until the holder writes a number, and commits it."""
+    doc = DOC if doc is None else doc
+    if doc == DOC and not committed(doc, ROOT):
+        return 0.0
     return float(answers(doc)["capital_usd"] or 0.0)
 
 
@@ -116,8 +133,12 @@ def operator_response_s(doc: Path = DOC) -> float:
     return max(PROTOCOL_RESPONSE_S, hours * 3600.0) if hours else PROTOCOL_RESPONSE_S
 
 
-def eligible(venue: str, doc: Path = DOC) -> bool:
-    """A venue the holder has checked against its current terms, and whose tax and licensing they have checked."""
+def eligible(venue: str, doc: Optional[Path] = None) -> bool:
+    """A venue the holder has checked against its current terms, and whose tax and licensing they have checked,
+    in a commit."""
+    doc = DOC if doc is None else doc
+    if doc == DOC and not committed(doc, ROOT):
+        return False
     a = answers(doc)
     return bool(a["tax_and_licensing_checked"]) and venue.lower() in a["venues_eligible"]
 

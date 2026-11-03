@@ -26,8 +26,12 @@ live() {
     curl -fsSL -o "$tmp/$NAME" "$URL/$NAME"
     curl -fsSL -o "$tmp/$NAME.sha256" "$URL/$NAME.sha256"
     (cd "$tmp" && shasum -a 256 -c "$NAME.sha256")
-    # -k: a file that already exists here is kept, so a local recording is never overwritten
-    tar -xzkf "$tmp/$NAME" -C "$REPO" 2>/dev/null || true
+    # the checksum proves the download, not the publisher: nothing from a release may land outside the
+    # live folders (a .pth in .venv/ would run on the next python start). Refused before anything is extracted.
+    check_archive "$tmp/$NAME"
+    # -k: a file that already exists here is kept, so a local recording is never overwritten; bsdtar reports each
+    # kept file as an error, which is the one error hidden here
+    tar -xzkf "$tmp/$NAME" -C "$REPO" 2>&1 | grep -v "Already exists" || true
     echo "extracted into data/ (existing files kept)"
     # a local file that was kept may differ from the release's; that is reported, not an error
     present=()
@@ -59,6 +63,19 @@ archives() {
     status
 }
 
+check_archive() {
+    # every member must sit under one of the live folders; anything else (a path with .., a dotfile at the
+    # root, a file under .venv/ or espero/) refuses the whole archive
+    local members bad
+    members="$(tar -tzf "$1")" || { echo "cannot list $1" >&2; return 1; }
+    bad="$(printf '%s\n' "$members" | grep -Ev '^(data/(hlcollect|hlbook|book|lows/forward|aggr/forward|aggr/forward5m)(/|$)|data/$)' || true)"
+    if [ -n "$bad" ]; then
+        echo "refusing $1: it holds files outside the live folders:" >&2
+        printf '  %s\n' $bad >&2
+        return 1
+    fi
+}
+
 status() {
     for p in "${LIVE[@]}" \
              data/lows data/liq data/liq2 data/oi data/settle data/levetf data/bids \
@@ -75,5 +92,6 @@ case "${1:-}" in
     live) live ;;
     archives) archives "${2:-}" ;;
     status) status ;;
+    check-archive) check_archive "${2:?a tarball}" ;;
     *) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

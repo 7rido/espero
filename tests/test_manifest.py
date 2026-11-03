@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import hashlib
 import re
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -88,6 +90,36 @@ class TestProvenance(unittest.TestCase):
         for folder in UNRECOVERABLE:
             self.assertIn(folder, paths, folder)
         self.assertIn("espero.manifest write", script)
+
+    @unittest.skipUnless(shutil.which("bash") and shutil.which("tar"), "needs bash and tar")
+    def test_fetch_script_refuses_a_release_with_a_file_outside_the_live_folders(self):
+        """A release is integrity-checked against its own sha256, never authenticated: a member outside data/'s
+        live folders (a .pth under .venv/ would run on the next python start) refuses the whole archive."""
+        script = ROOT / "scripts" / "fetch-data.sh"
+        with tempfile.TemporaryDirectory() as d:
+            src = Path(d) / "src"
+            (src / "data" / "hlbook").mkdir(parents=True)
+            (src / "data" / "hlbook" / "a.csv").write_text("x")
+            good = Path(d) / "good.tar.gz"
+            subprocess.run(["tar", "-czf", str(good), "-C", str(src), "data"], check=True)
+            (src / ".venv" / "lib").mkdir(parents=True)
+            (src / ".venv" / "lib" / "evil.pth").write_text("import os")
+            evil = Path(d) / "evil.tar.gz"
+            subprocess.run(["tar", "-czf", str(evil), "-C", str(src), "data", ".venv"], check=True)
+            (src / "data" / "cache").mkdir()
+            (src / "data" / "cache" / "x.csv").write_text("x")
+            stray = Path(d) / "stray.tar.gz"
+            subprocess.run(["tar", "-czf", str(stray), "-C", str(src), "data"], check=True)
+            env = {"PATH": "/usr/bin:/bin", "HOME": d}
+            ok = subprocess.run(["bash", str(script), "check-archive", str(good)], capture_output=True, text=True,
+                                env=env)
+            self.assertEqual(ok.returncode, 0, ok.stderr)
+            for bad in (evil, stray):
+                r = subprocess.run(["bash", str(script), "check-archive", str(bad)], capture_output=True,
+                                   text=True, env=env)
+                self.assertEqual(r.returncode, 1, bad.name)
+                self.assertIn("outside the live folders", r.stderr)
+        self.assertNotIn("2>/dev/null || true", script.read_text())      # a tar error is shown, not hidden
 
     def test_fetch_script_checks_the_manifests(self):
         script = (ROOT / "scripts" / "fetch-data.sh").read_text()

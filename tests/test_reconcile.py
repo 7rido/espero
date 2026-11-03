@@ -1,3 +1,5 @@
+import unittest
+
 from espero import reconcile as rc
 
 
@@ -86,3 +88,32 @@ def test_fill_markouts_take_the_makers_side_and_need_a_recent_row():
     assert abs(m[0][10] + 100.0) < 1e-9                                                 # mid 99 at +10 s
     assert abs(m[0][60] - 200.0) < 1e-9                                                 # 61.5 s is within 2 s
     assert m[0][300] is None                                                            # nothing near +300 s
+
+
+class TestStartup(unittest.TestCase):
+    """reconcile.startup: what an executor checks before its first order after any start."""
+
+    def test_agreement_is_no_break(self):
+        self.assertEqual(rc.startup({"BTC": 0.01}, {"BTC": 0.01}, ["c1"], ["c1"], {"BTC": 0.001}), [])
+
+    def test_a_position_the_journal_does_not_know(self):
+        out = rc.startup({}, {"ETH": -0.5}, [], [], {"ETH": 0.01})
+        self.assertEqual(out, ["ETH: the venue holds -0.5 that the journal does not know"])
+
+    def test_a_position_the_venue_does_not_hold_and_a_size_off(self):
+        out = rc.startup({"BTC": 0.01, "SOL": 2.0}, {"SOL": 1.0}, [], [], {"BTC": 0.001, "SOL": 0.1})
+        self.assertEqual(out, ["BTC: the journal holds +0.01 that the venue does not",
+                               "SOL: the journal holds +2, the venue +1"])
+
+    def test_half_a_step_is_agreement(self):
+        self.assertEqual(rc.startup({"BTC": 0.0104}, {"BTC": 0.01}, [], [], {"BTC": 0.001}), [])
+
+    def test_orders_unknown_and_lost(self):
+        out = rc.startup({}, {}, ["a", "b"], ["b", "c"], {})
+        self.assertEqual(out, ["order c: resting on the venue, unknown to the journal",
+                               "order a: the journal says resting, the venue does not list it (filled or cancelled?)"])
+
+    def test_a_shared_account_compares_only_its_own_orders(self):
+        out = rc.startup({}, {"ETH": -0.5}, ["a"], ["a", "someone-elses"], {}, owns_account=False)
+        self.assertEqual(out, [])
+        self.assertEqual(len(rc.startup({}, {}, ["a"], [], {}, owns_account=False)), 1)

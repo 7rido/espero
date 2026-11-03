@@ -43,7 +43,7 @@ LAYERS: Dict[str, Tuple[str, List[str]]] = {
                  "hl_exchange", "hlp_testnet", "rawbars", "replaysim", "robustness", "sleeves", "opalpha",
                  "costcurve", "costcurve_table"]),
     "live": ("from a verdict to a sized order, built and tested before any verdict; no mainnet path",
-             ["latency", "approvals", "risk", "rungs", "holder"]),
+             ["latency", "approvals", "risk", "rungs", "holder", "watchdog"]),
     "operate": ("the commands, the screens, the scheduler and this table",
                 ["cli", "ui", "runner", "loop", "lock", "notify", "dashboard", "report", "board", "carry_view",
                  "fast", "broker", "layers", "__init__", "__main__"]),

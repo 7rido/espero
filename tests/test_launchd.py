@@ -119,3 +119,25 @@ class TestPaperAgent(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
+class TestWatchdogAgent(unittest.TestCase):
+    def render(self, raw=""):
+        env = {"PATH": "/usr/bin:/bin", "HOME": "/tmp", "PYTHON": "/x/python", "ESPERO_RAW_DIR": raw}
+        out = subprocess.run(["bash", str(ROOT / "scripts" / "install-watchdog-launchd.sh"), "--print"],
+                             capture_output=True, text=True, check=True, env=env).stdout
+        return plistlib.loads(out.encode())
+
+    def test_once_a_minute_from_the_repo_never_kept_alive(self):
+        p = self.render("/tape")
+        self.assertEqual(p["Label"], "com.espero.watchdog")
+        self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "watchdog", "--once"])
+        self.assertEqual(p["StartInterval"], 60)
+        self.assertNotIn("KeepAlive", p)
+        self.assertEqual(p["WorkingDirectory"], str(ROOT))
+        self.assertEqual(p["EnvironmentVariables"]["ESPERO_RAW_DIR"], "/tape")
+        self.assertTrue(p["StandardOutPath"].endswith("watchdog.log"))
+
+    def test_without_a_tape_folder_the_tape_is_simply_not_checked(self):
+        self.assertEqual(self.render("")["EnvironmentVariables"]["ESPERO_RAW_DIR"], "")

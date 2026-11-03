@@ -5,6 +5,10 @@ Our record, per order id: {"tif": "Alo" | "Ioc", "filled": size, "avg_px": IOC
 average price or None}. The exchange's record: Hyperliquid `userFills` rows
 (coin, px, sz, oid, crossed, fee, time). A break is any disagreement; the
 pre-registration passes only with none.
+
+`startup` is what an executor runs before its first order after any start: the
+venue's positions and open orders against its own journal's. Any break blocks
+entries (risk.Account.breaks) until it is resolved and journaled.
 """
 from __future__ import annotations
 
@@ -124,3 +128,32 @@ def fill_markouts(fills: Iterable[dict], book: List[tuple], horizons_s=(1, 10, 6
             r[h] = s * (rows[i][1] / px - 1) * 1e4 if ok else None
         out.append(r)
     return out
+
+
+def startup(journal_positions: Dict[str, float], venue_positions: Dict[str, float],
+            journal_orders: Iterable[str], venue_orders: Iterable[str], step: Dict[str, float],
+            owns_account: bool = True) -> List[str]:
+    """Before the first order after a start: does the venue hold what the journal says, and nothing else?
+
+    Positions are signed sizes per coin; orders are client order ids (cloids) still resting. On an account the
+    executor shares (the testnet account carry-maker's mirror also trades), positions cannot be attributed, so only
+    orders are compared, by the cloids the journal owns. Every break is listed; none is dropped or repaired here."""
+    breaks = []
+    if owns_account:
+        for coin in sorted(set(journal_positions) | set(venue_positions)):
+            want, got = journal_positions.get(coin, 0.0), venue_positions.get(coin, 0.0)
+            if abs(want - got) <= step.get(coin, 0.0) / 2 + 1e-12:
+                continue
+            if abs(want) <= 1e-12:
+                breaks.append(f"{coin}: the venue holds {got:+.8g} that the journal does not know")
+            elif abs(got) <= 1e-12:
+                breaks.append(f"{coin}: the journal holds {want:+.8g} that the venue does not")
+            else:
+                breaks.append(f"{coin}: the journal holds {want:+.8g}, the venue {got:+.8g}")
+    ours, theirs = set(journal_orders), set(venue_orders)
+    for c in sorted(theirs - ours):
+        if owns_account:
+            breaks.append(f"order {c}: resting on the venue, unknown to the journal")
+    for c in sorted(ours - theirs):
+        breaks.append(f"order {c}: the journal says resting, the venue does not list it (filled or cancelled?)")
+    return breaks

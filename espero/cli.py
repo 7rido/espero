@@ -1469,6 +1469,24 @@ def _cmd_approve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_watchdog(args: argparse.Namespace) -> int:
+    """The silence alarm (espero/watchdog.py): check once and escalate, or show, acknowledge, or report a drill."""
+    from . import watchdog
+
+    argv = ["--state-dir", str(args.state_dir)]
+    if args.status:
+        argv.append("--status")
+    elif args.ack:
+        argv += ["--ack", args.ack]
+    elif args.drill_report:
+        argv += ["--drill-report", args.drill_report]
+    else:
+        argv.append("--once")
+    if args.no_clock:
+        argv.append("--no-clock")
+    return watchdog.main(argv)
+
+
 def _cmd_readout(args: argparse.Namespace) -> int:
     print(dash.READOUT.read_text(encoding="utf-8"))
     return 0
@@ -1975,6 +1993,16 @@ def build_parser() -> argparse.ArgumentParser:
     apv.add_argument("--notional", type=float, help="modify: the smaller size in USD")
     apv.add_argument("--state-dir", default=None)
     apv.set_defaults(func=_cmd_approve)
+
+    wd = sub.add_parser("watchdog",
+                        help="the silence alarm: recorders, loops, the daily run, disk and clock (never trades)")
+    wd.add_argument("--once", action="store_true", help="check, escalate and remember (the default)")
+    wd.add_argument("--status", action="store_true", help="the last checks, notifying no one")
+    wd.add_argument("--ack", metavar="NAME", help="stop repeating an alarm until it recovers")
+    wd.add_argument("--drill-report", metavar="SINCE_UTC", help="after a recovery drill begun at YYYY-MM-DDTHH:MM UTC")
+    wd.add_argument("--no-clock", action="store_true", help="skip the NTP check")
+    wd.add_argument("--state-dir", default=None)
+    wd.set_defaults(func=_cmd_watchdog)
 
     rd = sub.add_parser("readout", help="what the free Hyperliquid data shows, for reading the market; not signals")
     rd.set_defaults(func=_cmd_readout)

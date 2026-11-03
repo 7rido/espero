@@ -296,6 +296,86 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-deribit-la
 - A restart fetches only the slots not on disk. Deribit serves no history of open interest by strike,
   so a slot missed while the Mac slept is lost.
 
+## The silence alarm (watchdog)
+
+`espero watchdog --once` checks everything that should be alive and says so when it is not. Each check has an
+allowance:
+
+| check | silent when | allowance |
+|---|---|---|
+| `rawrec:<venue>` | the newest raw tape file for that venue (`ESPERO_RAW_DIR`) | 120 s, the silence `rawrec.gaps` calls a gap |
+| `recorder:hlcollect`, `hlbook`, `deribit` | the newest file in that folder's latest day | 15 minutes |
+| `daily` | `health.json`'s `last_run`, and every step `ok` | 26 hours |
+| `agent:<label>` | launchd's own state for each always-on agent | must say `running` |
+| `disk` | free space where the tape is written | 30 GB, the recorder's own floor |
+| `clock` | this Mac against `time.apple.com` (SNTP) | 250 ms warns; past 1 s **trading is refused** |
+
+A failing check goes to the macOS notification centre at once, to the webhook (`ESPERO_WEBHOOK_URL`) after 10
+minutes, and to both again every hour until it recovers or is acknowledged with `espero watchdog --ack NAME`. A
+recovery is announced once. `state/watchdog.json` holds the last checks and the open alarms;
+`espero watchdog --status` prints it. Install it to run every minute; the classifier may refuse the install from an
+agent, so the account holder runs:
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp/Espero Trading QuantBot/espero-raw" ./scripts/install-watchdog-launchd.sh
+```
+
+It reads files and launchd's state and writes only `state/watchdog.json`. Removing it is the same script with
+`--uninstall`.
+
+## The clock
+
+Every order is timed against the venue's clock, and the latency budgets of research/LIVE_LATENCY.md are seconds for
+the fastest rules. The watchdog's `clock` check reads the offset from an NTP server; `watchdog.clock_ok` is what an
+executor asks before it places an order, and it refuses at an offset over one second. If it fails: System Settings,
+General, Date & Time, "Set time and date automatically", which is the holder's setting to change.
+
+## Startup reconciliation
+
+Before its first order after any start, an executor runs `espero.reconcile.startup`: the venue's positions and
+resting orders against its own journal. A position the journal does not know, one the venue does not hold, a size
+off by more than half a step, an order resting that the journal never placed, or one the journal thinks is resting
+and the venue does not list: each is a **break**. Breaks are listed, never repaired automatically, and the risk gate
+refuses every entry while one is open (`risk.Account.breaks`). On an account shared with another book (the testnet
+account carry-maker's mirror also trades), positions cannot be attributed, so only the executor's own client order
+ids are compared.
+
+## Recovery drill
+
+What happens when the Mac dies, measured rather than guessed. The holder runs it, at a quiet hour, perhaps once a
+quarter:
+
+1. Write down the time in UTC.
+2. Take the machine down the way it really goes down: shut the Mac off, or pull its power, or log out. Every espero
+   loop stops with it, and launchd restarts them at the next login (each agent is `RunAtLoad`).
+3. Wait as long as the drill means to test (five minutes is enough to learn something).
+4. Bring it back: start the Mac and log in. Check `espero watchdog --status` until every check is `ok`.
+5. Measure: `espero watchdog --drill-report <the UTC time from step 1, as YYYY-MM-DDTHH:MM>`. It reports, per raw
+   venue, the gaps the tape itself records and when data resumed, and the collector's 5-minute slots that are missing.
+6. Reconcile: the testnet executor's next step looks up its in-flight orders by client id before sending anything.
+7. Record the result below, in a commit.
+
+| date | how it went down | down for | first data back | slots lost | breaks found |
+|---|---|---|---|---|---|
+| not yet run | | | | | |
+
+## The recorder of record sleeps: the options and what they cost
+
+Every recording here is made by a laptop that sleeps, travels and restarts for updates. A gap is a gap (AGENTS.md):
+nothing fills it later. The options, with rough costs to confirm before any purchase; the holder decides a figure
+first (docs/HOLDER_INPUTS.md, `data_budget_usd_month`), and nothing is bought by an agent. No AWS.
+
+| option | what it fixes | roughly | what it does not fix |
+|---|---|---|---|
+| keep this Mac awake on power (Battery settings: prevent sleeping when the display is off) | the nightly sleep | nothing | restarts, travel, power cuts, one machine |
+| a second always-on machine at home recording a **replica** (a mini PC or a Mac mini, a 1-2 TB SSD; the tape is about 4 GB a day with books) | sleep and travel, with a cross-check of the record | a few hundred USD once, a few dollars a month of power | a home power or network cut; the replica is not the record (AGENTS.md) |
+| a small server from a non-AWS provider | sleep, travel and home outages | from about 5-20 USD a month plus storage for about 120 GB a month of tape | a venue may serve the server's location differently (Binance answers 451 here); whether recording from there is within each venue's terms is the holder's check |
+| a paid historical data vendor | the past, and a second witness for the record | the vendor's subscription; the holder tested free days on 2026-10-31 (trades matched the API; books were half-second snapshots, 5 levels a side) | nothing live: a vendor's history cannot place an order in time |
+
+Feeds this Mac cannot get at all (Binance's liquidation and funding streams are silent here) are why #22, #23 and
+#38 are next-day-batch in research/LIVE_LATENCY.md; only a machine where those streams arrive changes that, and only
+after the holder's terms check.
+
 ## Running it in Docker — any machine
 
 `Dockerfile` and `docker-compose.yml` package the same two jobs launchd runs here: the Hyperliquid

@@ -115,6 +115,37 @@ class TestFiles(unittest.TestCase):
         got = [r["d"]["n"] for r in rr.read_day(self.raw, "okx", "2026-11-02")]
         self.assertEqual(got, [1, 2, 3])
 
+    def test_a_pretty_printed_frame_stays_one_line_and_the_hour_reads_on(self):
+        """A gateway's pretty-printed JSON error body used to put raw newlines on the tape, and every reader then
+        raised at that line and lost the rest of the hour."""
+        w = rr.HourWriter(self.raw, "okx")
+        w.write(rr.line(T0, "rest.books", "BTC-USDT-SWAP", b'{"code":"50011",\n  "msg": "too many"\r\n}'))
+        w.write(rr.line(T0 + 1, "trades", "A", b'{"n":2}'))
+        w.close()
+        got = list(rr.read_day(self.raw, "okx", "2026-11-02"))
+        self.assertEqual([g["d"] for g in got], [{"code": "50011", "msg": "too many"}, {"n": 2}])
+
+    def test_a_line_that_does_not_parse_is_a_marker_not_the_end_of_the_hour(self):
+        """A bad line written before the fix: readers skip it and read on."""
+        dec = rr.FrameDecoder()
+        import zstandard
+        blob = zstandard.ZstdCompressor().compress(b'{"rt":1,"n":1}\n{"rt":2,"n":\n2}\n{"rt":3,"n":3}\n')
+        out = list(dec.feed(blob)) + list(dec.finish())
+        self.assertEqual([r.get("n") for r in out if not r.get("truncated")], [1, 3])
+        self.assertTrue(any(r.get("bad") for r in out))
+
+    def test_a_frame_of_an_unexpected_shape_is_ctrl_not_an_exception(self):
+        """The feed treated an exception here as a lost connection and reconnected, with backoff."""
+        for venue, frame in (("bybit", b'{"topic":5,"data":{}}'), ("binance", b'{"stream":5,"data":{}}'),
+                             ("hyperliquid", b'{"channel":"trades","data":[5]}'), ("okx", b'{"arg":[1],"data":1}')):
+            self.assertEqual(rr.classify(venue, frame), ("_ctrl", ""), venue)
+
+    def test_the_feeds_bound_a_frame_size(self):
+        import inspect
+        src = inspect.getsource(rr)
+        self.assertNotIn("max_size=None", src)
+        self.assertGreater(rr.MAX_FRAME_BYTES, 4 << 20)
+
     def test_restart_appends_a_second_frame_that_reads_back_in_order(self):
         for n in (1, 2):
             w = rr.HourWriter(self.raw, "bybit")

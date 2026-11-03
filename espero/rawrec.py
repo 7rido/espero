@@ -104,6 +104,7 @@ MANIFEST_EVERY_S = 3600
 FLUSH_EVERY_S = 1.0
 BINANCE_RETRY_S = 3600
 FREE_FLOOR_GB = 30.0
+MAX_FRAME_BYTES = 64 << 20   # a 400-level OKX book is well under 1 MiB; a frame past this is a venue fault, not data
 HL_NAME = {"SHIB": "kSHIB"}  # Hyperliquid lists some coins in thousands
 HL_MAINNET_WS = "wss://api.hyperliquid.xyz/ws"
 HL_TESTNET_WS = "wss://api.hyperliquid-testnet.xyz/ws"
@@ -161,6 +162,11 @@ def line(rt_ms: int, channel: str, symbol: str, frame: bytes) -> bytes:
     frame = frame.strip()
     if frame[:1] not in (b"{", b"["):  # a text frame such as OKX's "pong": kept as a JSON string
         frame = json.dumps(frame.decode("utf-8", "replace")).encode()
+    elif b"\n" in frame or b"\r" in frame:
+        # pretty-printed JSON (a gateway's error body): inside valid JSON a raw newline can only be whitespace
+        # between tokens, so a space keeps it the same document on one line; one line per frame is what readers
+        # split on
+        frame = frame.replace(b"\r", b" ").replace(b"\n", b" ")
     return head[:-1].encode() + b',"d":' + frame + b"}\n"
 
 
@@ -169,7 +175,16 @@ def meta(rt_ms: int, event: str, **fields) -> bytes:
 
 
 def classify(venue: str, frame: bytes) -> Tuple[str, str]:
-    """(channel, symbol) of a frame, parsed only as far as that takes. Unknown shapes are `_ctrl`."""
+    """(channel, symbol) of a frame, parsed only as far as that takes. Unknown shapes are `_ctrl`: a frame whose
+    fields have unexpected types used to raise here, which the feed took for a connection error and reconnected,
+    so one odd frame per connection could starve a venue's tape."""
+    try:
+        return _classify(venue, frame)
+    except Exception:  # noqa: BLE001 - the frame is still recorded verbatim, under _ctrl
+        return "_ctrl", ""
+
+
+def _classify(venue: str, frame: bytes) -> Tuple[str, str]:
     try:
         d = json.loads(frame)
     except ValueError:
@@ -302,7 +317,12 @@ class FrameDecoder:
         only = self._only
         for raw in lines:
             if raw.strip() and (only is None or any(k in raw for k in only)):
-                yield json.loads(raw)
+                try:
+                    yield json.loads(raw)
+                except ValueError:
+                    # one bad line (written before line() kept frames on one line) must not end the hour for
+                    # every reader; the marker is skipped wherever a cut frame's is
+                    yield {"truncated": True, "bad": True}
 
     def feed(self, chunk: bytes, final: bool = False, only=None) -> Iterator[dict]:
         """`only`: byte strings; a line is parsed only when it contains one of them (a cheap pre-filter)."""
@@ -674,7 +694,8 @@ class Feed:
         retry = 1.0
         while True:
             try:
-                async with connect(self.url(), open_timeout=15, ping_interval=20, ping_timeout=20, max_size=None) as ws:
+                async with connect(self.url(), open_timeout=15, ping_interval=20, ping_timeout=20,
+                                   max_size=MAX_FRAME_BYTES) as ws:
                     self.ws = ws
                     self.note(
                         "open" if not self.reconnects else "reconnect",
@@ -736,7 +757,7 @@ async def bybit_snapshots(
     clock = clock or (lambda: int(time.time() * 1000))
     want = {f"orderbook.50.{s}" for s in symbols}
     got = 0
-    async with connect(BYBIT_WS, open_timeout=15, max_size=None) as ws:
+    async with connect(BYBIT_WS, open_timeout=15, max_size=MAX_FRAME_BYTES) as ws:
         writer.write(meta(clock(), "snapshot_request", venue="bybit", symbols=symbols))
         for msg in [json.dumps({"op": "subscribe", "args": part}) for part in chunks(sorted(want), 10)]:
             await ws.send(msg)

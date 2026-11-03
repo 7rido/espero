@@ -21,7 +21,7 @@ START, END = "<!-- layers:start -->", "<!-- layers:end -->"
 
 # layer -> (what it is, its modules). Order is the order a reader meets them: data in, rules on it,
 # the daily steps that apply them forward, the books that hold positions, what gets recorded, what
-# gets measured, and the commands that run it all.
+# gets measured, the path from a verdict to an order, and the commands that run it all.
 LAYERS: Dict[str, Tuple[str, List[str]]] = {
     "core": ("market data, venues and the causal primitives every rule is built from",
              ["data", "hyperliquid", "kraken_futures", "coinbase_fees", "aggr", "coinm", "panel", "features",
@@ -41,6 +41,8 @@ LAYERS: Dict[str, Tuple[str, List[str]]] = {
     "measure": ("costs on prints, fills on tape, the point-in-time store and the ledger of every trial",
                 ["markout", "execsim", "pit", "trials", "factor_eval", "detector", "audit", "tca", "reconcile",
                  "hl_exchange", "hlp_testnet", "rawbars", "replaysim", "robustness", "sleeves"]),
+    "live": ("from a verdict to a sized order, built and tested before any verdict; no mainnet path",
+             ["latency"]),
     "operate": ("the commands, the screens, the scheduler and this table",
                 ["cli", "ui", "runner", "loop", "lock", "notify", "dashboard", "report", "board", "carry_view",
                  "fast", "broker", "layers", "__init__", "__main__"]),

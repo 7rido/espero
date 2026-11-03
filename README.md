@@ -561,7 +561,7 @@ Same signals every row. The only things that change are when the fill happens an
 
 ## Layout
 
-Every module sits in one of seven layers; `espero/layers.py` is the table, each line is the module's
+Every module sits in one of eight layers; `espero/layers.py` is the table, each line is the module's
 own first docstring line, and `tests/test_layers.py` fails when a module is unclaimed or this block is
 stale. The path from a recording to a verdict is [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
 
@@ -659,6 +659,8 @@ espero/
     replaysim.py      # #62: the paper fills replayed on the recorded book (research/PREREGISTRATION_REPLAYSIM.md).
     robustness.py     # Robustness readouts reported beside every result from #61 on (research/ROBUSTNESS_STANDARD.md).
     sleeves.py        # #63: the portfolio layer, how passes combine, fixed before any two exist …
+    # live: from a verdict to a sized order, built and tested before any verdict; no mainnet path
+    latency.py        # How late each forward rule and pass may act, how late the pipeline is, and the class that …
     # operate: the commands, the screens, the scheduler and this table
     cli.py            # Command line entry point: `python -m espero ...` or the `espero` script.
     ui.py             # `espero` with no arguments: an interactive home screen.

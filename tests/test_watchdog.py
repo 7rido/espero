@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import socket
 import struct
 import tempfile
@@ -78,6 +79,15 @@ class TestChecks(unittest.TestCase):
         states = {"a": "running", "b": "not loaded", "c": "waiting"}
         got = {c.name: c.ok for c in W.check_agents(lambda label: states[label], agents=("a", "b", "c"))}
         self.assertEqual(got, {"agent:a": True, "agent:b": False, "agent:c": False})
+
+    def test_every_always_on_launchd_template_is_watched(self):
+        templates = sorted((Path(W.__file__).resolve().parents[1] / "deploy" / "launchd").glob("*.plist.template"))
+        self.assertTrue(templates)
+        for p in templates:
+            if not re.search(r"<key>KeepAlive</key>\s*<true/>", p.read_text(encoding="utf-8")):
+                continue                                                 # the timed jobs are judged by their output
+            label = p.name.removesuffix(".plist.template")               # carry's becomes carry-maker, carry-taker
+            self.assertTrue(any(a == label or a.startswith(label + "-") for a in W.AGENTS), label)
 
     def test_disk_floor(self):
         self.assertTrue(W.check_disk(Path("/"), free_gb=lambda p: 31.0).ok)

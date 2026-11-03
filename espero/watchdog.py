@@ -39,7 +39,8 @@ RECORDERS = {                           # folder under data/ -> its period's all
 DAILY_MAX_AGE_S = 26 * 3600.0
 AGENTS = ("com.espero.rawrec", "com.espero.hlcollect", "com.espero.hlbook", "com.espero.deribit",
           "com.espero.carry-maker", "com.espero.carry-taker", "com.espero.hlp", "com.espero.hlp2",
-          "com.espero.hlp2-testnet", "com.espero.paper")       # KeepAlive: launchd should say "running"
+          "com.espero.hlp2-testnet", "com.espero.paper",
+          "com.espero.livesig")                                # KeepAlive: launchd should say "running"
 DISK_FLOOR_GB = rawrec.FREE_FLOOR_GB
 CLOCK_WARN_S, CLOCK_REFUSE_S = 0.25, 1.0
 NTP_SERVER = "time.apple.com"

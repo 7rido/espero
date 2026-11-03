@@ -647,6 +647,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `PREREGISTRATION_EDGEWATCH.md`
 - `PREREGISTRATION_EDGEWATCH.md.ots`
 
+## #71 — The streaming engine's events against the next-day batch's
+
+*#71 forward_pending*
+
+- `PREREGISTRATION_LIVESIG.md`
+- `PREREGISTRATION_LIVESIG.md.ots`
+
 ## #72 — Open interest as a next-day cascade forecast, beyond volatility
 
 *#72 fail*

@@ -158,6 +158,8 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
                                                                                     "PREREGISTRATION_OPALPHA.md.ots"]),
     "70": ("Edgewatch: the live stop rule, is this sleeve still the registered edge?", ["PREREGISTRATION_EDGEWATCH.md",
                                                                                       "PREREGISTRATION_EDGEWATCH.md.ots"]),
+    "71": ("The streaming engine's events against the next-day batch's", ["PREREGISTRATION_LIVESIG.md",
+                                                                       "PREREGISTRATION_LIVESIG.md.ots"]),
     "72": ("Open interest as a next-day cascade forecast, beyond volatility", ["EXPLORE_CASCADE.md", "cascade.py", "cascade_design_run.txt", "PREREGISTRATION_CASCADE.md", "PREREGISTRATION_CASCADE.md.ots",
                                                                            "RESULTS_CASCADE.md", "cascade_run.txt", "cascade_series.csv", "cascade_cells.csv.gz"]),
 }

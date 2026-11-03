@@ -297,6 +297,10 @@ ROWS: Tuple[Row, ...] = (
         "each live observation of a sleeve, against its registered edge", "the sleeve's net series",
         "none", None, "a rule acting through the risk gate", "none", None, False, "nothing until a sleeve is live",
         None, False, "a rule, not a trade: it halves or flattens a live sleeve through its scale", NOT_TRADABLE),
+    Row("71", "the streaming engine against the batch", "research/PREREGISTRATION_LIVESIG.md",
+        "each live-from-tape event the engine emits, against the next day's batch", "the raw tape, the archive",
+        "none", None, "a measurement", "none", None, False, "nothing until the engine runs", None, False,
+        "a measurement, information only", NOT_TRADABLE),
 )
 
 

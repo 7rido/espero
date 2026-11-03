@@ -673,6 +673,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 **From a verdict to an order**
 
 - `LIVE_LATENCY.md`
+- `RISK_POLICY.md`
 
 **This index**
 

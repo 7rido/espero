@@ -630,7 +630,6 @@ espero/
     hlpbook.py        # #58 and #59: HLP's absorbed inventory, as a rule, a ledger and a paper book …
     paper.py          # Paper trading: the backtest loop, but time moves forward and state is on disk.
     journal.py        # SQLite journal: every signal, order, fill and equity mark, in order.
-    risk.py           # The gate every order passes through before it can cost money.
     portfolio.py      # From a ranking to a set of weights that a small account can actually carry.
     execution.py      # Resting limit orders, simulated against a recorded book, pessimistically.
     backtest.py       # One long-only position, one bar at a time, filled when it is physically possible.
@@ -665,6 +664,7 @@ espero/
     # live: from a verdict to a sized order, built and tested before any verdict; no mainnet path
     latency.py        # How late each forward rule and pass may act, how late the pipeline is, and the class that …
     approvals.py      # The operator's protocol in code: proposals, replies with a one-time code, timeouts, every …
+    risk.py           # The gate every order passes through before it can cost money.
     # operate: the commands, the screens, the scheduler and this table
     cli.py            # Command line entry point: `python -m espero ...` or the `espero` script.
     ui.py             # `espero` with no arguments: an interactive home screen.

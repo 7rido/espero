@@ -696,6 +696,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `DEPLOYMENT_LADDER.md`
 - `LIVE_LATENCY.md`
 - `RISK_POLICY.md`
+- `ROBUSTNESS_LIVE.md`
 - `TEMPLATE_SIZING.md`
 
 **This index**

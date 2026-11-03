@@ -5,6 +5,7 @@ recorded depth, and a block that says "not applicable" where an input is missing
 
 from __future__ import annotations
 
+import math
 import unittest
 
 import numpy as np
@@ -157,6 +158,88 @@ class TestBlock(unittest.TestCase):
         self.assertIn("DSR", ro.render(b))
         self.assertIn("Capacity", ro.render(b))
         self.assertFalse(b["pbo"]["applicable"])
+
+
+class TestReadoutsAtSize(unittest.TestCase):
+    """research/ROBUSTNESS_LIVE.md's second table, on synthetic series only."""
+
+    def setUp(self):
+        rng = np.random.default_rng(3)
+        self.days = pd.date_range("2025-01-01", periods=400, freq="D")
+        self.btc = pd.Series(rng.normal(0, 0.03, 400), index=self.days)
+        noise = pd.Series(rng.normal(0, 0.01, 400), index=self.days)
+        self.sleeves = pd.DataFrame({"22": 0.5 * self.btc + noise, "24": 0.3 * self.btc + noise,
+                                     "12": pd.Series(rng.normal(0.001, 0.005, 400), index=self.days)})
+
+    def test_beta_recovers_the_exposure(self):
+        b = ro.beta(self.sleeves["22"], self.btc)
+        self.assertAlmostEqual(b["beta"], 0.5, delta=0.05)
+        self.assertGreater(b["t_beta"], 10)
+        self.assertEqual(b["n"], 400)
+        self.assertTrue(math.isnan(ro.beta(self.sleeves["22"][:5], self.btc)["beta"]))
+
+    def test_the_dip_cluster_is_one_equal_weight_series(self):
+        c = ro.cluster_beta(self.sleeves, self.btc)
+        self.assertEqual(c["members"], ["22", "24"])
+        self.assertAlmostEqual(c["beta"], 0.4, delta=0.05)
+        self.assertFalse(ro.cluster_beta(self.sleeves[["12"]], self.btc)["applicable"] is not False)
+        gappy = self.sleeves.copy()
+        gappy.loc[gappy.index[::2], "24"] = np.nan                       # a day #24 did not trade counts 0
+        want = ro.beta(gappy[["22", "24"]].fillna(0.0).mean(axis=1), self.btc)["beta"]
+        self.assertAlmostEqual(ro.cluster_beta(gappy, self.btc)["beta"], want)
+
+    def test_tail_dependence_one_for_the_same_series_about_q_for_independent_ones(self):
+        same = ro.lower_tail_dependence(self.btc, self.btc)
+        self.assertEqual(same["lambda_lower"], 1.0)
+        indep = ro.lower_tail_dependence(self.btc, self.sleeves["12"])
+        self.assertLess(indep["lambda_lower"], 0.2)
+        self.assertEqual(indep["n_tail"], 20)
+        self.assertTrue(math.isnan(ro.lower_tail_dependence(self.btc[:10], self.btc[:10])["lambda_lower"]))
+        steps = pd.Series(np.arange(21.0))                                  # the 5 % quantile is a value here
+        self.assertEqual(ro.lower_tail_dependence(steps, steps)["lambda_lower"], 1.0)
+        self.assertEqual(ro.block_live(self.sleeves[["12"]], self.btc)["tail"]["applicable"], False)
+        m = ro.tail_matrix(self.sleeves)
+        self.assertEqual(len(m), 3)
+        self.assertIn("pearson", m.columns)
+
+    def test_a_regime_split_by_year_and_by_funding(self):
+        years = ro.regime_split(self.sleeves["12"], ro.by_year(self.days))
+        self.assertEqual(sorted(years), ["2025", "2026"])
+        self.assertEqual(years["2025"]["n"] + years["2026"]["n"], 400)
+        v = self.sleeves["12"][self.days.year == 2026].to_numpy()
+        self.assertAlmostEqual(years["2026"]["t"], v.mean() / v.std(ddof=1) * math.sqrt(len(v)))
+        funding = pd.Series(np.r_[np.full(200, 0.0001), np.full(200, 0.0004)], index=self.days)
+        lab = ro.funding_regime(funding)
+        self.assertEqual(set(lab.unique()), {"high", "low"})
+        self.assertEqual(lab.iloc[-1], "high")
+
+    def test_the_extra_cost_at_size_and_its_deflated_sharpe(self):
+        levels = [(100.01, 50.0), (100.05, 50.0), (100.20, 500.0)]
+        small = ro.extra_cost_bps(levels, 100.0, 1_000.0)
+        self.assertEqual(small, 0.0)
+        big = ro.extra_cost_bps(levels, 100.0, 20_000.0)
+        self.assertAlmostEqual(big, 2 * (ro.sweep_cost_bps(levels, 100.0, 20_000.0)
+                                         - ro.sweep_cost_bps(levels, 100.0, 1_000.0)))
+        self.assertTrue(math.isnan(ro.extra_cost_bps(levels, 100.0, 1e9)))
+        r = self.sleeves["12"].to_numpy()
+        free = ro.deflated_sharpe_at_size(r, 1.0, 0.0, 30, 0.002)
+        self.assertAlmostEqual(free["dsr"], ro.deflated_sharpe(r, 30, 0.002)["dsr"])
+        dear = ro.deflated_sharpe_at_size(r, 1.0, 5.0, 30, 0.002)
+        self.assertLess(dear["dsr"], free["dsr"])
+
+    def test_the_second_table_without_inputs_is_all_not_applicable_and_the_first_is_unchanged(self):
+        b = ro.block_live()
+        self.assertTrue(all(v.get("applicable") is False for v in b.values()))
+        self.assertEqual(ro.render_live(b).count("not applicable"), 5)
+        self.assertEqual(len(ro.block()), 6)
+
+    def test_the_second_table_with_inputs(self):
+        b = ro.block_live(self.sleeves, self.btc, {"year": ro.by_year(self.days)},
+                                  {"trades_per_obs": 1.0, "extra_bps": 2.0, "notional": 10_000.0},
+                                  self.sleeves["12"].to_numpy(), 30, 0.002, capacity_usd=25_000.0)
+        out = ro.render_live(b)
+        for text in ("#22 +0.4", "members #22, #24", "λ", "year:", "capacity $25,000", "at $10,000"):
+            self.assertIn(text, out)
 
 
 if __name__ == "__main__":

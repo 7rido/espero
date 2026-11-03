@@ -8,6 +8,11 @@ Pure: arrays in, numbers out. None of these is a pass bar; FDR and t ≥ 3 stay 
 trials behind it (deflated Sharpe, `espero.trials`), the choice among configurations (PBO), leakage across
 the fold boundary (purged k-fold), how fast the signal fades (half-life), how much it trades (turnover),
 and how much money the recorded book would carry at the measured edge (capacity).
+
+A second table, for sleeves at their sizing document and the family's judgment (research/ROBUSTNESS_LIVE.md):
+BTC beta of each sleeve and of the dip-buying cluster (#22, #24, #31), lower-tail dependence between sleeves
+beside #63's Pearson correlation, the split by year and by funding regime, and the deflated Sharpe at the
+intended size, net of the extra impact the recorded book charges there. Reported, never decisive.
 """
 
 from __future__ import annotations
@@ -273,4 +278,166 @@ def render(b: Dict[str, object]) -> str:
                 f"| {label} | ${v['capacity_usd']:,.0f} at {v['edge_bps']:.1f} bps "
                 f"(recorded depth ${v['depth_usd']:,.0f}) |"
             )
+    return "\n".join(lines)
+
+
+
+# ------------------------------------------------------------------ the readouts at size (research/ROBUSTNESS_LIVE.md)
+DIP_CLUSTER = ("22", "24", "31")          # FORWARD_FAMILY.md rule 6: they buy the same kind of dip
+TAIL_Q = 0.05
+
+
+def _aligned(*series: pd.Series) -> pd.DataFrame:
+    return pd.concat([x.rename(i) for i, x in enumerate(series)], axis=1).dropna()
+
+
+def beta(returns: pd.Series, benchmark: pd.Series) -> Dict[str, float]:
+    """OLS beta of a sleeve's daily returns on BTC's, on the days both have, with its plain t and R²."""
+    d = _aligned(returns, benchmark)
+    n = len(d)
+    if n < 10 or d[1].std(ddof=1) == 0:
+        return {"n": n, "beta": float("nan"), "alpha": float("nan"), "t_beta": float("nan"), "r2": float("nan")}
+    r, b = d[0].to_numpy(), d[1].to_numpy()
+    bc = b - b.mean()
+    slope = float((bc * (r - r.mean())).sum() / (bc**2).sum())
+    alpha = float(r.mean() - slope * b.mean())
+    resid = r - alpha - slope * b
+    se = math.sqrt(float((resid**2).sum()) / (n - 2) / float((bc**2).sum()))
+    sst = float(((r - r.mean()) ** 2).sum())
+    return {"n": n, "beta": slope, "alpha": alpha, "t_beta": slope / se if se > 0 else float("nan"),
+            "r2": 1 - float((resid**2).sum()) / sst if sst > 0 else float("nan")}
+
+
+def cluster_beta(sleeves: pd.DataFrame, benchmark: pd.Series, members: Sequence[str] = DIP_CLUSTER) -> Dict[str, float]:
+    """The beta of the members' equal-weight daily return (a day a member did not trade is 0, as #63 counts it)."""
+    have = [m for m in members if m in sleeves.columns]
+    if not have:
+        return {"applicable": False, "note": "no member of the cluster passed"}
+    out = beta(sleeves[have].fillna(0.0).mean(axis=1), benchmark)
+    out["members"] = have
+    return out
+
+
+def lower_tail_dependence(x: pd.Series, y: pd.Series, q: float = TAIL_Q) -> Dict[str, float]:
+    """P(y in its lower q tail | x in its lower q tail), against q if the two were independent, beside Pearson."""
+    d = _aligned(x, y)
+    n = len(d)
+    if n < 20:
+        return {"n": n, "q": q, "lambda_lower": float("nan"), "n_tail": 0, "pearson": float("nan")}
+    qx, qy = d[0].quantile(q), d[1].quantile(q)
+    tail = d[0] <= qx
+    both = tail & (d[1] <= qy)
+    return {"n": n, "q": q, "lambda_lower": float(both.sum() / tail.sum()) if tail.sum() else float("nan"),
+            "n_tail": int(tail.sum()), "pearson": float(d[0].corr(d[1]))}
+
+
+def tail_matrix(sleeves: pd.DataFrame, q: float = TAIL_Q) -> pd.DataFrame:
+    """Every pair of sleeves: lower-tail dependence both ways round, the Pearson correlation #63 uses, the counts."""
+    rows = []
+    cols = list(sleeves.columns)
+    for i, a in enumerate(cols):
+        for b in cols[i + 1:]:
+            ab, ba = lower_tail_dependence(sleeves[a], sleeves[b], q), lower_tail_dependence(sleeves[b], sleeves[a], q)
+            rows.append({"a": a, "b": b, "lambda_a_given_b": ba["lambda_lower"], "lambda_b_given_a": ab["lambda_lower"],
+                         "pearson": ab["pearson"], "n": ab["n"], "n_tail": ab["n_tail"]})
+    return pd.DataFrame(rows, columns=["a", "b", "lambda_a_given_b", "lambda_b_given_a", "pearson", "n", "n_tail"])
+
+
+def regime_split(returns: pd.Series, labels: pd.Series) -> Dict[str, Dict[str, float]]:
+    """The sleeve's daily return in each regime: count, mean, plain t, per-observation Sharpe."""
+    d = _aligned(returns, labels)
+    out = {}
+    for label, g in d.groupby(1)[0]:
+        v = g.to_numpy(dtype=float)
+        sd = v.std(ddof=1) if len(v) > 1 else float("nan")
+        out[str(label)] = {"n": int(len(v)), "mean": float(v.mean()),
+                           "t": float(v.mean() / sd * math.sqrt(len(v))) if sd and sd > 0 else float("nan"),
+                           "sharpe": float(v.mean() / sd) if sd and sd > 0 else float("nan")}
+    return out
+
+
+def by_year(index: pd.DatetimeIndex) -> pd.Series:
+    return pd.Series(index.year.astype(str), index=index)
+
+
+def funding_regime(funding: pd.Series, window: int = 30) -> pd.Series:
+    """'high' where the trailing mean of daily funding is above its median over the whole window, else 'low'.
+    Descriptive: the median is the window's, so the split is a reading of the past, not a rule."""
+    trail = funding.rolling(window, min_periods=window).mean().dropna()
+    return pd.Series(np.where(trail > trail.median(), "high", "low"), index=trail.index)
+
+
+def extra_cost_bps(levels: Sequence[Tuple[float, float]], mid: float, notional: float, small: float = 1_000.0) -> float:
+    """What a round trip costs at `notional` beyond what it costs at `small`, from the recorded side of the book:
+    the impact the registered costs (measured at small size) do not hold. NaN past the recorded depth."""
+    at, base = sweep_cost_bps(levels, mid, notional), sweep_cost_bps(levels, mid, small)
+    return 2 * max(0.0, at - base) if math.isfinite(at) and math.isfinite(base) else float("nan")
+
+
+def deflated_sharpe_at_size(net_returns: Sequence[float], trades_per_obs: float, extra_bps: float, n_trials: int,
+                            var_sharpe: float) -> Dict[str, float]:
+    """The deflated Sharpe of the registered net series once each observation pays its trades' extra impact at
+    the intended size."""
+    r = np.asarray(net_returns, dtype=float) - trades_per_obs * extra_bps / 1e4
+    return {**deflated_sharpe(r, n_trials, var_sharpe), "extra_bps": extra_bps, "trades_per_obs": trades_per_obs}
+
+
+def block_live(sleeves: Optional[pd.DataFrame] = None, btc: Optional[pd.Series] = None,
+               labels: Optional[Dict[str, pd.Series]] = None, at_size: Optional[Dict[str, float]] = None,
+               net: Optional[Sequence[float]] = None, n_trials: int = 0, var_sharpe: float = float("nan"),
+               capacity_usd: Optional[float] = None) -> Dict[str, object]:
+    """The second table: each readout where its input exists, "not applicable" with the reason where not."""
+    out: Dict[str, object] = {}
+    if sleeves is not None and btc is not None:
+        out["beta"] = {c: beta(sleeves[c], btc) for c in sleeves.columns}
+        out["cluster_beta"] = cluster_beta(sleeves, btc)
+    else:
+        out["beta"] = out["cluster_beta"] = {"applicable": False, "note": "no sleeve returns or no BTC series"}
+    out["tail"] = (tail_matrix(sleeves) if sleeves is not None and sleeves.shape[1] >= 2
+                   else {"applicable": False, "note": "fewer than two sleeves"})
+    if sleeves is not None and labels:
+        out["regimes"] = {name: {c: regime_split(sleeves[c], lab) for c in sleeves.columns}
+                          for name, lab in labels.items()}
+    else:
+        out["regimes"] = {"applicable": False, "note": "no sleeve returns or no regime labels"}
+    if net is not None and at_size and n_trials and math.isfinite(var_sharpe):
+        out["dsr_at_size"] = deflated_sharpe_at_size(net, at_size["trades_per_obs"], at_size["extra_bps"], n_trials,
+                                                     var_sharpe)
+        out["dsr_at_size"]["capacity_usd"] = capacity_usd
+        out["dsr_at_size"]["notional"] = at_size.get("notional")
+    else:
+        out["dsr_at_size"] = {"applicable": False, "note": "no net series, intended size or trial count"}
+    return out
+
+
+def render_live(b: Dict[str, object]) -> str:
+    lines = ["| readout at size | value |", "|---|---|"]
+    for key, label in (("beta", "BTC beta"), ("cluster_beta", "BTC beta, #22/#24/#31 together"),
+                       ("tail", "Lower-tail dependence (q 5 %)"), ("regimes", "By year and funding regime"),
+                       ("dsr_at_size", "Deflated Sharpe at the intended size")):
+        v = b[key]
+        if isinstance(v, dict) and v.get("applicable") is False:
+            lines.append(f"| {label} | not applicable: {v['note']} |")
+        elif key == "beta":
+            lines.append(f"| {label} | " + "; ".join(f"#{c} {x['beta']:+.2f} (t {x['t_beta']:.1f}, n {x['n']})"
+                                                     for c, x in v.items()) + " |")
+        elif key == "cluster_beta":
+            lines.append(f"| {label} | {v['beta']:+.2f} (t {v['t_beta']:.1f}, n {v['n']}, members "
+                         f"{', '.join('#' + m for m in v['members'])}) |")
+        elif key == "tail":
+            lines.append(f"| {label} | " + "; ".join(
+                f"#{r.a}/#{r.b} λ {r.lambda_b_given_a:.2f} vs Pearson {r.pearson:+.2f} ({r.n_tail} tail days)"
+                for r in v.itertuples()) + " |")
+        elif key == "regimes":
+            parts = []
+            for name, per in v.items():
+                for c, regs in per.items():
+                    parts.append(f"#{c} {name}: " + ", ".join(f"{k} {x['mean'] * 1e4:+.1f} bps (n {x['n']})"
+                                                              for k, x in regs.items()))
+            lines.append(f"| {label} | " + "; ".join(parts) + " |")
+        elif key == "dsr_at_size":
+            cap = v.get("capacity_usd")
+            lines.append(f"| {label} | DSR {v['dsr']:.3f} after {v['extra_bps']:.1f} bps extra a round trip at "
+                         f"${(v.get('notional') or 0):,.0f}" + (f"; capacity ${cap:,.0f}" if cap is not None else "")
+                         + " |")
     return "\n".join(lines)

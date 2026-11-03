@@ -167,6 +167,8 @@ class TestnetExchange:
         sz, px = round_size(size, sd), round_price(price, sd, side)
         if sz <= 0:
             raise ValueError(f"{coin}: size {size} rounds to zero at {sd} decimals")
+        if px <= 0:
+            raise ValueError(f"{coin}: price {price} rounds to zero on the venue's grid")
         kw = {"cloid": _cloid(cloid)} if cloid else {}
         resp = self.ex.order(coin, side == "buy", sz, px, {"limit": {"tif": tif}}, reduce_only=reduce_only, **kw)
         p = parse_order_response(resp)

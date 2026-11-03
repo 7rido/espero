@@ -131,6 +131,11 @@ class TestExchange(unittest.TestCase):
         with self.assertRaises(ValueError):
             ex.limit("BTC", "sell", 0.000001, 80000)
 
+    def test_a_price_that_rounds_to_zero_is_refused(self):
+        ex = exchange()
+        with self.assertRaises(ValueError):
+            ex.limit("BTC", "buy", 1, 3e-7)                 # a buy rounds down, to 0.0 at 6 decimals
+
 
 class TestMirrorGrace(unittest.TestCase):
     def test_just_placed_order_not_listed_yet_stays_resting(self):

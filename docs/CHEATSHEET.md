@@ -192,9 +192,10 @@ or hourly bars for the last ~208 days. Details: research/ERRATA.md, 2026-10-29.
 
 ## Drawer 5: live money. There is no drawer.
 
-The repo has no mainnet order path; `espero live` was removed on 2026-11-01. The only signing code
-is the Hyperliquid testnet mirror (`espero/hl_exchange.py`), and a real order is yours to place,
-outside this repo.
+`espero live` was removed on 2026-11-01. Two modules sign: the Hyperliquid testnet mirror
+(`espero/hl_exchange.py`), and `espero/hl_mainnet.py`, which exists under your signed lift of
+2026-11-03 (research/MAINNET_LIFT.md), refuses unless your lift and allow-list verify, and dry-runs
+by default.
 
 ## Where things are
 

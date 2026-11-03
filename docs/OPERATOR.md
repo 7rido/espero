@@ -1,8 +1,9 @@
 # The operator's protocol: who answers, how, how fast, and what happens when nobody does
 
-**Written 2026-11-02, before any sleeve exists.** Nothing here places an order: there is no mainnet order path
-in this repo (AGENTS.md), and none of this runs until a forward rule passes, its sizing document is written, and
-the account holder lifts the rule in writing (research/DESIGN_MAINNET_PATH.md). This is the protocol that will
+**Written 2026-11-02, before any sleeve exists.** Nothing here places an order by itself. The account holder lifted
+the no-mainnet rule in writing on 2026-11-03 (research/MAINNET_LIFT.md) for a plumbing canary on rule 8, so
+`espero/hl_mainnet.py` exists behind research/DESIGN_MAINNET_PATH.md's guards; every other sleeve still waits for a
+forward rule to pass and its sizing document to be written. This is the protocol that will
 stand between a passed rule and its orders, fixed while no verdict can shape it. `espero/approvals.py` is its
 code and `tests/test_approvals.py` holds it.
 

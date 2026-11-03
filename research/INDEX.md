@@ -703,6 +703,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `DEPLOYMENT_LADDER.md`
 - `DESIGN_MAINNET_PATH.md`
 - `LIVE_LATENCY.md`
+- `MAINNET_LIFT.md`
 - `RISK_POLICY.md`
 - `ROBUSTNESS_LIVE.md`
 - `TEMPLATE_SIZING.md`

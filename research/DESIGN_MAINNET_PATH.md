@@ -1,7 +1,10 @@
-# The mainnet order module, as a design only
+# The mainnet order module: the design it was built from
 
-**Written 2026-11-02. This is a design document. There is no mainnet order path in this repo, and this page
-adds none.** AGENTS.md: "There is no mainnet order path in this repo, and none is to be added", and
+**Built 2026-11-03 as `espero/hl_mainnet.py`, after the account holder lifted the no-mainnet rule in writing, in
+their own words, in signed commits (research/MAINNET_LIFT.md, cf109df and 88cd069).** The guards below are the
+module's, in this order, and `tests/test_hl_mainnet.py` refuses on each one alone. Nothing below was changed to build
+it. **This was a design document, written 2026-11-02, when there was no mainnet order path in this repo, and the
+page added none.** AGENTS.md: "There is no mainnet order path in this repo, and none is to be added", and
 `espero/hl_exchange.py` signs on Hyperliquid's testnet only. The module described here becomes code only after the
 account holder lifts that rule **in writing, in their own words, in a committed document**
 (docs/HOLDER_INPUTS.md, `mainnet_lift`). Nothing is prepared for it quietly, no guard is weakened, and an agent does

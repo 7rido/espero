@@ -53,15 +53,17 @@ block of `research/ROBUSTNESS_STANDARD.md` (deflated Sharpe, PBO, purged k-fold,
 capacity), reported, not decisive; and #63 fixes, before any two passes exist, how passes would share one
 account (`research/PREREGISTRATION_SLEEVES.md`).
 
-What is deliberately **not** on the path: a mainnet order. The only signing code is the Hyperliquid
-testnet mirror for #12's maker book. A real order is the account holder's act, outside this repo. The next
-section is what stands between a verdict and that act.
+What stands between the paper books and a real order: the account holder's signed lift of the no-mainnet rule
+(research/MAINNET_LIFT.md, 2026-11-03, a plumbing canary on rule 8), `espero/hl_mainnet.py` behind every guard of
+research/DESIGN_MAINNET_PATH.md, dry run by default, and the holder's yes. The testnet mirror for #12's maker book is
+the other signing code. The next section is the whole path.
 
 ## From a verdict to an order
 
 A PASS is not an order. Every step between a verdict and a sized order is built and tested before any verdict
 exists, on recorded tape and the testnet, so a pass changes numbers in documents, not code. None of it can place
-a mainnet order; research/DESIGN_MAINNET_PATH.md describes the module that would, as a design only.
+a mainnet order on its own: `espero/hl_mainnet.py`, built from research/DESIGN_MAINNET_PATH.md under the holder's
+signed lift, refuses unless the lift and the allow-list verify, and dry-runs unless asked.
 
 ```mermaid
 flowchart LR
@@ -74,7 +76,7 @@ flowchart LR
     E --> G
     G --> R["the ladder's rung<br/>research/DEPLOYMENT_LADDER.md"]
     R -->|rungs 0 and 1| T["paper twin, testnet<br/>espero/hl_exchange.py"]
-    R -.->|"rung 2 on: the holder's written lift first<br/>research/DESIGN_MAINNET_PATH.md, not built"| M[mainnet order]
+    R -.->|"rung 2 on: the holder's written lift first<br/>espero/hl_mainnet.py, under research/MAINNET_LIFT.md"| M[mainnet order]
     T --> W["watchdog, reconcile.startup, attribution, edgewatch #70<br/>scale down, never up"]
     W -.-> G
 ```
@@ -102,8 +104,8 @@ flowchart LR
 5. **The ladder.** research/DEPLOYMENT_LADDER.md, with `espero/rungs.py`: the paper twin from the day after the
    verdict, then the testnet (50 round trips, every fault below drilled), then a canary at the venue's minimum,
    then 10 % of the target, doubled after each clean block of 30 fills, up to the target the sizing document
-   fixed. The canary needs the holder's committed lift of the no-mainnet rule; until then the ladder stops at
-   the testnet.
+   fixed. The canary needs the holder's committed lift of the no-mainnet rule, given on 2026-11-03 for rule 8
+   (research/MAINNET_LIFT.md); every other sleeve's ladder still stops at the testnet until its verdict.
 6. **Watching it run.** `espero watchdog` alarms on silence (the recorders, the daily run, the loops, the
    disk, and the clock: past one second off, trading is refused); `reconcile.startup` sets the journal against
    the venue before the first order after any start; `espero/attribution.py` splits each sleeve's P&L into

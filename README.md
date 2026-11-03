@@ -131,7 +131,9 @@ and launchd at the same `data/` folder. Setting `ESPERO_PUBLISH_AS` also publish
 
 ## Live trading — there is none
 
-The repo has no mainnet order path. The Coinbase adapter and `espero live` were removed on
+The repo's one mainnet order path, `espero/hl_mainnet.py`, exists under the account holder's signed lift of
+2026-11-03 (research/MAINNET_LIFT.md) and refuses unless every guard in research/DESIGN_MAINNET_PATH.md passes; it
+dry-runs by default. The Coinbase adapter and `espero live` were removed on
 2026-11-01: that path had never been reconciled against a venue, and it served the four original
 strategies, which failed their tests. The only code that signs anything is
 [espero/hl_exchange.py](espero/hl_exchange.py), on Hyperliquid's **testnet**, for #12's maker
@@ -681,6 +683,7 @@ espero/
     attribution.py    # Live attribution: per sleeve, venue and day, what the fills cost against their decision prices …
     replay_stack.py   # Full-stack replay with faults: a signal through the risk gate to a fill on the recorded book …
     holderform.py     # The holder's inputs and the mainnet lift, filled in by a guided form instead of by editing a …
+    hl_mainnet.py     # Hyperliquid **mainnet** order path, built from research/DESIGN_MAINNET_PATH.md after the …
     # operate: the commands, the screens, the scheduler and this table
     cli.py            # Command line entry point: `python -m espero ...` or the `espero` script.
     ui.py             # `espero` with no arguments: an interactive home screen.

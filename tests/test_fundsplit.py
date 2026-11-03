@@ -68,6 +68,14 @@ class TestFunding(unittest.TestCase):
         self.assertTrue(np.isnan(got[0]))                  # nothing settled yet
         self.assertEqual(got[1:], [0.0001, 0.0001, 0.0005])
 
+    def test_a_settlement_older_than_one_interval_is_not_the_one_before_the_break(self):
+        """Until the archive publishes the current month, the last rate on disk is last month's final one."""
+        f = pd.DataFrame({"ts": [T0], "rate": [0.0009]})
+        ev = pd.DataFrame({"coin": "BTC", "ts": [T0 + 8 * 3600, T0 + 356 * 3600]})
+        got = fs.attach(ev, {"BTC": f}).sort_values("ts")["funding"].tolist()
+        self.assertEqual(got[0], 0.0009)                    # inside one interval: that settlement
+        self.assertTrue(np.isnan(got[1]))                   # two weeks on: unknown, and dropped as the plan says
+
     def test_crowded_means_above_the_default(self):
         ev = pd.DataFrame({"direction": -1, "group": "forced", "funding": [0.0001, 0.00011, np.nan],
                            "y60": 0.0, "y240": 0.0, "day": "2026-11-02"})

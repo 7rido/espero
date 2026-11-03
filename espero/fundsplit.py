@@ -18,7 +18,7 @@ from typing import Callable, Dict, List, Optional
 
 import pandas as pd
 
-from . import liq
+from . import liq, manifest
 from .levetf import welch
 from .liq import clustered
 
@@ -78,12 +78,14 @@ def rates(sym: str, data: Path = DATA, now: Optional[pd.Timestamp] = None,
             blob = get(URL.format(sym=sym, month=m))
             if blob is None:
                 continue
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(blob)
+            manifest.write_atomic(path, blob, manifest.zip_whole)
         frames.append(parse(path.read_bytes(), scaled))
     if not frames:
         return pd.DataFrame({"ts": pd.Series(dtype="int64"), "rate": pd.Series(dtype=float)})
     return pd.concat(frames, ignore_index=True).drop_duplicates("ts").sort_values("ts").reset_index(drop=True)
+
+
+SETTLEMENT_TOLERANCE_S = 9 * 3600     # an 8-hour interval and a margin; 4-hour coins sit well inside
 
 
 def attach(ev: pd.DataFrame, funding: Dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -95,8 +97,10 @@ def attach(ev: pd.DataFrame, funding: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         if f is None or f.empty:
             out.append(g.assign(funding=math.nan))
             continue
+        # within one funding interval: until the archive publishes the current month, the last rate on disk is
+        # last month's final one, which is not the settlement before this break (research/ERRATA.md, 2026-11-03)
         m = pd.merge_asof(g.astype({"ts": "int64"}), f.rename(columns={"rate": "funding"}).sort_values("ts"),
-                          on="ts", direction="backward")
+                          on="ts", direction="backward", tolerance=SETTLEMENT_TOLERANCE_S)
         out.append(m)
     return pd.concat(out, ignore_index=True) if out else ev.assign(funding=pd.Series(dtype=float))
 

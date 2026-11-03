@@ -15,7 +15,8 @@ GH_REPO="${GH_REPO:-7rido/espero}"
 PYTHON="${PYTHON:-$REPO/.venv/bin/python}"
 NAME="espero-live-data.tar.gz"
 URL="https://github.com/$GH_REPO/releases/latest/download"
-LIVE=(data/hlcollect data/hlbook data/book data/lows/forward data/aggr/forward data/aggr/forward5m)
+# the recordings scripts/publish-data.sh releases (its PATHS); tests/test_manifest.py holds the two lists equal
+LIVE=(data/hlcollect data/deribit data/hlbook data/book data/lows/forward data/aggr/forward data/aggr/forward5m)
 
 cd "$REPO"
 
@@ -66,9 +67,11 @@ archives() {
 check_archive() {
     # every member must sit under one of the live folders; anything else (a path with .., a dotfile at the
     # root, a file under .venv/ or espero/) refuses the whole archive
-    local members bad
+    local members bad alt
     members="$(tar -tzf "$1")" || { echo "cannot list $1" >&2; return 1; }
-    bad="$(printf '%s\n' "$members" | grep -Ev '^(data/(hlcollect|hlbook|book|lows/forward|aggr/forward|aggr/forward5m)(/|$)|data/$)' || true)"
+    alt="$(printf '%s|' "${LIVE[@]}")"
+    # a live folder and what is under it, or one of the folders above it (data/, data/lows/, data/aggr/)
+    bad="$(printf '%s\n' "$members" | grep -Ev "^((${alt%|})(/|\$)|data/(lows/|aggr/)?\$)" || true)"
     if [ -n "$bad" ]; then
         echo "refusing $1: it holds files outside the live folders:" >&2
         printf '  %s\n' $bad >&2

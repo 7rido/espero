@@ -12,7 +12,8 @@ from pathlib import Path
 from espero import manifest
 
 ROOT = Path(__file__).resolve().parents[1]
-UNRECOVERABLE = ["data/hlcollect", "data/hlbook", "data/book", "data/aggr/forward", "data/aggr/forward5m"]
+UNRECOVERABLE = ["data/hlcollect", "data/deribit", "data/hlbook", "data/book", "data/aggr/forward",
+                 "data/aggr/forward5m"]
 
 
 class TestWrite(unittest.TestCase):
@@ -113,12 +114,19 @@ class TestProvenance(unittest.TestCase):
         """A release is integrity-checked against its own sha256, never authenticated: a member outside data/'s
         live folders (a .pth under .venv/ would run on the next python start) refuses the whole archive."""
         script = ROOT / "scripts" / "fetch-data.sh"
+        published = re.search(r"^PATHS=\((.*?)\)", (ROOT / "scripts" / "publish-data.sh").read_text(),
+                              re.M).group(1).split()
+        fetched = re.search(r"^LIVE=\((.*?)\)", script.read_text(), re.M).group(1).split()
+        self.assertEqual(sorted(fetched), sorted(published), "fetch refuses what publish releases, or the reverse")
         with tempfile.TemporaryDirectory() as d:
             src = Path(d) / "src"
-            (src / "data" / "hlbook").mkdir(parents=True)
-            (src / "data" / "hlbook" / "a.csv").write_text("x")
+            for folder in published:                                   # a release as publish-data.sh builds it
+                (src / folder).mkdir(parents=True)
+                (src / folder / "a.csv").write_text("x")
             good = Path(d) / "good.tar.gz"
-            subprocess.run(["tar", "-czf", str(good), "-C", str(src), "data"], check=True)
+            subprocess.run(["tar", "-czf", str(good), "-C", str(src), *published], check=True)
+            whole = Path(d) / "whole.tar.gz"
+            subprocess.run(["tar", "-czf", str(whole), "-C", str(src), "data"], check=True)
             (src / ".venv" / "lib").mkdir(parents=True)
             (src / ".venv" / "lib" / "evil.pth").write_text("import os")
             evil = Path(d) / "evil.tar.gz"
@@ -128,9 +136,10 @@ class TestProvenance(unittest.TestCase):
             stray = Path(d) / "stray.tar.gz"
             subprocess.run(["tar", "-czf", str(stray), "-C", str(src), "data"], check=True)
             env = {"PATH": "/usr/bin:/bin", "HOME": d}
-            ok = subprocess.run(["bash", str(script), "check-archive", str(good)], capture_output=True, text=True,
-                                env=env)
-            self.assertEqual(ok.returncode, 0, ok.stderr)
+            for fine in (good, whole):
+                ok = subprocess.run(["bash", str(script), "check-archive", str(fine)], capture_output=True,
+                                    text=True, env=env)
+                self.assertEqual(ok.returncode, 0, ok.stderr)
             for bad in (evil, stray):
                 r = subprocess.run(["bash", str(script), "check-archive", str(bad)], capture_output=True,
                                    text=True, env=env)

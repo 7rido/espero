@@ -5,6 +5,20 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
+## 2026-11-02: Binance's trade stream carries zero-price records; #71's engine skips them, #61's rebuild counts them
+
+**No tolerance or criterion changes; written while building #71's engine, before any day was compared.** Binance's
+futures `trade` stream on this Mac sends records with `"X": "NA"`, price 0 and size 0 among its trades: on
+2026-11-02 from 04:02 to 07:00 UTC, 5,131 of them across the 13 recorded symbols (ETH 1,385, BTC 1,043, SOL 914,
+BNB 688, DOGE 461, XRP 320, the rest fewer). Counted as trades they put a zero low into the 5-minute bar, and
+because #24's and #31's trigger needs a close below the prior 48 bars' low, one zero low silences both rules for
+four hours: the engine's first replay of 2026-11-02 found no event at all, which is how this was seen.
+`PREREGISTRATION_LIVESIG.md` (#71, stamped) builds bars from "trade frames"; a record with no price and no size is
+read as not a trade, and `livesig.trade_of` skips it. **For #61:** `espero/rawbars.py`'s Binance branch counts every
+`trade` record, so its rebuilt Binance bars carry the same zero lows and extra counts against aggr's. Whether #61's
+registered "a trade" excludes them is for its owner to decide, and to record here, before its first comparable day
+(2026-11-03, read at the 07:30 run on 2026-11-04). Nothing in #61 was changed.
+
 ## 2026-11-02: HLP's positions are mostly out of sight; #58 and #59 read about 4% of the vault
 
 **No rule, threshold or criterion changes; a finding about the recording, written during the forward windows.**

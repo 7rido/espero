@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.espero.livesig</string>
+
+    <!-- #71's streaming engine (espero/livesig.py): it reads the raw tape the recorder writes and appends events to
+         state/livesig_events.csv; it opens no connection and nothing signs or trades.
+         scripts/install-livesig-launchd.sh renders this. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>-m</string>
+        <string>espero</string>
+        <string>livesig</string>
+        <string>--loop</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+
+    <!-- start at login and restart whenever the loop dies, at most once a minute. A restart seeds the panel from
+         the tape's closed bars and follows the current hour; a bar that closed while it was down emits nothing, as a
+         live trader would have missed it; a replay of the day (espero livesig, replay) shows what was missed. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>StandardOutPath</key>
+    <string>__LOG_DIR__/livesig.log</string>
+    <key>StandardErrorPath</key>
+    <string>__LOG_DIR__/livesig.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+        <key>ESPERO_RAW_DIR</key>
+        <string>__RAW_DIR__</string>
+    </dict>
+
+    <!-- Standard: a deferred process would emit late -->
+    <key>ProcessType</key>
+    <string>Standard</string>
+    <key>Nice</key>
+    <integer>5</integer>
+</dict>
+</plist>

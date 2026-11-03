@@ -141,3 +141,22 @@ class TestWatchdogAgent(unittest.TestCase):
 
     def test_without_a_tape_folder_the_tape_is_simply_not_checked(self):
         self.assertEqual(self.render("")["EnvironmentVariables"]["ESPERO_RAW_DIR"], "")
+
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
+class TestLivesigAgent(unittest.TestCase):
+    def test_kept_alive_reading_the_tape_it_is_told(self):
+        env = {"PATH": "/usr/bin:/bin", "HOME": "/tmp", "PYTHON": "/x/python", "ESPERO_RAW_DIR": "/tape"}
+        out = subprocess.run(["bash", str(ROOT / "scripts" / "install-livesig-launchd.sh"), "--print"],
+                             capture_output=True, text=True, check=True, env=env).stdout
+        p = plistlib.loads(out.encode())
+        self.assertEqual(p["Label"], "com.espero.livesig")
+        self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "livesig", "--loop"])
+        self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
+        self.assertEqual(p["EnvironmentVariables"]["ESPERO_RAW_DIR"], "/tape")
+        self.assertEqual(p["WorkingDirectory"], str(ROOT))
+
+    def test_it_refuses_without_a_tape_folder(self):
+        r = subprocess.run(["bash", str(ROOT / "scripts" / "install-livesig-launchd.sh"), "--print"],
+                           capture_output=True, text=True, env={"PATH": "/usr/bin:/bin", "HOME": "/tmp"})
+        self.assertNotEqual(r.returncode, 0)

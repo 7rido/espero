@@ -296,6 +296,22 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ./scripts/install-deribit-la
 - A restart fetches only the slots not on disk. Deribit serves no history of open interest by strike,
   so a slot missed while the Mac slept is lost.
 
+## The streaming engine (#71)
+
+`espero livesig --loop` reads the Binance tape the recorder writes and, as each 5-minute bar closes, emits the
+events of #24, #29, #31 and #34 that the batch would find a day later: rule, coin, side, time, and when the engine
+knew. It appends them to `state/livesig_events.csv` and keeps no return. It opens no connection to any venue, places
+nothing, and is information only (research/PREREGISTRATION_LIVESIG.md). `espero livesig --replay DAY` shows what a
+running engine emitted on a recorded day, and `--compare DAY` sets those events against the next-day batch's. The
+account holder installs the loop:
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp/Espero Trading QuantBot/espero-raw" ./scripts/install-livesig-launchd.sh
+```
+
+It reads the tape; it is not a second recorder. Removing it is the same script with `--uninstall`. A replay reads a
+day of Binance tape (about four minutes on this Mac).
+
 ## The silence alarm (watchdog)
 
 `espero watchdog --once` checks everything that should be alive and says so when it is not. Each check has an

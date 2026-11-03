@@ -1487,6 +1487,15 @@ def _cmd_watchdog(args: argparse.Namespace) -> int:
     return watchdog.main(argv)
 
 
+def _cmd_livesig(args: argparse.Namespace) -> int:
+    """#71's streaming engine (espero/livesig.py): replay or compare a recorded day, or follow the tape live."""
+    from . import livesig
+
+    argv = ["--state-dir", str(args.state_dir)]
+    argv += ["--replay", args.replay] if args.replay else ["--compare", args.compare] if args.compare else ["--loop"]
+    return livesig.main(argv)
+
+
 def _cmd_readout(args: argparse.Namespace) -> int:
     print(dash.READOUT.read_text(encoding="utf-8"))
     return 0
@@ -2003,6 +2012,14 @@ def build_parser() -> argparse.ArgumentParser:
     wd.add_argument("--no-clock", action="store_true", help="skip the NTP check")
     wd.add_argument("--state-dir", default=None)
     wd.set_defaults(func=_cmd_watchdog)
+
+    lsg = sub.add_parser("livesig", help="#71: the streaming engine on the raw tape; events only, never a return")
+    g = lsg.add_mutually_exclusive_group(required=True)
+    g.add_argument("--replay", metavar="DAY", help="the events a running engine emitted on DAY (counts, latency)")
+    g.add_argument("--compare", metavar="DAY", help="DAY's events against the next-day batch's")
+    g.add_argument("--loop", action="store_true", help="follow the tape as it is written")
+    lsg.add_argument("--state-dir", default=None)
+    lsg.set_defaults(func=_cmd_livesig)
 
     rd = sub.add_parser("readout", help="what the free Hyperliquid data shows, for reading the market; not signals")
     rd.set_defaults(func=_cmd_readout)

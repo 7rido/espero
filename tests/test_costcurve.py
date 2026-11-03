@@ -182,6 +182,18 @@ class TableTests(unittest.TestCase):
                 cc.cost(coin, usd, table=self.TABLE)
         self.assertTrue(np.isfinite(cc.cost("HBAR", 50_000, table=self.TABLE)))
 
+    def test_the_generated_table_has_one_usable_row_per_coin_measured(self):
+        """`espero.costcurve_table` exists once #68 ran; every row then carries the four fields `cost` reads."""
+        try:
+            from espero.costcurve_table import TABLE
+        except ImportError:
+            self.skipTest("#68 has not run")
+        for coin, row in TABLE.items():
+            self.assertEqual(sorted(row), ["c0", "k", "reach", "verdict"], coin)
+            self.assertIn(row["verdict"], ("UNKNOWN", "FLAT IS ENOUGH", "CURVE HOLDS", "CURVE DRIFTS"), coin)
+            if row["verdict"] in cc.USABLE:
+                self.assertTrue(np.isfinite(cc.cost(coin, row["reach"])), coin)
+
     def test_adjusted_uses_the_largest_gap_for_an_unvalidated_coin(self):
         self.assertAlmostEqual(cc.adjusted("ADA", 1.0), 1.562)
         self.assertAlmostEqual(cc.adjusted("ETH", 1.0), 1.370)

@@ -1,10 +1,10 @@
-# Status — generated 2026-11-02 22:06 UTC by `scripts/status.py`
+# Status — generated 2026-11-03 01:42 UTC by `scripts/status.py`
 
 Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `state/health.json`.
 
 ## The ledger
 
-66 tests: 26 fail, 19 forward_pending, 12 measurement, 7 pass, 1 exploratory, 1 provisional.
+67 tests: 26 fail, 19 forward_pending, 13 measurement, 7 pass, 1 exploratory, 1 provisional.
 
 | # | status | what | document |
 |---|---|---|---|
@@ -45,11 +45,11 @@ Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `
 
 | folder | files |
 |---|---|
-| `data/hlcollect` | 1918 |
-| `data/deribit` | 435 |
-| `data/hlbook` | 788 |
-| `data/aggr/forward` | 3 |
-| `data/aggr/forward5m` | 3 |
-| `data/lows/forward` | 164 |
+| `data/hlcollect` | 0 |
+| `data/deribit` | 0 |
+| `data/hlbook` | 0 |
+| `data/aggr/forward` | 0 |
+| `data/aggr/forward5m` | 0 |
+| `data/lows/forward` | 0 |
 
 Verdicts, costs and what a pass leads to: `research/INDEX.md`, `research/FORWARD_FAMILY.md`.

@@ -640,6 +640,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `PREREGISTRATION_OPALPHA.md`
 - `PREREGISTRATION_OPALPHA.md.ots`
 
+## #72 — Open interest as a next-day cascade forecast, beyond volatility
+
+*#72 (not in trials.csv)*
+
+- `EXPLORE_CASCADE.md`
+- `cascade.py`  (rule: `espero/cascade.py`)
+
 ## Cross-cutting
 
 **The ledger of every test**

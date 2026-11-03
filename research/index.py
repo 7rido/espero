@@ -156,6 +156,7 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
                                                                                   "costcurve_buckets.csv", "RESULTS_COSTCURVE.md"]),
     "69": ("Operator alpha: what the operator's overrides earned against the rule", ["PREREGISTRATION_OPALPHA.md",
                                                                                     "PREREGISTRATION_OPALPHA.md.ots"]),
+    "72": ("Open interest as a next-day cascade forecast, beyond volatility", ["EXPLORE_CASCADE.md", "cascade.py"]),
 }
 
 # files that belong to the project as a whole, not to one test

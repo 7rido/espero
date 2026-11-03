@@ -298,7 +298,12 @@ class FrameDecoder:
     concatenated zstd frames of one hour file. A frame without its end (a crash, a kill, or the session
     still writing) costs the block being written: the decoder yields one `{"truncated": True}` marker where
     the next session's frame begins (found by its magic and a valid header), and reads on. Input goes to
-    zstd in small pieces on purpose: a decoder that raises discards the output of the call that raised."""
+    zstd in pieces of at most `PIECE` bytes, whatever the caller reads from disk: a decoder that raises discards
+    the output of the call that raised, and a large piece makes each call return a large block (1 MiB of an hour
+    of Binance's tape decompresses to about 15 MB), which kept a reader's memory near 1 GB on this Mac though
+    Python held 31 MB of it; 64 KiB pieces keep it under 30 MB at the same speed (docs/AUDIT_PROD.md)."""
+
+    PIECE = 64 << 10
 
     def __init__(self):
         import zstandard
@@ -326,6 +331,13 @@ class FrameDecoder:
 
     def feed(self, chunk: bytes, final: bool = False, only=None) -> Iterator[dict]:
         """`only`: byte strings; a line is parsed only when it contains one of them (a cheap pre-filter)."""
+        if len(chunk) <= self.PIECE:
+            yield from self._feed(chunk, final, only)
+            return
+        for i in range(0, len(chunk), self.PIECE):
+            yield from self._feed(chunk[i:i + self.PIECE], final and i + self.PIECE >= len(chunk), only)
+
+    def _feed(self, chunk: bytes, final: bool = False, only=None) -> Iterator[dict]:
         import zstandard
 
         self._only = only

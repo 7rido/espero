@@ -134,6 +134,38 @@ class TestFiles(unittest.TestCase):
         self.assertEqual([r.get("n") for r in out if not r.get("truncated")], [1, 3])
         self.assertTrue(any(r.get("bad") for r in out))
 
+    def test_the_decoder_feeds_zstd_small_pieces_whatever_it_is_given(self):
+        """1 MiB of compressed tape per decompress call returns ~15 MB blocks and held a reader's memory near 1 GB;
+        however much a caller reads from disk, zstd sees at most PIECE bytes at a time, and the records are the same."""
+        w = rr.HourWriter(self.raw, "binance")
+        for i in range(20_000):
+            pad = os.urandom(40).hex().encode()                       # incompressible, so the file spans pieces
+            w.write(rr.line(T0 + i, "trade", "BTCUSDT", b'{"n":%d,"pad":"%s"}' % (i, pad)))
+        w.close()
+        blob = next(self.raw.rglob("*" + rr.SUFFIX)).read_bytes()
+        self.assertGreater(len(blob), 4 * rr.FrameDecoder.PIECE)
+        sizes = []
+        dec = rr.FrameDecoder()
+        real = dec._dctx.decompressobj
+
+        def spy():
+            obj = real()
+
+            class Spy:
+                def decompress(self, data):
+                    sizes.append(len(data))
+                    return obj.decompress(data)
+
+                def __getattr__(self, name):
+                    return getattr(obj, name)
+
+            return Spy()
+
+        dec._dctx = type("Ctx", (), {"decompressobj": staticmethod(spy)})()
+        got = [r["d"]["n"] for r in list(dec.feed(blob)) + list(dec.finish()) if not r.get("truncated")]
+        self.assertEqual(got, list(range(20_000)))
+        self.assertLessEqual(max(sizes), rr.FrameDecoder.PIECE)
+
     def test_a_frame_of_an_unexpected_shape_is_ctrl_not_an_exception(self):
         """The feed treated an exception here as a lost connection and reconnected, with backoff."""
         for venue, frame in (("bybit", b'{"topic":5,"data":{}}'), ("binance", b'{"stream":5,"data":{}}'),

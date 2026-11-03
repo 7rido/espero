@@ -47,5 +47,21 @@ class TestModules(unittest.TestCase):
         self.assertEqual(missing, [])
 
 
+class TestTestsRun(unittest.TestCase):
+    """scripts/check.sh and CI run `unittest discover`, which collects TestCase methods only. A test written as a
+    plain function never runs there: 68 did not until 2026-11-03, and one of them had been failing (AUDIT_PROD.md)."""
+
+    def test_no_test_is_a_plain_function(self):
+        stray = [f"{p.name}:{m.group(1)}" for p in sorted((ROOT / "tests").glob("test_*.py"))
+                 for m in re.finditer(r"^def (test_\w+)\(", p.read_text(encoding="utf-8"), re.M)]
+        self.assertEqual(stray, [], "a module-level test function is never collected: put it in a TestCase")
+
+    def test_every_test_file_collects_a_test(self):
+        loader = unittest.defaultTestLoader
+        empty = [p.name for p in sorted((ROOT / "tests").glob("test_*.py"))
+                 if loader.loadTestsFromName(f"tests.{p.stem}").countTestCases() == 0]
+        self.assertEqual(empty, [])
+
+
 if __name__ == "__main__":
     unittest.main()

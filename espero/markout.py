@@ -287,7 +287,7 @@ def q3(stats: pd.DataFrame, validated: Optional[set] = None, replicated: bool = 
     validated (coin, horizon) and only if the second source replicated."""
     pre = stats["cond"].isin(["all", *CONDITIONS])
     s = stats[(stats["measure"] == "maker_cons") & pre].copy()
-    fee = s["venue"].map(lambda v: FEES_BPS[v]["maker"])
+    fee = s["venue"].map(lambda v: FEES_BPS[v]["maker"]).astype(float)   # an empty frame maps to str under pandas 3
     s["net"] = s["mean"] - fee
     s["net_h1"], s["net_h2"] = s["h1"] - fee, s["h2"] - fee
     s["t_net"] = s["t"] * s["net"] / s["mean"]

@@ -133,17 +133,28 @@ class Stack:
 
     def startup(self, now_ms: int, step: Optional[Dict[str, float]] = None) -> List[str]:
         """First every order left in flight is looked up by its client id and its fill recorded, then the journal's
-        positions are reconciled against the venue's (reconcile.startup); any break blocks entries and is journaled."""
+        positions are reconciled against the venue's (reconcile.startup); any break blocks entries and is journaled.
+        An order the venue did not answer for leaves the journal's positions unknown, so the reconciliation waits:
+        entries stay refused, and the next step asks again before anything else (a reconciliation run on a fill not
+        yet recorded would report the venue's position as one the journal does not know, for ever)."""
+        self._startup_step = step or {}
+        unresolved = 0
         for r in self.db.execute("SELECT * FROM stack_orders WHERE status='inflight'").fetchall():
             try:
                 st = self.venue.order_status(r["cloid"], now_ms)
             except VenueSilent:
-                continue                                   # still unknown: the step asks again before any resend
+                unresolved += 1                            # still unknown: asked again before any entry
+                continue
             if st["status"] != "unknownOid":
                 s = Signal(r["rule"], "", r["coin"], r["side"], 0, 0.0)
                 self._record(r["cloid"], st, now_ms, s, "found filled at startup")
+        self._startup_pending = unresolved > 0
+        if self._startup_pending:
+            self.breaks = [f"{unresolved} order(s) in flight and the venue silent: reconciled once it answers"]
+            self._event(now_ms, "break", "", "", self.breaks[0])
+            return self.breaks
         self.breaks = reconcile.startup(self.journal_positions(), dict(self.venue.positions), [], [],
-                                        step or {}, owns_account=True)
+                                        self._startup_step, owns_account=True)
         for b in self.breaks:
             self._event(now_ms, "break", "", "", b)
         return self.breaks
@@ -191,6 +202,8 @@ class Stack:
         the risk gate, then the send."""
         if not watchdog.clock_ok(self.offset()):
             return self._refuse(s, now_ms, f"clock off by {self.offset():+.2f} s")
+        if getattr(self, "_startup_pending", False):
+            self.startup(now_ms, self._startup_step)       # the venue may answer now: finish the startup first
         if self.breaks:
             return self._refuse(s, now_ms, f"an open break: {self.breaks[0]}")
         row = latency.by_test().get(s.rule)

@@ -124,6 +124,43 @@ class TestFaults(unittest.TestCase):
             self.assertEqual(len(venue.sent), 1)                         # no second order
             db.close()
 
+    def test_a_restart_while_the_venue_is_silent_waits_instead_of_a_false_break(self):
+        """The order was sent, the process died, and the venue is silent at the restart: the startup cannot record
+        the fill, so a reconciliation then would call the venue's position unknown and refuse every entry for good.
+        Entries wait instead, and once the venue answers the fill is recorded and trading resumes."""
+        class CrashOnce(R.RecordedVenue):
+            crash = True
+
+            def market(self, *a, **k):
+                out = super().market(*a, **k)
+                if self.crash:
+                    self.crash = False
+                    raise RuntimeError("the process died after the venue took the order")
+                return out
+
+        venue = CrashOnce(books())
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "stack.db"
+            db = sqlite3.connect(path)
+            st = stack(venue, db=db)
+            with self.assertRaises(RuntimeError):
+                st.step(signal(), NOW)
+            db.close()
+            venue.silent = (NOW + 1, NOW + 60_000)
+            db = sqlite3.connect(path)
+            again = R.Stack(db, venue, R.replay_account(10_000, "s"))
+            again.startup(NOW + 1_000)
+            self.assertEqual(len(again.breaks), 1)
+            self.assertIn("in flight", again.breaks[0])
+            refused = again.step(signal(ts=T + 10, coin="BTC"), NOW + 30_000)
+            self.assertFalse(refused["placed"])                         # still silent: no entry
+            venue.silent = None
+            out = again.step(signal(ts=T + 90), NOW + 120_000)
+            self.assertEqual(again.breaks, [])
+            self.assertAlmostEqual(again.journal_positions()["BTC"], 10.0 + out.get("filled", 0.0))
+            self.assertTrue(out["placed"])
+            db.close()
+
     def test_unknown_position(self):
         venue = R.RecordedVenue(books(), positions={"ETH": 1.5})
         st = stack(venue)

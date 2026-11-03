@@ -16,7 +16,8 @@ pre-registration said the author expected a FAIL with the gap near zero, and the
 
 42 coins. **The pre-registration said ARB, SEI, TIA and WLD have no bars and drop out; that was the design window.**
 All four list after 2022-12 and have bars, open interest and funding in the holdout, so the registered rule included
-them: 927 to 1,369 targets each. 80,286 rows with a target over both windows, 3,593 cascade days (4.48%; the design
+them: 852 to 1,074 targets each. Information only, computed afterwards from the scored cells: on the 38 coins
+the pre-registration named, the gap is +0.00058 over 991 origins, Newey-West t 0.41, halves -0.00137 / +0.00253, 24 of 38 coins. The verdict is the same. 80,286 rows with a target over both windows, 3,593 cascade days (4.48%; the design
 window's 4.65% kept k at 1.25). Squeeze days 3.90%.
 
 **194 of the 1,185 holdout origins have no `FULL` forecast on any coin**, about five a month: the open-interest

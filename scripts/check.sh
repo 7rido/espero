@@ -43,6 +43,22 @@ echo "== tests =="
 "$PY" -m unittest discover -s tests -t . -v
 
 echo
+echo "== tests as CI's lean install sees them =="
+# CI's Python 3.10 run installs only the chart and dev extras: every optional library below is absent there. Hiding
+# them here catches a test that quietly needs one before a push does (2026-11-04: six form tests needed questionary).
+"$PY" - <<'LEAN'
+import sys
+import unittest
+
+for name in ("rich", "questionary", "textual", "zstandard", "websockets", "duckdb", "pyarrow", "hyperliquid",
+             "eth_account", "hftbacktest"):
+    sys.modules[name] = None          # an import of it now raises ImportError, as on a machine without it
+suite = unittest.defaultTestLoader.discover("tests", top_level_dir=".")
+result = unittest.TextTestRunner(verbosity=0, stream=sys.stdout).run(suite)
+sys.exit(0 if result.wasSuccessful() else 1)
+LEAN
+
+echo
 echo "== shape =="
 "$PY" research/index.py --check        # every research file claimed; INDEX.md current
 "$PY" -m espero.layers --check         # every module in a layer; the README's layout block current

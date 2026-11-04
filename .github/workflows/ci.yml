@@ -14,7 +14,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.12"]
+        include:
+          # lean: the package as most installs see it, with every optional library absent, so a test that quietly
+          # needs one is caught; scripts/check.sh repeats this run on the Mac with those libraries hidden
+          - python: "3.10"
+            extras: "chart,dev"
+          # full: the home screen and the answer form (tui), and the raw tape's readers (raw), tested for real
+          - python: "3.12"
+            extras: "chart,dev,tui,raw"
     steps:
       - uses: actions/checkout@v4
 
@@ -26,7 +33,7 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[chart,dev]"
+          pip install -e ".[${{ matrix.extras }}]"
 
       - name: Lint
         run: ruff check espero tests research

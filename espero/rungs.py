@@ -15,12 +15,20 @@ from typing import Optional
 
 RUNGS = ("paper", "testnet", "canary", "scaled", "target")
 TESTNET_ROUND_TRIPS = 50       # testnet mechanics: round trips through the sleeve's own executor
+CANARY_MF = "mf-canary"         # rule 8's plumbing canary under research/MAINNET_LIFT.md
+CANARY_MF_TESTNET_ROUND_TRIPS = 10   # the holder's signed amendment of 2026-11-03: that sleeve only
 CANARY_FILLS = 30              # a mainnet block: the canary's, and each scaled step's
 START_FRACTION = 0.10          # the scaled rung starts at a tenth of the target
 STEP_UP = 2.0
 STEP_DOWN = 0.5
 BREACHES_TO_CANARY = 2
 
+
+
+def testnet_round_trips(sleeve: str) -> int:
+    """The round trips a sleeve's testnet rung needs: 50, or 10 for rule 8's plumbing canary alone, by the holder's
+    signed amendment of 2026-11-03. Every other sleeve, and every sleeve after a verdict, keeps 50."""
+    return CANARY_MF_TESTNET_ROUND_TRIPS if sleeve == CANARY_MF else TESTNET_ROUND_TRIPS
 
 @dataclass(frozen=True)
 class Block:

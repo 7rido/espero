@@ -86,5 +86,12 @@ class TestFraction(unittest.TestCase):
                           G.BREACHES_TO_CANARY), (50, 30, 0.10, 2.0, 0.5, 2))
 
 
+class TestTheCanaryAmendment(unittest.TestCase):
+    def test_only_rule_8s_canary_needs_ten_testnet_round_trips(self):
+        self.assertEqual(G.testnet_round_trips(G.CANARY_MF), 10)
+        self.assertEqual(G.CANARY_MF, "mf-canary")
+        for other in ("mf", "carry", "hlp2", "", "MF-CANARY"):
+            self.assertEqual(G.testnet_round_trips(other), 50, other)
+
 if __name__ == "__main__":
     unittest.main()

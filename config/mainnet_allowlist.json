@@ -1,0 +1,41 @@
+{
+ "_about": "The mainnet allow-list (research/DESIGN_MAINNET_PATH.md, guard 4), signed by the account holder. espero/hl_mainnet.py refuses any coin or size not here, and refuses this file unless its last commit verifies against the holder's key. Built from research/MAINNET_LIFT.md's fields.",
+ "rows": [
+  {
+   "venue": "hyperliquid",
+   "coin": "BTC",
+   "max_order_usd": 30.0,
+   "max_position_usd": 50.0
+  },
+  {
+   "venue": "hyperliquid",
+   "coin": "ETH",
+   "max_order_usd": 30.0,
+   "max_position_usd": 50.0
+  },
+  {
+   "venue": "hyperliquid",
+   "coin": "SOL",
+   "max_order_usd": 30.0,
+   "max_position_usd": 50.0
+  },
+  {
+   "venue": "hyperliquid",
+   "coin": "ETC",
+   "max_order_usd": 30.0,
+   "max_position_usd": 50.0
+  },
+  {
+   "venue": "hyperliquid",
+   "coin": "NEAR",
+   "max_order_usd": 30.0,
+   "max_position_usd": 50.0
+  },
+  {
+   "venue": "hyperliquid",
+   "coin": "BCH",
+   "max_order_usd": 30.0,
+   "max_position_usd": 50.0
+  }
+ ]
+}

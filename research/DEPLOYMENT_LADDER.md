@@ -83,6 +83,16 @@ journal, with client order ids, a lookup before any resend, and a `.stop` kill s
 - **Edgewatch (#70) is binding** here and on rungs 2 and 3: its alarm halves or flattens as #70 says, through the
   sleeve's scale.
 
+## Amendment 2026-11-03, signed by the account holder: rule 8's plumbing canary
+
+The holder lifted the no-mainnet rule for a plumbing canary on rule 8 (research/MAINNET_LIFT.md). Rule 8 rebalances
+once a week, and on its judged history 50 round trips on every coin it trades take about five months. The holder
+decided that **the sleeve `mf-canary` alone passes rung 1 at 10 round trips** (`rungs.testnet_round_trips`), with
+every other criterion of rung 1 unchanged, the fault drills included, on every coin rule 8 picks that the testnet
+lists. Rung 2 stays at the venue's minimum order, on the coins and sizes of the lift and the allow-list. **Every
+other sleeve keeps 50**, and this canary decides no verdict: rule 8 is judged once, after 2027-05-03, as
+research/FORWARD_MF.md fixed.
+
 ## What every rung shares
 
 - **The risk gate:** every order on rungs 1 to 4 passes `risk.check`, and the rung's fraction is one factor of the

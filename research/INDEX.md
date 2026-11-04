@@ -700,6 +700,8 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 **From a verdict to an order**
 
+- `CANARY_MF.md`
+- `CANARY_MF.md.ots`
 - `DEPLOYMENT_LADDER.md`
 - `DESIGN_MAINNET_PATH.md`
 - `LIVE_LATENCY.md`

@@ -40,7 +40,7 @@ DAILY_MAX_AGE_S = 26 * 3600.0
 AGENTS = ("com.espero.rawrec", "com.espero.hlcollect", "com.espero.hlbook", "com.espero.deribit",
           "com.espero.carry-maker", "com.espero.carry-taker", "com.espero.hlp", "com.espero.hlp2",
           "com.espero.hlp2-testnet", "com.espero.paper",
-          "com.espero.livesig")                                # KeepAlive: launchd should say "running"
+          "com.espero.livesig", "com.espero.mf-canary")        # KeepAlive: launchd should say "running"
 LIVESIG_HEARTBEAT = "livesig.heartbeat.json"   # livesig.HEARTBEAT, not imported: that loads pandas every minute
 LIVESIG_LAG_S = 600.0                  # the engine's last frame may trail a tape being written by two bars
 LIVESIG_START_S = 900.0                # a start reads yesterday's whole tape first: about five minutes on this Mac

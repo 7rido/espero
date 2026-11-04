@@ -749,6 +749,48 @@ def _cmd_hlp(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_mf_canary(args: argparse.Namespace) -> int:
+    """Rule 8's plumbing canary on the testnet (research/CANARY_MF.md): proposes, waits for the holder's yes."""
+    from . import approvals, holder, notify
+    from . import mf_canary as mc
+    from .hl_exchange import TestnetRefused
+    from .lock import JournalBusy, JournalLock
+
+    state = Path(args.state_dir) if args.state_dir else state_dir()
+    if args.status:
+        print("\n".join(mc.summary(state)))
+        return 0
+    try:
+        ex = _testnet_exchange()
+    except TestnetRefused as exc:
+        print(f"refused: {exc}")
+        return 2
+    try:
+        key = approvals.secret()
+    except approvals.NoSecret as exc:
+        print(f"warning: {exc}; every reply will be refused until it is set")
+        key = None
+    try:
+        with JournalLock(state / mc.DB):
+            run = mc.Canary(state, ex, mc.hl_decide(state), key=key, holder_capital=holder.allocated_usd(),
+                            notify=notify.notify)
+            try:
+                print(f"#8 canary on the TESTNET from {ex.address}: journal {state / mc.DB}, "
+                      f"stop file {state / mc.STOP}", flush=True)
+                if not args.loop:
+                    run.step()
+                    return 0
+                run_loop(run.step, args.interval, label="mf canary")
+            except KeyboardInterrupt:
+                print("stopped")
+            finally:
+                run.close()
+    except JournalBusy as exc:
+        print(f"refused: {exc}")
+        return 2
+    return 0
+
+
 def _cmd_hlp_testnet(args: argparse.Namespace) -> int:
     """#59's signals as real testnet orders: proves the order path, not the edge."""
     from . import hlp_testnet as ht
@@ -1925,6 +1967,13 @@ def build_parser() -> argparse.ArgumentParser:
     hp.add_argument("--status", action="store_true", help="what the book holds; running numbers are not a result")
     hp.add_argument("--verdict", action="store_true", help="the registered verdict, once, after 2027-03-31")
     hp.set_defaults(func=_cmd_hlp)
+
+    mcn = sub.add_parser("mf-canary", help="rule 8's plumbing canary on the testnet: proposals wait for your yes")
+    mcn.add_argument("--loop", action="store_true", help="step every --interval seconds until stopped")
+    mcn.add_argument("--interval", type=float, default=300.0)
+    mcn.add_argument("--status", action="store_true", help="the journal's weeks and legs, read only")
+    mcn.add_argument("--state-dir", default=None)
+    mcn.set_defaults(func=_cmd_mf_canary)
 
     ht = sub.add_parser("hlp-testnet", help="#59's signals as real TESTNET orders (mechanics, not a result)")
     ht.add_argument("--book", default="hlp2-book.db", help="#59's paper journal, read only")

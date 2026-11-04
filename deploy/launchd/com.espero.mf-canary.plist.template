@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.espero.mf-canary</string>
+
+    <!-- rule 8's plumbing canary (espero/mf_canary.py, research/CANARY_MF.md): decides once Sunday's daily bar is
+         complete, proposes each entry for the holder's yes, and places approved orders on Hyperliquid's TESTNET
+         only, through espero/hl_exchange.py's guards; the key comes from .env in the repo.
+         scripts/install-mf-canary-launchd.sh renders this -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>-m</string>
+        <string>espero</string>
+        <string>mf-canary</string>
+        <string>--loop</string>
+        <string>--state-dir</string>
+        <string>__STATE_DIR__</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+
+    <!-- start at login and restart whenever the loop dies, at most once a minute. A restart reads its own journal:
+         an order with no answer is looked up by its client id before anything new is sent. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>StandardOutPath</key>
+    <string>__LOG_DIR__/mf-canary.log</string>
+    <key>StandardErrorPath</key>
+    <string>__LOG_DIR__/mf-canary.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Standard</string>
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>

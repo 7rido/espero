@@ -162,6 +162,25 @@ class TestLivesigAgent(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
 
 
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
+class TestMfCanaryAgent(unittest.TestCase):
+    def test_kept_alive_stepping_the_canary_with_its_journal_in_the_repo(self):
+        out = subprocess.run(["bash", str(ROOT / "scripts" / "install-mf-canary-launchd.sh"), "--print"],
+                             capture_output=True, text=True, check=True,
+                             env={"PATH": "/usr/bin:/bin", "HOME": "/tmp", "PYTHON": "/x/python"}).stdout
+        p = plistlib.loads(out.encode())
+        self.assertEqual(p["Label"], "com.espero.mf-canary")
+        self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "mf-canary", "--loop", "--state-dir",
+                                                 str(ROOT / "state")])
+        self.assertEqual(p["WorkingDirectory"], str(ROOT))          # where .env is read
+        self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
+        self.assertTrue(p["StandardOutPath"].endswith("mf-canary.log"))
+
+    def test_the_watchdog_watches_it(self):
+        from espero import watchdog
+        self.assertIn("com.espero.mf-canary", watchdog.AGENTS)
+
+
 class TestReinstall(unittest.TestCase):
     """bootout returns before the old job has gone: loading at once can fail (`Bootstrap failed: 5`, livesig's
     reinstall on 2026-11-03), or the late stop can remove the new job. An installer that reloads waits until launchd

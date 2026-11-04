@@ -44,7 +44,7 @@ LAYERS: Dict[str, Tuple[str, List[str]]] = {
                  "costcurve", "costcurve_table", "livesig"]),
     "live": ("from a verdict to a sized order, built and tested before any verdict; no mainnet path",
              ["latency", "approvals", "risk", "rungs", "holder", "watchdog", "attribution", "replay_stack",
-              "holderform", "hl_mainnet"]),
+              "holderform", "hl_mainnet", "mf_canary"]),
     "operate": ("the commands, the screens, the scheduler and this table",
                 ["cli", "ui", "runner", "loop", "lock", "notify", "dashboard", "report", "board", "carry_view",
                  "fast", "broker", "layers", "__init__", "__main__"]),

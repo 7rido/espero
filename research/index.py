@@ -173,7 +173,7 @@ CROSS_CUTTING: Dict[str, List[str]] = {
                                                           "OPERATOR_READOUT.md"],
     "Costs and venues": ["RECHECK_COSTS.md", "VENUE_CONFIRMATION.md", "VENUE_NONUS.md", "HL_ARCHIVE.md"],
     "From a verdict to an order": ["LIVE_LATENCY.md", "RISK_POLICY.md", "DEPLOYMENT_LADDER.md", "TEMPLATE_SIZING.md",
-                                   "ROBUSTNESS_LIVE.md", "DESIGN_MAINNET_PATH.md", "MAINNET_LIFT.md"],
+                                   "ROBUSTNESS_LIVE.md", "DESIGN_MAINNET_PATH.md", "MAINNET_LIFT.md", "CANARY_MF.md", "CANARY_MF.md.ots"],
     "This index": ["index.py"],
 }
 

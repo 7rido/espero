@@ -82,7 +82,8 @@ class TestTheClock(unittest.TestCase):
         self.assertEqual(C.monday_of(MON), MON)
         self.assertEqual(C.monday_of(MON + 6 * 86_400 + 86_399), MON)          # Sunday 23:59:59
         self.assertEqual(C.monday_of(MON - 1), MON - 7 * 86_400)
-        self.assertEqual(C.deadline(MON), MON + 30_240 - 300)                    # #8's 8.4 h less 5 minutes
+        self.assertEqual(C.deadline(MON), MON + 86_400 - 300)                    # a day, less the 5-minute allowance
+        self.assertEqual(C.ANSWER_WINDOW_S, 86_100)
 
 
 class TestPure(unittest.TestCase):
@@ -134,6 +135,14 @@ class TestTheWeek(unittest.TestCase):
         self.assertEqual(p.event_ts, MON)
         r.canary.step(MON + 7200)
         self.assertEqual(r.decided, [SUN])                                   # decided once a week
+
+    def test_an_answer_at_7am_eastern_on_monday_is_in_time(self):
+        r = Run(picks=("BTC",))
+        r.canary.step(MON + 300)                                             # 00:05 UTC, 7:05 p.m. Sunday Eastern
+        noon = MON + 12 * 3600                                               # 12:00 UTC, 7:00 a.m. Monday Eastern
+        r.answer(r.leg("BTC")["proposal"], "approve", noon)
+        r.canary.step(noon)
+        self.assertEqual(r.leg("BTC")["status"], "filled")
 
     def test_an_approved_entry_is_bought_and_silence_is_no(self):
         r = Run()

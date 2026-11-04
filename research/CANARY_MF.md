@@ -77,3 +77,12 @@ before the first real order.
 
 `state/mf-canary.stop` (no entries, sell what the canary holds); the state folder's `KILL` file; the lift's expiry,
 2027-01-31; a reconciliation break, which refuses entries until it is resolved; the holder's drawdown stop on rung 2.
+
+## Amendment 2026-11-04, by the account holder: a day to answer
+
+Before the canary's first proposal. This sleeve's entries may be approved until Monday 23:55 UTC (6:55 p.m. Eastern in
+winter), a day less the five-minute execution allowance, instead of rule 8's budget of 8.4 hours, which closed at about
+08:19 UTC (3:19 a.m. Eastern), before my Monday morning. Proposals still appear just after Monday 00:00 UTC. A buy may
+land up to a day after rule 8's decision. The canary proves the order path, not the edge, so it waits for me. For this
+sleeve only, the testnet stage's latency criterion is measured from my approval to the venue's acknowledgement, not
+from the signal. Everything else above stands. The timestamp beside this file covers the text before this amendment.

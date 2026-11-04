@@ -213,8 +213,9 @@ Every five minutes it takes your answers, decides the week once Sunday's daily b
 proposes each new entry for your yes, and places what you approved on Hyperliquid's **testnet**. Journal:
 `state/mf-canary.db`; proposals: `state/approvals.db`.
 
-- **Your part.** Each entry is announced in the notification centre. Answer with the one-time code before about
-  08:19 UTC that Monday, on the home screen ("Approvals") or with `espero approve <id> approve <code>`. One code
+- **Your part.** Each entry is announced in the notification centre around 00:05 UTC Monday (7:05 p.m. Sunday
+  Eastern). Answer with the one-time code before 23:55 UTC that Monday (6:55 p.m. Eastern), on the home screen
+  ("Approvals") or with `espero approve <id> approve <code>`. One code
   answers one proposal: for a second, wait for the next code. Silence is "no".
 - **Exits never wait.** A coin rule 8 drops is sold at once, exactly the canary's own size.
 - **Shared account.** It trades the testnet account #59's executor and carry-maker's mirror use, so it tracks its

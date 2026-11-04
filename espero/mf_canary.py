@@ -48,6 +48,7 @@ EXIT_TRIES = 8
 # executor does, an exit sells exactly the canary's own size with a plain IOC (docs/RUNBOOK.md, "#59 on testnet").
 REDUCE_ONLY_EXITS = False
 DAY_S = 86_400
+ANSWER_WINDOW_S = approvals.MAX_WAIT_S - approvals.EXECUTION_ALLOWANCE_S   # the holder's amendment
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS weeks (
@@ -75,11 +76,12 @@ def monday_of(now: int) -> int:
     return (days - (days + 3) % 7) * DAY_S  # 1970-01-01 was a Thursday
 
 
-def deadline(monday: int, rows: Optional[Sequence[latency.Row]] = None) -> int:
-    """The last moment an entry may still be approved: Monday 00:00 UTC plus #8's budget, less the execution
-    allowance (docs/OPERATOR.md)."""
-    r = latency.by_test(latency.ROWS if rows is None else rows)[RULE]
-    return int(monday + r.budget_s - approvals.EXECUTION_ALLOWANCE_S)
+def deadline(monday: int) -> int:
+    """The last moment an entry may still be approved: Monday 00:00 UTC plus the canary's answer window, a day less the
+    execution allowance, by the holder's signed amendment of 2026-11-03 (research/CANARY_MF.md): 23:55 UTC, 6:55 p.m.
+    Eastern in winter. #8's own budget of 8.4 hours closed before the holder's Monday morning; a plumbing canary proves
+    the order path, so it waits for the holder, as no sleeve trading for an edge may."""
+    return int(monday + ANSWER_WINDOW_S)
 
 
 def plan(picks: Sequence[str], held: Dict[str, float]) -> Tuple[List[str], List[str]]:
@@ -207,7 +209,7 @@ class Canary:
         sunday = time.strftime("%Y-%m-%d", time.gmtime(monday - DAY_S))
         if self.db.execute("SELECT 1 FROM weeks WHERE sunday=?", (sunday,)).fetchone():
             return
-        if now >= deadline(monday, self.rows):
+        if now >= deadline(monday):
             self.db.execute(
                 "INSERT INTO weeks (sunday, decided, status, note) VALUES (?,?,?,?)",
                 (sunday, now, "late", "decided after the budget: nothing proposed"),
@@ -253,7 +255,8 @@ class Canary:
         if made:
             self.notify(
                 f"espero: {len(made)} canary proposal(s) for your answer",
-                "\n".join(made) + f"\nanswer by {time.strftime('%H:%M UTC', time.gmtime(deadline(monday, self.rows)))}",
+                "\n".join(made) + f"\nanswer by {time.strftime('%H:%M UTC', time.gmtime(deadline(monday)))}"
+                f" ({time.strftime('%a %H:%M %Z', time.localtime(deadline(monday)))} here)",
             )
 
     def _gate(self, coin: str, capital: float) -> risk.Ruling:
@@ -307,7 +310,7 @@ class Canary:
             note=f"rule 8's plumbing canary, week of {sunday}",
             rows=self.rows,
         )
-        p = replace(p, expires=min(p.expires, deadline(monday, self.rows)))
+        p = replace(p, expires=deadline(monday))
         self.ledger.record(p)
         return "proposed", "", p.id
 
@@ -391,7 +394,7 @@ class Canary:
             if leg["inflight"]:
                 self._set(leg["id"], inflight=None)  # it never reached the venue: safe to send again
                 leg = self.legs("id=?", (leg["id"],))[0]
-            if now >= deadline(monday_of(int(leg["created"])), self.rows):
+            if now >= deadline(monday_of(int(leg["created"]))):
                 self._set(leg["id"], status="late", done=now, note="approved, but past the budget before it filled")
                 continue
             try:

@@ -91,7 +91,9 @@ decided that **the sleeve `mf-canary` alone passes rung 1 at 10 round trips** (`
 every other criterion of rung 1 unchanged, the fault drills included, on every coin rule 8 picks that the testnet
 lists. Rung 2 stays at the venue's minimum order, on the coins and sizes of the lift and the allow-list. **Every
 other sleeve keeps 50**, and this canary decides no verdict: rule 8 is judged once, after 2027-05-03, as
-research/FORWARD_MF.md fixed.
+research/FORWARD_MF.md fixed. A second amendment gives this sleeve's entries until Monday 23:55 UTC to be approved
+(research/CANARY_MF.md); for it alone, rung 1's latency criterion is measured from the holder's approval to the venue's
+acknowledgement.
 
 ## What every rung shares
 

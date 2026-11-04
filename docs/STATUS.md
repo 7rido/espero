@@ -1,4 +1,4 @@
-# Status — generated 2026-11-03 03:35 UTC by `scripts/status.py`
+# Status — generated 2026-11-04 08:13 UTC by `scripts/status.py`
 
 Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `state/health.json`.
 
@@ -21,35 +21,35 @@ Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `
 
 ## The last daily run
 
-`last_run` 2026-11-02T12:32:57+00:00 — ok; `last_success` 2026-11-02T12:32:57+00:00
+`last_run` 2026-11-03T12:32:29+00:00 — ok; `last_success` 2026-11-03T12:32:29+00:00
 
 | step | ok | note |
 |---|---|---|
-| tsmom | yes | rebalance |
-| xs | yes | rebalance |
-| mf | yes | rebalance |
-| mf-hl | yes | mark |
-| liqfwd | yes | mark: longs 14 trades on 3 days (+28.9 bps a day); shorts 21 trades on 3 days (+38.8 bps a day) (paper, gross; decides nothing) |
-| lowsfwd | yes | mark: 161 paper trades on 3 days (+37.0 bps a day, gross; decides nothing); 4 coin-days not published yet |
-| liqbreak | yes | mark: 110 breaks on 3 days; forced down-breaks bought: 29, +5.8 bps an hour (decides nothing) |
-| fundsplit | yes | mark: 29 forced down-breaks, 0 after crowded funding |
-| postclose | yes | mark: 1 trading days (BTC+ETH after the close -7.3 bps in 15 min; decides nothing) |
-| levpush | yes | mark: 1 trading days (SOL+XRP into the close -14.9 bps; decides nothing) |
-| bidsfwd | yes | mark: 52 fills of 152 breakdowns on 3 days (+42.8 bps a fill net; decides nothing) |
+| tsmom | yes | mark |
+| xs | yes | mark |
+| mf | yes | mark |
+| mf-hl | yes | rebalance |
+| liqfwd | yes | mark: longs 25 trades on 4 days (+14.7 bps a day); shorts 26 trades on 4 days (+39.0 bps a day) (paper, gross; decides nothing) |
+| lowsfwd | yes | mark: 258 paper trades on 4 days (+18.8 bps a day, gross; decides nothing); 5 coin-days not published yet |
+| liqbreak | yes | mark: 159 breaks on 4 days; forced down-breaks bought: 43, +5.7 bps an hour (decides nothing) |
+| fundsplit | yes | mark: 15 forced down-breaks, 0 after crowded funding |
+| postclose | yes | mark: 2 trading days (BTC+ETH after the close -1.0 bps in 15 min; decides nothing) |
+| levpush | yes | mark: 2 trading days (SOL+XRP into the close -3.1 bps; decides nothing) |
+| bidsfwd | yes | mark: 80 fills of 252 breakdowns on 4 days (+30.9 bps a fill net; decides nothing) |
 | settlefwd | yes | mark: 3 shorts-paying settlements of 240 (-32.2 bps in 30 min; decides nothing) |
-| liqhold | yes | mark: forced down-breaks held, net trade-weighted: 4h -13.1 bps over 25; 12h -56.6 bps over 15; 1d -89.4 bps over 15 (decides nothing) |
-| publish | yes | published: https://github.com/7rido/espero/releases/tag/data-2026-11-02 |
+| liqhold | yes | mark: forced down-breaks held, net trade-weighted: 4h -4.3 bps over 43; 12h -35.5 bps over 29; 1d -95.6 bps over 29 (decides nothing) |
+| publish | yes | not Monday |
 | dashboard | yes | wrote /Users/fredp/Espero Trading QuantBot/espero/state/dashboard.html |
 
 ## Recorded on disk (cannot be fetched again)
 
 | folder | files |
 |---|---|
-| `data/hlcollect` | 2036 |
-| `data/deribit` | 633 |
-| `data/hlbook` | 854 |
-| `data/aggr/forward` | 3 |
-| `data/aggr/forward5m` | 3 |
-| `data/lows/forward` | 164 |
+| `data/hlcollect` | 2637 |
+| `data/deribit` | 1662 |
+| `data/hlbook` | 1197 |
+| `data/aggr/forward` | 4 |
+| `data/aggr/forward5m` | 4 |
+| `data/lows/forward` | 205 |
 
 Verdicts, costs and what a pass leads to: `research/INDEX.md`, `research/FORWARD_FAMILY.md`.

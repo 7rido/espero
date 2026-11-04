@@ -4,22 +4,64 @@ A crypto research harness that tries to find a tradable edge and refuses to lie 
 test pre-registered before its result exists, run once, judged against a bar that gets stricter with
 every test tried, with costs measured on real prints and fills that were physically possible.
 
+## Try it
+
+You need a terminal and Python 3.10 or newer. No account, no key and nothing to pay; about two minutes.
+**On a Mac, `python3 --version` often says 3.9, which is too old:** install a newer one from
+[python.org](https://www.python.org/downloads/) or with `brew install python@3.12`, and use `python3.12` below.
+
+```bash
+git clone https://github.com/7rido/espero.git
+cd espero
+python3.12 -m venv .venv && source .venv/bin/activate     # python3 works too, if it is 3.10 or newer
+pip install -e ".[chart,tui,dev]"
+espero
+```
+
+That opens the home screen. ← and → switch tabs, `q` quits:
+
+- **Market** reads Hyperliquid's public data live: your coins' moves against their normal day, the biggest movers,
+  who pays funding, the last hour's liquidations, and next week's volatility from a forecast that passed its test
+  (the first load of the day takes about a minute).
+- **Today** and **Books** are empty on a fresh copy; they fill once the background jobs run.
+- **Research** lists every analysis tool: Enter opens one in the plain terminal, Enter brings you back.
+
+Then, from the same terminal:
+
+| command | what you see |
+|---|---|
+| `espero matrix` | the audit table: one strategy with and without look-ahead and fees, and why the difference matters |
+| `espero rate BTC` | a 1 to 10 rating of where a chart leans, with an honest note that it has not beaten chance |
+| `espero readout` | what Hyperliquid's free data shows about order costs and short-term patterns |
+| `espero dashboard --open` | one HTML page with the paper accounts and the market readout |
+| `espero paper --loop --interval 60` | a paper BTC trader on live candles; ctrl-c stops it |
+| `./scripts/check.sh` | the whole test suite and CI's checks, about three and a half minutes |
+
+To keep paper accounts running every day on a Mac, `./scripts/install-launchd.sh` ([docs/RUNBOOK.md](docs/RUNBOOK.md));
+anywhere else, `docker compose up`. The forward tests need the recordings, which `./scripts/fetch-data.sh live`
+downloads ([docs/DATA.md](docs/DATA.md)).
+
+**A copy cannot place a real order.** The one mainnet path, `espero/hl_mainnet.py`, refuses unless the account
+holder's signed lift and allow-list verify against their own key on their own machine, and a fork has neither. The
+testnet tools need your own testnet key in `.env`; `.env.example` lists every variable the repo reads.
+
 ## What it is now
 
-- **Fourteen forward tests on data being recorded today**, judged once, after 2027-03-31, by
+- **Twenty-two forward tests on data being recorded today**, judged once, after 2027-03-31, by
   criteria frozen in `research/FORWARD_*.md`. Their running numbers decide nothing. The recordings
   (Hyperliquid's positions and order book, aggr's liquidation bars) can't be fetched again, so they
   are manifested, published weekly and never deleted. The path from a bar to a verdict is
   [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
-- **A ledger of 59 tests** in `research/trials.csv`: 25 failed, 6 passed (two are plumbing, one a
-  measurement, one old literature, one history-only, one with its forward test pending), 12 are
-  measurements, 14 are forward. **No confirmed, tradable live edge yet.** From #61 on a pass needs
-  Benjamini-Hochberg q < 0.05 over the whole ledger and |t| ≥ 3, both.
+- **A ledger of 71 tests** in `research/trials.csv`: 27 failed, 7 passed (two are plumbing, one a
+  measurement, one old literature, one history-only, one a volatility forecast, one with its forward test
+  pending), 13 are measurements, 22 are forward, one provisional, one exploratory. **No confirmed, tradable
+  live edge yet.** From #61 on a pass needs Benjamini-Hochberg q < 0.05 over the whole ledger and |t| ≥ 3, both.
 - **Costs that were measured, not assumed:** #39 and #41 put a round trip at 10–14 bps from
   Binance and Hyperliquid prints; every rule is charged that, or a venue's fee, never zero.
-- **Paper books, not a trading bot.** Two paper accounts, two carry books, two forward books (#58,
-  #59) and a BTC paper trader run under launchd; nothing in the tree can place a mainnet order, and
-  the account holder places any real one outside it.
+- **Paper books, and one plumbing canary.** Paper accounts, carry books, forward books and a BTC paper
+  trader run under launchd. Rule 8's canary trades minimum sizes on Hyperliquid's **testnet**, each entry
+  waiting for the account holder's approval with a one-time code, under the holder's signed lift of the
+  no-mainnet rule ([research/CANARY_MF.md](research/CANARY_MF.md)). It proves the order path, not an edge.
 - **A test suite that fails when you cheat:** causal indicators, next-bar fills, numbers pinned to
   committed data, and tests that hold the repo's own shape (every module in a layer, every research
   file claimed, every daily step with its plan).
@@ -37,6 +79,17 @@ original strategies all failed their tests, and their Coinbase order path was re
 
 ## Recent changes
 
+- **2026-11-04.** The home screen became five tabs: Today (what waits for your answer), Market, Books, Research and
+  Settings ([The home screen](#the-home-screen)). CI now tests it on Python 3.12 with every interface library, and on
+  3.10 without them, and `scripts/check.sh` repeats the lean run before any push.
+- **2026-11-03.** The account holder answered [docs/HOLDER_INPUTS.md](docs/HOLDER_INPUTS.md) and lifted the
+  no-mainnet rule in writing, in signed commits, for a plumbing canary on rule 8
+  ([research/MAINNET_LIFT.md](research/MAINNET_LIFT.md)). `espero/hl_mainnet.py` was built from
+  [the design](research/DESIGN_MAINNET_PATH.md), every guard tested on its own, dry run by default; `espero
+  mf-canary` runs the canary on the testnet ([research/CANARY_MF.md](research/CANARY_MF.md)). A security, code and
+  bug audit fixed 25 findings ([docs/AUDIT_PROD.md](docs/AUDIT_PROD.md)). #68 measured cost by order size, #72
+  found open interest adds nothing to a volatility forecast of cascades, and `espero holder --fill` is a guided
+  form for the holder's answers.
 - **2026-11-02.** The repo's shape is now held by tests: every module in one of seven layers
   (`espero/layers.py`, rendered into [Layout](#layout)), every research file claimed
   ([research/INDEX.md](research/INDEX.md)), every daily step with its plan, no state file beside the
@@ -57,12 +110,18 @@ original strategies all failed their tests, and their Coinbase order path was re
 
 ## The home screen
 
-`espero` with no arguments opens an interactive screen: the two accounts and the last run's health on
-top, an arrow-key menu below (status, dashboard, a no-write preview of what each rule would decide now,
-history, run the daily job, deposit, pause, log, the single-coin loop, the forward tests, the research
-results with #39/#41's measured costs, the factor table, tests). Needs
-the `tui` extra: `pip install -e ".[chart,tui,dev]"`. Everything on the menu is also a plain command.
-Paper books started from it are kept in `paper-books/`.
+`espero` with no arguments opens five tabs (`espero/tui.py`; `espero ui --classic` keeps the old one-page menu):
+
+| tab | what it shows |
+|---|---|
+| **Today** | what waits for your answer, picked with ↑↓, `a` to approve and `x` to reject with your authenticator's code; and one line on whether the recorders, the daily job and the watchdog are all right |
+| **Market** | the lift's coins with today's move against each one's normal day, the biggest liquid movers, who pays funding and which coins are crowded, the last hour's liquidations on BTC and ETH, and next week's volatility from #66's forecast, labelled information, not a signal |
+| **Books** | the canary's round trips against its bar, and the paper accounts |
+| **Research** | every analysis tool, opened in the plain terminal and back |
+| **Settings** | your answers, pause and resume, the daily job, the log, the classic menu |
+
+← and → (or 1 to 5) switch tabs, `r` refreshes, `q` quits. It reads, and leaves answers in the approvals inbox; it
+places no order. Needs the `tui` extra: `pip install -e ".[chart,tui,dev]"`. Everything on it is also a plain command.
 
 ## A 1-10 rating for one symbol
 
@@ -124,28 +183,37 @@ Other launchd jobs install separately, each with its own script in `scripts/`:
 | `install-carry-launchd.sh` | #12's two carry books |
 | `install-hlp-launchd.sh`, `install-hlp2-launchd.sh` | #58's and #59's paper books |
 | `install-paper-launchd.sh` | a paper BTC perp on Hyperliquid, which counts toward no verdict |
+| `install-rawrec-launchd.sh` | the raw tape: every trade, book change and liquidation on five venues |
+| `install-deribit-launchd.sh` | Deribit's options: open interest and implied volatility every 5 minutes |
+| `install-livesig-launchd.sh` | #71's streaming engine on the raw tape |
+| `install-watchdog-launchd.sh` | the silence alarm: a recorder, loop or the daily job gone quiet |
+| `install-hlp2-testnet-launchd.sh` | #59's trades as real orders on Hyperliquid's testnet |
+| `install-mf-canary-launchd.sh` | rule 8's plumbing canary: proposes for the holder's yes, then the testnet ([research/CANARY_MF.md](research/CANARY_MF.md)) |
 
 launchd catches up scheduled jobs after a sleep, but a recorder records nothing while the Mac is asleep, and a gap
 stays a gap. `docker compose up` is the alternative on any machine, and on a Mac it has the same gaps. Never point it
 and launchd at the same `data/` folder. Setting `ESPERO_PUBLISH_AS` also publishes the live recordings every Monday.
 
-## Live trading — there is none
+## Live trading: one canary, under a signed lift
 
-The repo's one mainnet order path, `espero/hl_mainnet.py`, exists under the account holder's signed lift of
-2026-11-03 (research/MAINNET_LIFT.md) and refuses unless every guard in research/DESIGN_MAINNET_PATH.md passes; it
-dry-runs by default. The Coinbase adapter and `espero live` were removed on
-2026-11-01: that path had never been reconciled against a venue, and it served the four original
-strategies, which failed their tests. The only code that signs anything is
-[espero/hl_exchange.py](espero/hl_exchange.py), on Hyperliquid's **testnet**, for #12's maker
-mirror, behind three guards that refuse anything but a testnet URL. A real order is the account
-holder's own act, placed outside this repo with their own keys. `.env.example` lists every variable
-the repo reads, and none of them can move money.
+On 2026-11-03 the account holder lifted the no-mainnet rule in writing, in commits signed with their own key
+([research/MAINNET_LIFT.md](research/MAINNET_LIFT.md)), for one thing only: a plumbing canary on rule 8, at
+Hyperliquid's minimum order size, every entry approved by the holder, until 2027-01-31. So:
 
-What a pass would still need before any live order is built and tested without one: the path is
-[docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md#from-a-verdict-to-an-order), how size would grow is
-[research/DEPLOYMENT_LADDER.md](research/DEPLOYMENT_LADDER.md), and the mainnet order module is
-[research/DESIGN_MAINNET_PATH.md](research/DESIGN_MAINNET_PATH.md), a design only, not built unless the
-holder lifts the rule in a committed document in their own words.
+- `espero/hl_mainnet.py` is the one mainnet order path, built from [the design](research/DESIGN_MAINNET_PATH.md).
+  It refuses unless the environment asks for mainnet twice over, the lift and the allow-list are committed,
+  unedited and signed by the holder's key, the lift has not lapsed and names this machine, every order fits the
+  coins and sizes on both and carries an allowing ruling from the risk gate, and, live only, the key is read last
+  and never under CI. It dry-runs by default. `tests/test_no_mainnet.py` fails if a third module ever signs.
+- `espero/hl_exchange.py` signs on Hyperliquid's **testnet** only, for the canary's testnet stage, #59's
+  executor and #12's maker mirror.
+- The canary climbs [the deployment ladder](research/DEPLOYMENT_LADDER.md): 10 matched round trips on the
+  testnet first, then minimum-size mainnet orders. Its first proposals are due Monday 2026-11-09.
+- No agent places a real order, and only the holder writes the lift or the allow-list. `.env.example` lists every
+  variable the repo reads.
+
+The path from a verdict to an order is [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md#from-a-verdict-to-an-order).
+Every other rule still waits for its verdict and a sizing document ([research/TEMPLATE_SIZING.md](research/TEMPLATE_SIZING.md)).
 
 ## What it does not do (yet)
 
@@ -183,7 +251,7 @@ What it deliberately does not include: breadth beyond 42 survivors, machine-lear
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -e ".[chart]"          # numpy + pandas (+ Pillow for charts)
+pip install -e ".[chart,tui]"      # numpy + pandas, Pillow for charts, the home screen
 
 espero matrix                      # the audit table on the committed BTC-USD data
 espero backtest --fee-bps 60       # one configuration, honest fills
@@ -532,7 +600,8 @@ guard that voids only recorded failed reads: [FORWARD_HLP.md](research/FORWARD_H
 [FORWARD_HLP2.md](research/FORWARD_HLP2.md). #60 goes long for 4 hours after the price falls through a dense band of long
 liquidation prices: [FORWARD_LADDER.md](research/FORWARD_LADDER.md).
 
-Scoreboard, from [research/trials.csv](research/trials.csv): 59 tests, #1–#45, 9b and #48–#60. #46 is a rule document,
+Scoreboard at #60, on 2026-11-01, from [research/trials.csv](research/trials.csv) (the counts today, 71 tests, are
+in [docs/STATUS.md](docs/STATUS.md)): 59 tests, #1–#45, 9b and #48–#60. #46 is a rule document,
 and #47 is held for a first real-order test. Four signals passed (#4, #8, #12 provisional, #26), two plumbing checks passed
 (#40, #42), and #43 passed its confirmation but isn't tradable. Twenty-five failed, including #19 and #20, whose effects are
 real but not tradable. Twelve are measurements (#39, #41, #44, #48, #50–#57) and #7 is exploratory. Thirteen forward tests
@@ -719,9 +788,8 @@ espero/
 - [x] SQLite journal: bars, signals, orders, fills, positions, equity
 - [x] Restart-safe paper trader on live candles, with a pre-trade risk gate
 - [x] Broker interface behind one protocol, with `client_order_id` idempotency
-- [ ] A live path: `espero live` was removed on 2026-11-01, never reconciled against a venue. Its
-  replacement is built and tested without a mainnet order: latency classes, the operator protocol, the
-  account gate, the ladder, the watchdog and the full-stack replay (docs/HOW_IT_WORKS.md)
+- [x] A live path, behind the holder's signed lift: the mainnet module, the operator protocol, the account gate,
+  the ladder, the watchdog and the full-stack replay; rule 8's canary is on its testnet stage (research/CANARY_MF.md)
 - [x] Reconciliation on start against the venue's positions and open orders (`reconcile.startup`); no
   live account yet
 - [ ] Exchange-side stop orders (so the stop survives a crash)
@@ -761,8 +829,10 @@ your actual fee tier.
 - [research/RISK_POLICY.md](research/RISK_POLICY.md) — the account's caps and stops, as the gate enforces them.
 - [research/DEPLOYMENT_LADDER.md](research/DEPLOYMENT_LADDER.md) — paper twin, testnet, canary, scaled,
   target; [research/TEMPLATE_SIZING.md](research/TEMPLATE_SIZING.md) is the sizing document a pass needs.
-- [research/DESIGN_MAINNET_PATH.md](research/DESIGN_MAINNET_PATH.md) — the mainnet order module, as a
-  design only.
+- [research/DESIGN_MAINNET_PATH.md](research/DESIGN_MAINNET_PATH.md) — the mainnet order module's design, built
+  as `espero/hl_mainnet.py` after the holder's signed lift ([research/MAINNET_LIFT.md](research/MAINNET_LIFT.md)).
+- [research/CANARY_MF.md](research/CANARY_MF.md) — rule 8's plumbing canary: what it trades, who approves, when.
+- [docs/AUDIT_PROD.md](docs/AUDIT_PROD.md) — the security, code and bug audit of 2026-11-03 and the plan to production.
 
 ## License
 

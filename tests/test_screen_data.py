@@ -168,7 +168,12 @@ class TestToday(unittest.TestCase):
 
     def test_system_is_one_line_from_the_watchdog_and_the_daily_job(self):
         state = Path(tempfile.mkdtemp())
-        self.assertFalse(D.system(state, NOW).ok)
+        fresh = D.system(state, NOW)
+        self.assertEqual((fresh.ok, fresh.fresh, fresh.problems), (True, True, ()))
+        self.assertIn("fresh copy", fresh.line)
+        (state / "health.json").write_text(json.dumps({"ok": True, "steps": {}}))
+        self.assertIn("no watchdog report yet", D.system(state, NOW).problems)   # one has run: the other is missed
+        (state / "health.json").unlink()
         (state / "watchdog.json").write_text(json.dumps({"at": NOW - 60, "checks": [{"name": "rawrec", "ok": True}]}))
         (state / "health.json").write_text(json.dumps({"ok": True, "steps": {}}))
         s = D.system(state, NOW)

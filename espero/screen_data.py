@@ -71,6 +71,7 @@ class System:
     ok: bool
     line: str
     problems: Tuple[str, ...]
+    fresh: bool = False       # nothing has ever run here: a new copy, not a fault
 
 
 WATCH_STALE_S = 30 * 60
@@ -80,6 +81,8 @@ def system(state: Path, now: Optional[float] = None) -> System:
     """One line: all running, or what is not. From the watchdog's last pass and the daily job's last run."""
     now = time.time() if now is None else now
     state = Path(state)
+    if not (state / "watchdog.json").exists() and not (state / "health.json").exists():
+        return System(True, "a fresh copy: nothing runs in the background yet", (), fresh=True)
     problems: List[str] = []
     if (state / "KILL").exists():
         problems.append("paused: the KILL file is set")

@@ -260,7 +260,7 @@ class EsperoApp(App):
         top.append("espero", style=f"bold {ACCENT}")
         top.append(f"  ·  {D.local_time(now, '%a %-d %b, %-I:%M %p %Z')}", style=MUTED)
         top.append("  ·  ")
-        top.append(sysd.line, style="green" if sysd.ok else "bold red")
+        top.append(sysd.line, style=MUTED if sysd.fresh else "green" if sysd.ok else "bold red")
         self.query_one("#topbar", Static).update(top)
 
         self.items = D.waiting(self.state, int(now))
@@ -276,7 +276,11 @@ class EsperoApp(App):
             note.update(Text("Nothing waits for you. The canary proposes on Sunday evenings, 7 pm Eastern.",
                              style=MUTED))
         body = Text()
-        if sysd.ok:
+        if sysd.fresh:
+            body.append("Nothing runs in the background on this copy, and that is fine for trying it: the Market "
+                        "tab reads public data live. To keep paper accounts every day on a Mac: "
+                        "./scripts/install-launchd.sh", style=MUTED)
+        elif sysd.ok:
             body.append("Recorders, the daily job and the canary are running.", style="green")
         for p in sysd.problems:
             body.append(f"• {p}\n", style="red")

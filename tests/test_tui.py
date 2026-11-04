@@ -107,6 +107,13 @@ class TestTheScreen(unittest.IsolatedAsyncioTestCase):
             self.assertIsInstance(app.screen, tui.AnswerScreen)
             self.assertIn("needs a reason", str(app.screen.query_one("#dialog-hint", tui.Label).render()))
 
+    async def test_a_fresh_copy_is_not_called_broken(self):
+        app = tui.EsperoApp(Path(tempfile.mkdtemp()), sources())
+        async with app.run_test():
+            self.assertIn("a fresh copy", str(app.query_one("#topbar", tui.Static).render()))
+            self.assertNotIn("need", str(app.query_one("#topbar", tui.Static).render()))
+            self.assertIn("install-launchd", str(app.query_one("#system", tui.Static).render()))
+
     async def test_answer_keys_do_nothing_off_the_today_tab(self):
         state = Path(tempfile.mkdtemp())
         ledger_with(state, "BTC")

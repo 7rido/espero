@@ -160,6 +160,13 @@ class _Ask:
         return self.value
 
 
+try:
+    import questionary as _questionary  # noqa: F401  the tui extra; CI installs only chart and dev
+except ImportError:
+    _questionary = None
+
+
+@unittest.skipIf(_questionary is None, "needs the tui extra (questionary)")
 class TestTheFormEndToEnd(unittest.TestCase):
     """The whole form with scripted answers, in a copy of the page: what it writes, and that a no writes nothing."""
 

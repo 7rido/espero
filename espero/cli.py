@@ -1463,9 +1463,18 @@ def place_state(args: argparse.Namespace, env: Optional[dict] = None) -> argpars
 
 
 def _cmd_ui(args: argparse.Namespace) -> int:
+    """The tabbed home screen (espero/tui.py), or the classic menu with --classic or without textual installed."""
+    state = state_dir(args.state_dir)
+    if not getattr(args, "classic", False):
+        try:
+            from .tui import main as tui_main
+        except ImportError:
+            pass
+        else:
+            return tui_main(state)
     from .ui import main as ui_main
 
-    return ui_main(state_dir(args.state_dir))
+    return ui_main(state)
 
 
 def _cmd_dashboard(args: argparse.Namespace) -> int:
@@ -1684,6 +1693,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     u = sub.add_parser("ui", help="interactive home screen (the default when no command is given)")
     u.add_argument("--state-dir", default=None, help="default: here if it holds accounts, else the project folder")
+    u.add_argument("--classic", action="store_true", help="the old one-page menu instead of the tabs")
     u.set_defaults(func=_cmd_ui)
 
     f = sub.add_parser("fetch", help="download public Coinbase candles to CSV")
@@ -2113,7 +2123,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.cmd is None:
         if sys.stdin.isatty():
-            return _cmd_ui(argparse.Namespace(state_dir=None))
+            return _cmd_ui(argparse.Namespace(state_dir=None, classic=False))
         parser.print_help()
         return 0
     return args.func(place_state(args))

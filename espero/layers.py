@@ -46,8 +46,8 @@ LAYERS: Dict[str, Tuple[str, List[str]]] = {
              ["latency", "approvals", "risk", "rungs", "holder", "watchdog", "attribution", "replay_stack",
               "holderform", "hl_mainnet", "mf_canary"]),
     "operate": ("the commands, the screens, the scheduler and this table",
-                ["cli", "ui", "runner", "loop", "lock", "notify", "dashboard", "report", "board", "carry_view",
-                 "fast", "broker", "layers", "__init__", "__main__"]),
+                ["cli", "ui", "tui", "screen_data", "runner", "loop", "lock", "notify", "dashboard", "report", "board",
+                 "carry_view", "fast", "broker", "layers", "__init__", "__main__"]),
 }
 
 # the rest of the tree, by hand: it changes rarely

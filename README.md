@@ -688,6 +688,8 @@ espero/
     # operate: the commands, the screens, the scheduler and this table
     cli.py            # Command line entry point: `python -m espero ...` or the `espero` script.
     ui.py             # `espero` with no arguments: an interactive home screen.
+    tui.py            # `espero` with no arguments: the home screen, in five tabs (the account holder's design of …
+    screen_data.py    # What the tabbed home screen shows (`espero/tui.py`), gathered without drawing anything, in …
     runner.py         # `espero daily`: the one command a scheduler runs.
     loop.py           # One loop runner for every long-running paper (and live) loop.
     lock.py           # One writer per journal.

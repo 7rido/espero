@@ -131,6 +131,33 @@ class TestAnswers(LedgerCase):
         self.assertEqual(self.reply(p).event, "approved")
         self.assertEqual([e["event"] for e in self.led.events()], ["proposed", "refused", "refused", "approved"])
 
+    def test_a_code_is_checked_when_it_was_typed_not_when_the_sleeve_reads_it(self):
+        # 2026-11-09: the canary steps every five minutes, so every code it read had expired
+        p, q = self.proposal(), self.proposal()
+        typed = NOW - 4 * 60
+        late = A.Reply(p.id, "approve", code(typed), "", None, "tui", typed)
+        self.assertEqual(self.led.answer(late, KEY, NOW).event, "approved")
+        again = A.Reply(q.id, "approve", code(typed), "", None, "tui", typed)
+        self.assertEqual(self.led.answer(again, KEY, NOW).reason,
+                         "unauthenticated: no valid one-time code; counts as silence")    # still spent once used
+
+    def test_a_reply_older_than_the_inbox_allows_is_refused_and_leaves_the_proposal_open(self):
+        p = self.proposal(now=NOW - 3600)
+        typed = NOW - A.REPLY_MAX_AGE_S - 1
+        out = self.led.answer(A.Reply(p.id, "approve", code(typed), "", None, "tui", typed), KEY, NOW)
+        self.assertEqual(out.event, "refused")
+        self.assertIn("too old", out.reason)
+        self.assertEqual(self.led.status(p.id), "open")
+        edge = NOW - A.REPLY_MAX_AGE_S
+        ok = self.led.answer(A.Reply(p.id, "approve", code(edge), "", None, "tui", edge), KEY, NOW)
+        self.assertEqual(ok.event, "approved")
+
+    def test_a_reply_dated_ahead_of_the_sleeve_is_checked_at_the_sleeves_time(self):
+        p = self.proposal()
+        ahead = NOW + 3600
+        out = self.led.answer(A.Reply(p.id, "approve", code(ahead), "", None, "tui", ahead), KEY, NOW)
+        self.assertEqual(out.event, "refused")
+
     def test_an_override_needs_a_reason(self):
         p = self.proposal()
         self.assertEqual(self.reply(p, "reject").reason, "an override needs a reason")

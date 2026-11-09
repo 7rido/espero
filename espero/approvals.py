@@ -30,6 +30,8 @@ SECRET_ENV = "ESPERO_OPERATOR_TOTP"
 TOTP_STEP_S = 30
 TOTP_DIGITS = 6
 TOTP_WINDOWS = 1               # the current 30-second window's code, or the one before it
+REPLY_MAX_AGE_S = 600          # a reply waits in the inbox until the sleeve's next step (every five minutes);
+                               # its code is checked at the moment it was typed, and a reply older than this is refused
 EXECUTION_ALLOWANCE_S = 300    # an approved order still has to be placed and filled inside the budget
 MAX_WAIT_S = 24 * 3600         # no proposal waits longer than a day
 LEDGER = "approvals.db"        # in the state folder: one ledger for every operator-paced sleeve
@@ -313,7 +315,12 @@ class Ledger:
                 return self._refuse(now, p.id, body, "an override needs a reason")
             if reply.answer == "modify" and not (reply.notional is not None and 0 < reply.notional < p.notional):
                 return self._refuse(now, p.id, body, "modify only sizes down, to more than zero")
-            if self._authenticate(key, reply.code, now) is None:
+            if reply.at and now - reply.at > REPLY_MAX_AGE_S:
+                return self._refuse(now, p.id, body, f"too old: the reply waited over {REPLY_MAX_AGE_S // 60} minutes "
+                                                     "in the inbox; counts as silence")
+            # the code is checked against the moment the reply was made, not the moment the sleeve reads it: a
+            # sleeve that steps every five minutes would otherwise find every code expired (2026-11-09, the canary)
+            if self._authenticate(key, reply.code, min(reply.at, now) if reply.at else now) is None:
                 return self._refuse(now, p.id, body, "unauthenticated: no valid one-time code; counts as silence")
             event, notional = {"approve": ("approved", p.notional), "reject": ("rejected", 0.0),
                                "modify": ("modified", float(reply.notional or 0.0))}[reply.answer]

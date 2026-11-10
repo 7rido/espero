@@ -753,6 +753,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `PREREGISTRATION_FUNDSPREAD.md`
 - `PREREGISTRATION_FUNDSPREAD.md.ots`
+- `fundspread.py`  (rule: `espero/fundspread.py`)
 
 ## Cross-cutting
 

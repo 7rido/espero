@@ -486,7 +486,7 @@ def paper(state: Path) -> List[Tuple[str, float, float]]:
     return out
 
 
-HIP3_TESTS = ("75", "76", "77", "78", "79")
+HIP3_TESTS = ("75", "76", "77", "78", "79", "80")
 
 
 def hip3_verdicts(path: Optional[Path] = None) -> List[Tuple[str, str, str, str]]:

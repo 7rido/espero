@@ -749,11 +749,15 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #80 — The funding spread between trade.xyz's markets: short the payers, long the payees
 
-*#80 (not in trials.csv)*
+*#80 fail*
 
 - `PREREGISTRATION_FUNDSPREAD.md`
 - `PREREGISTRATION_FUNDSPREAD.md.ots`
+- `RESULTS_FUNDSPREAD.md`
 - `fundspread.py`  (rule: `espero/fundspread.py`)
+- `fundspread_inputs.csv.gz`
+- `fundspread_run.txt`
+- `fundspread_weeks.csv`
 
 ## Cross-cutting
 

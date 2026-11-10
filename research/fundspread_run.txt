@@ -1,0 +1,54 @@
+#80, run 2026-11-10 11:59 UTC, as registered in research/PREREGISTRATION_FUNDSPREAD.md
+28 markets; 198,857 funding rows; weeks with a position: 47 from 2025-12-15 to 2026-11-02 (the last ends 2026-11-09); eligible markets per week 11 to 28
+
+== The registered criteria, on 47 weeks
+1. profit factor over the weekly net returns: 0.509 (need >= 1.5)
+2. mean weekly net -0.668%, Newey-West t -1.58 (3 lags), p 0.1148, BH q 0.3214 over 42 tests (need mean > 0, t >= 3.0, q < 0.05)
+3. 2000 random assignments (seed 0): median gross -0.006%; the rule's gross -0.562%; 97.2% of draws at or above it (need under 5%)
+4. halves: -1.160% then -0.156%
+5. the lowest mean with one market removed: -0.836% (without MSFT)
+
+VERDICT: FAIL
+  missed 1: profit factor 0.509 under 1.5
+  missed 2: mean -0.006684, t -1.5769864116225165, q 0.32143622490115564 (need mean > 0, t >= 3.0, q < 0.05)
+  missed 3: 97.2% of random assignments at or above it (need under 5%)
+  missed 4: halves -0.011597 / -0.001558
+  missed 5: the mean falls to -0.008364 with one market removed
+
+== Information only
+components of the mean week: price -0.760%, funding +0.198%, gross -0.562%, costs +0.107%; mean turnover 0.761 of capital a week
+growth-mode fee (0.9 bps) + 5 bps slippage: mean weekly net -0.607%, NW t -1.43
+the signal's spread, short leg minus long leg, mean +29.5% a year (hourly rate x 8,760)
+weeks with the funding component positive: 46 of 47; weeks with net above zero: 20 of 47
+
+per market: weeks long, weeks short, mean net with the market removed
+  AAPL       26   2  -0.815%
+  AMD        16   7  -0.715%
+  AMZN        6   8  -0.702%
+  BRENTOIL   26   3  -0.693%
+  CBRS       23   1  -0.659%
+  CL         29   8  -0.530%
+  CRCL        9  28  -0.649%
+  CRWV       17  13  -0.763%
+  DRAM        1  20  -0.726%
+  EWY        12   6  -0.754%
+  GOLD        5  15  -0.681%
+  GOOGL       3  18  -0.695%
+  INTC        3  21  -0.718%
+  META       11   9  -0.756%
+  MRVL        4  12  -0.633%
+  MSFT       15   6  -0.836%
+  MSTR       16  22  -0.651%
+  MU          4  29  -0.584%
+  NBIS        1  14  -0.734%
+  NVDA       10  10  -0.764%
+  SILVER      1  15  -0.675%
+  SKHX        3  32  -0.633%
+  SMSN       10  23  -0.698%
+  SNDK       12  18  -0.775%
+  SP500      29   0  -0.708%
+  SPCX       13   3  -0.668%
+  TSLA       18   9  -0.641%
+  XYZ100     32   3  -0.699%
+
+wrote research/fundspread_inputs.csv.gz and research/fundspread_weeks.csv

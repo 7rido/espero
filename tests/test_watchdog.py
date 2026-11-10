@@ -125,11 +125,33 @@ class TestClock(unittest.TestCase):
         th = threading.Thread(target=answer)
         th.start()
         try:
-            off = W.sntp_offset("127.0.0.1", timeout=2.0, port=port)
+            off, rtt = W.sntp_sample("127.0.0.1", timeout=2.0, port=port)
         finally:
             th.join()
             srv.close()
         self.assertAlmostEqual(off, -2.0, delta=0.1)
+        self.assertTrue(0 <= rtt < 1.0)                                      # a local round trip, never negative
+
+    def test_the_shortest_round_trip_is_trusted_and_a_lost_sample_is_not_fatal(self):
+        slept = []
+        samples = iter([(-5.9, 1.8), (-0.01, 0.04), (-2.5, 0.9)])
+        with mock.patch.object(W, "sntp_sample", lambda *a, **k: next(samples)):
+            self.assertEqual(W.sntp_offset(gap=0.1, sleep=slept.append), -0.01)
+        self.assertEqual(slept, [0.1, 0.1])                                  # between samples, not after the last
+        mixed = iter([OSError("lost"), (0.2, 0.5), (0.3, 0.5)])
+        def next_or_raise(*a, **k):
+            v = next(mixed)
+            if isinstance(v, OSError):
+                raise v
+            return v
+        with mock.patch.object(W, "sntp_sample", next_or_raise):
+            self.assertEqual(W.sntp_offset(sleep=lambda s: None), 0.2)       # the first of two equal trips
+        def lost(*a, **k):
+            raise socket.timeout("none")
+        with mock.patch.object(W, "sntp_sample", lost):
+            with self.assertRaises(OSError):
+                W.sntp_offset(sleep=lambda s: None)
+        self.assertEqual(W.SNTP_SAMPLES, 3)
 
 
 class TestEscalation(unittest.TestCase):

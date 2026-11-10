@@ -48,6 +48,8 @@ LIVESIG_START_S = 900.0                # a start reads yesterday's whole tape fi
 DISK_FLOOR_GB = rawrec.FREE_FLOOR_GB
 CLOCK_WARN_S, CLOCK_REFUSE_S = 0.25, 1.0
 NTP_SERVER = "time.apple.com"
+SNTP_SAMPLES = 3                       # a reply delayed one way skews one sample, never the shortest round trip
+SNTP_GAP_S = 0.25
 ESCALATE_AFTER_S = 600.0
 REPEAT_S = 3600.0
 STATE = "watchdog.json"
@@ -163,8 +165,9 @@ def check_disk(path: Path, free_gb: Callable[[Path], float] = rawrec.free_gb) ->
     return Check("disk", gb >= DISK_FLOOR_GB, f"{gb:,.0f} GB free, floor {DISK_FLOOR_GB:.0f} GB")
 
 
-def sntp_offset(server: str = NTP_SERVER, timeout: float = 2.0, port: int = 123) -> float:
-    """This machine's clock minus the server's, in seconds (SNTP, RFC 4330): positive means we run ahead."""
+def sntp_sample(server: str = NTP_SERVER, timeout: float = 2.0, port: int = 123) -> Tuple[float, float]:
+    """(this machine's clock minus the server's, the round trip), in seconds (SNTP, RFC 4330): a positive offset
+    means we run ahead; it is wrong by up to half the round trip when the two legs differ."""
     packet = b"\x23" + 47 * b"\0"                       # LI 0, version 4, mode 3 (client)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.settimeout(timeout)
@@ -174,7 +177,29 @@ def sntp_offset(server: str = NTP_SERVER, timeout: float = 2.0, port: int = 123)
         t3 = time.time()
     secs, frac = struct.unpack("!II", data[40:48])
     server_tx = secs - 2_208_988_800 + frac / 2 ** 32
-    return (t0 + t3) / 2 - server_tx
+    return (t0 + t3) / 2 - server_tx, t3 - t0
+
+
+def sntp_offset(server: str = NTP_SERVER, timeout: float = 2.0, port: int = 123, samples: int = SNTP_SAMPLES,
+                gap: float = SNTP_GAP_S, sleep: Callable[[float], None] = time.sleep) -> float:
+    """The offset of the sample with the shortest round trip, which is the one an NTP client trusts: on 2026-11-10
+    the watchdog's log held 77 single readings of 1 to 6 seconds, each followed by a normal one the next minute.
+    Raises OSError only when no sample was answered."""
+    best: Optional[Tuple[float, float]] = None
+    last: Optional[OSError] = None
+    for k in range(samples):
+        try:
+            got = sntp_sample(server, timeout, port)
+        except OSError as exc:
+            last = exc
+            got = None
+        if got is not None and (best is None or got[1] < best[1]):
+            best = got
+        if k + 1 < samples:
+            sleep(gap)
+    if best is None:
+        raise last if last is not None else OSError("no sample")
+    return best[0]
 
 
 def check_clock(offset: Callable[[], float] = sntp_offset) -> Check:

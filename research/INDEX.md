@@ -761,11 +761,15 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #81 — The BTC volatility premium, sold every week with wings
 
-*#81 (not in trials.csv)*
+*#81 fail*
 
 - `PREREGISTRATION_VOLPREM.md`
 - `PREREGISTRATION_VOLPREM.md.ots`
+- `RESULTS_VOLPREM.md`
 - `volprem.py`  (rule: `espero/volprem.py`)
+- `volprem_inputs.csv.gz`
+- `volprem_run.txt`
+- `volprem_weeks.csv`
 
 ## Cross-cutting
 

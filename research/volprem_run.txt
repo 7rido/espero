@@ -1,0 +1,51 @@
+#81, run 2026-11-10 18:03 UTC, as registered in research/PREREGISTRATION_VOLPREM.md (8d60f75)
+Fee schedule checked 2026-11-10 against Deribit's published page (support.deribit.com/hc/en-us/articles/25944746248989, 'Fees', updated that day): options 3 bps of the underlying maker and taker, capped at 12.5% of the premium; delivery 0.015% (1.5 bps) of the underlying, capped at 12.5% of the option's value, with daily options exempt and Friday expiries not; the BTC perpetual taker 3.5 bps (hedge cost charged 6 bps, higher). Every figure in the contract equals or exceeds the page; nothing higher is charged. It is today's schedule, not the one in force in 2020 to 2024.
+357 Fridays from 2020-01-03 to 2026-10-30 (the last expires 2026-11-06); 855,368 raw trades fetched; Fridays whose fetch returned no trade at all: 0; 2,665 delivery prices from 2016-03-18 to 2026-11-10
+
+== The registered criteria, on 350 priced weeks of 357 Fridays
+1. MISS profit factor 0.84 (need >= 1.5)
+2. MISS mean -0.01348 of M, Newey-West t -1.36 (5 lags), p 0.1751, BH q 0.4429 over 43 tests (need mean > 0, t >= 3.0, q < 0.05)
+3. MISS mean since 2025-01-03 -0.00763 over 96 weeks (need > 0)
+4. MISS 6 of 7 years with >= 20 weeks at or below zero (2020, 2021, 2022, 2023, 2024, 2025) (need at most 2)
+5. MISS mean with half-gaps and hedge cost doubled -0.05222 (need > 0)
+6. MISS mean unhedged -0.03482 (need > 0)
+
+VERDICT: FAIL
+  missed 1: profit factor 0.84 (need >= 1.5)
+  missed 2: mean -0.01348 of M, Newey-West t -1.36 (5 lags), p 0.1751, BH q 0.4429 over 43 tests (need mean > 0, t >= 3.0, q < 0.05)
+  missed 3: mean since 2025-01-03 -0.00763 over 96 weeks (need > 0)
+  missed 4: 6 of 7 years with >= 20 weeks at or below zero (2020, 2021, 2022, 2023, 2024, 2025) (need at most 2)
+  missed 5: mean with half-gaps and hedge cost doubled -0.05222 (need > 0)
+  missed 6: mean unhedged -0.03482 (need > 0)
+
+== Information only
+priced 350, skipped 7; by reason: fewer than five traded strikes: 0, a wing has no traded strike in its range: 2, no delivery price for a day the week needs: 5, M <= 0: 0
+Fridays with no trade of the next expiry in the window: 0; trades dropped for a missing or non-positive iv, in priced weeks: 201
+  [M, in a share of M]
+    hedged: mean -1.348%, NW t -1.36, profit factor 0.8403567006647799, worst week -103.373% (2023-01-13), worst 13 weeks -231.079% from 2022-02-04
+    unhedged: mean -3.482%, NW t -1.62, profit factor 0.8092682922841128, worst week -100.659% (2023-10-13), worst 13 weeks -566.959% from 2020-10-09
+    hedged since 2025-01-03: mean -0.763% over 96 weeks, NW t -0.42
+    by calendar year (hedged mean, unhedged mean, weeks): 2020 -0.541% -10.294% 46; 2021 -1.910% -3.724% 52; 2022 -1.993% +5.928% 52; 2023 -1.715% -11.268% 52; 2024 -1.569% -7.013% 52; 2025 -2.103% +1.063% 52; 2026 +0.820% +0.812% 44
+  [index, in a share of the index]
+    hedged: mean -0.077%, NW t -0.76, profit factor 0.910962841480829, worst week -8.896% (2021-12-03), worst 13 weeks -24.582% from 2022-02-04
+    unhedged: mean -0.066%, NW t -0.29, profit factor 0.9623870266615028, worst week -15.749% (2021-02-05), worst 13 weeks -65.603% from 2020-10-09
+    hedged since 2025-01-03: mean -0.027% over 96 weeks, NW t -0.19
+    by calendar year (hedged mean, unhedged mean, weeks): 2020 -0.036% -0.632% 46; 2021 -0.034% -0.128% 52; 2022 -0.152% +0.990% 52; 2023 -0.119% -0.785% 52; 2024 -0.134% -0.453% 52; 2025 -0.174% +0.162% 52; 2026 +0.146% +0.387% 44
+
+  2020-03-06 and the week after:
+    2020-03-06: F 9,120.7, body 9,000 at 43.9%, wings 8,000 / 10,250, settled 5,251.5; credit 414.1, costs 30.1, payout 1,000.0, settlement fees 1.6, hedge pnl 402.2 cost 6.0; M 866.0; profit hedged -221.4 unhedged -617.5; returns -25.561% / -71.312%
+    2020-03-13: F 5,559.3, body 5,500 at 163.3%, wings 3,250 / 8,500, settled 6,305.5; credit 958.7, costs 47.5, payout 805.5, settlement fees 0.9, hedge pnl -385.1 cost 5.7; M 2,088.8; profit hedged -286.0 unhedged 104.8; returns -13.694% / +5.015%
+
+  share of the credit kept: hedged -2.4%, unhedged +0.0% (sum of profit over sum of credit, 2,605.7 a week)
+  cost by component, mean a week: half gaps $133.4 (+2.655% of M, 28.2 bps of the index); trading fees $51.0 (+1.072% of M, 10.3 bps of the index); settlement fees $8.2 (+0.175% of M, 1.6 bps of the index); hedge cost $59.6 (+1.218% of M, 11.6 bps of the index)
+  gross of the hedge, mean a week: credit +50.711% of M, payout +50.291%, hedge profit +3.352%
+  body implied volatility against the volatility realized at the daily prices: mean 53.8% vs 50.7% (+3.1 points; implied above realized in 234 of 350 weeks)
+  the hedge's dollars traded a week: mean $99,317, median $87,356; turnover (hedge dollars traded over the index) mean 1.93 a week
+  the model's credit against the credit from the same strikes' last mark price x index in the window (344 of 350 weeks had all four legs marked): mean model minus mark $-13.2 (-1.9 bps of the index), median $-3.8, mean ratio 0.996
+  worst unhedged loss over M 1.007 (settlement fees are not in M, so it can pass 1)
+
+== Robustness, information only
+deflated Sharpe on the hedged weekly returns (N = 43 judged rows): weekly Sharpe -0.0647, expected best of N 0.1892, DSR 0.000
+PBO (one configuration), purged k-fold (nothing fitted) and capacity (no recorded depth before 2026-11-02): not applicable, as registered.
+
+wrote research/volprem_run.txt, research/volprem_weeks.csv and research/volprem_inputs.csv.gz

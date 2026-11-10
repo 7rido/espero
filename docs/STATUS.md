@@ -1,10 +1,10 @@
-# Status — generated 2026-11-10 12:01 UTC by `scripts/status.py`
+# Status — generated 2026-11-10 18:15 UTC by `scripts/status.py`
 
 Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `state/health.json`.
 
 ## The ledger
 
-79 tests: 33 fail, 23 forward_pending, 14 measurement, 7 pass, 1 exploratory, 1 provisional.
+80 tests: 34 fail, 23 forward_pending, 14 measurement, 7 pass, 1 exploratory, 1 provisional.
 
 | # | status | what | document |
 |---|---|---|---|
@@ -21,35 +21,35 @@ Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `
 
 ## The last daily run
 
-`last_run` 2026-11-09T12:37:27+00:00 — ok; `last_success` 2026-11-09T12:37:27+00:00
+`last_run` 2026-11-10T12:34:35+00:00 — ok; `last_success` 2026-11-10T12:34:35+00:00
 
 | step | ok | note |
 |---|---|---|
 | tsmom | yes | mark |
-| xs | yes | rebalance |
-| mf | yes | rebalance |
-| mf-hl | yes | mark |
-| liqfwd | yes | mark: longs 47 trades on 10 days (+3.4 bps a day); shorts 54 trades on 10 days (+27.4 bps a day) (paper, gross; decides nothing) |
-| lowsfwd | yes | mark: 713 paper trades on 10 days (+19.3 bps a day, gross; decides nothing); 7 coin-days not published yet |
-| liqbreak | yes | mark: 443 breaks on 10 days; forced down-breaks bought: 120, -3.8 bps an hour (decides nothing) |
+| xs | yes | mark |
+| mf | yes | mark |
+| mf-hl | yes | rebalance |
+| liqfwd | yes | mark: longs 62 trades on 11 days (+25.0 bps a day); shorts 61 trades on 11 days (+20.5 bps a day) (paper, gross; decides nothing) |
+| lowsfwd | yes | mark: 803 paper trades on 11 days (+25.4 bps a day, gross; decides nothing); 7 coin-days not published yet |
+| liqbreak | yes | mark: 480 breaks on 11 days; forced down-breaks bought: 130, -6.8 bps an hour (decides nothing) |
 | fundsplit | yes | mark: 15 forced down-breaks, 0 after crowded funding |
-| postclose | yes | mark: 6 trading days (BTC+ETH after the close +8.8 bps in 15 min; decides nothing) |
-| levpush | yes | mark: 6 trading days (SOL+XRP into the close +8.3 bps; decides nothing) |
-| bidsfwd | yes | mark: 295 fills of 713 breakdowns on 10 days (+10.2 bps a fill net; decides nothing) |
+| postclose | yes | mark: 7 trading days (BTC+ETH after the close +8.3 bps in 15 min; decides nothing) |
+| levpush | yes | mark: 7 trading days (SOL+XRP into the close +6.1 bps; decides nothing) |
+| bidsfwd | yes | mark: 365 fills of 803 breakdowns on 11 days (+13.9 bps a fill net; decides nothing) |
 | settlefwd | yes | mark: 3 shorts-paying settlements of 240 (-32.2 bps in 30 min; decides nothing) |
-| liqhold | yes | mark: forced down-breaks held, net trade-weighted: 4h +18.4 bps over 108; 12h +38.2 bps over 104; 1d +18.2 bps over 103 (decides nothing) |
-| publish | yes | published: https://github.com/7rido/espero/releases/tag/data-2026-11-09 |
+| liqhold | yes | mark: forced down-breaks held, net trade-weighted: 4h +8.4 bps over 130; 12h +15.8 bps over 130; 1d +1.8 bps over 120 (decides nothing) |
+| publish | yes | not Monday |
 | dashboard | yes | wrote /Users/fredp/Espero Trading QuantBot/espero/state/dashboard.html |
 
 ## Recorded on disk (cannot be fetched again)
 
 | folder | files |
 |---|---|
-| `data/hlcollect` | 5755 |
-| `data/deribit` | 6963 |
-| `data/hlbook` | 2971 |
-| `data/aggr/forward` | 10 |
-| `data/aggr/forward5m` | 10 |
-| `data/lows/forward` | 455 |
+| `data/hlcollect` | 5886 |
+| `data/deribit` | 7188 |
+| `data/hlbook` | 3046 |
+| `data/aggr/forward` | 11 |
+| `data/aggr/forward5m` | 11 |
+| `data/lows/forward` | 497 |
 
 Verdicts, costs and what a pass leads to: `research/INDEX.md`, `research/FORWARD_FAMILY.md`.

@@ -82,6 +82,8 @@ the verdict.
 | 69 | operator alpha | each override of an operator-paced proposal, against the paper twin | the approvals ledger, the twin | — | — | nothing until a sleeve is live | **not tradable live** |
 | 70 | edgewatch, the live stop rule | each live observation of a sleeve, against its registered edge | the sleeve's net series | — | — | nothing until a sleeve is live | **not tradable live** |
 | 71 | the streaming engine against the batch | each live-from-tape event the engine emits, against the next day's batch | the raw tape, the archive | — | — | nothing until the engine runs | **not tradable live** |
+| 73 | a trade.xyz perp against its listed ticker | each hour's return of the perp against the ticker's | Hyperliquid's candles, Yahoo's bars | — | — | nothing until it is run once | **not tradable live** |
+| 74 | what a fill costs on trade.xyz perps | each minute's recorded book, walked for three order sizes | the second raw tape | — | — | nothing until the recorder has 14 days | **not tradable live** |
 
 **Why each class, and what stands between a PASS and a live order, rule by rule.** The steps every tradable rule shares are listed after this table; these are its own.
 
@@ -118,6 +120,8 @@ the verdict.
 | 69 | not tradable live | a measurement, information only | a measurement | — |
 | 70 | not tradable live | a rule, not a trade: it halves or flattens a live sleeve through its scale | a rule acting through the risk gate | — |
 | 71 | not tradable live | a measurement, information only | a measurement | — |
+| 73 | not tradable live | a measurement, information only | a measurement | — |
+| 74 | not tradable live | a measurement, information only | a measurement | — |
 
 **Shared by every tradable rule, in the order they would be met:**
 
@@ -129,7 +133,7 @@ the verdict.
 6. the holder's written lift of the no-mainnet rule and a mainnet module built from DESIGN_MAINNET_PATH.md
 7. edgewatch's parameters from its verdict window (#70)
 
-Counts: live-from-tape 9, operator-paced 4, next-day-batch 3, not tradable live 15.
+Counts: live-from-tape 9, operator-paced 4, next-day-batch 3, not tradable live 17.
 <!-- latency:end -->
 
 ## What the audit found, information only

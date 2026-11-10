@@ -160,6 +160,9 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
                                                                                       "PREREGISTRATION_EDGEWATCH.md.ots"]),
     "71": ("The streaming engine's events against the next-day batch's", ["PREREGISTRATION_LIVESIG.md",
                                                                        "PREREGISTRATION_LIVESIG.md.ots"]),
+    "73": ("Does a trade.xyz perp follow its listed ticker?", ["PREREGISTRATION_HIP3TRACK.md",
+                                                               "PREREGISTRATION_HIP3TRACK.md.ots"]),
+    "74": ("What a fill costs on trade.xyz perps", ["PREREGISTRATION_HIP3COST.md", "PREREGISTRATION_HIP3COST.md.ots"]),
     "72": ("Open interest as a next-day cascade forecast, beyond volatility", ["EXPLORE_CASCADE.md", "cascade.py", "cascade_design_run.txt", "PREREGISTRATION_CASCADE.md", "PREREGISTRATION_CASCADE.md.ots",
                                                                            "RESULTS_CASCADE.md", "cascade_run.txt", "cascade_series.csv", "cascade_cells.csv.gz"]),
 }

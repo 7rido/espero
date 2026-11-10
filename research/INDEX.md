@@ -668,6 +668,20 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `cascade_run.txt`
 - `cascade_series.csv`
 
+## #73 — Does a trade.xyz perp follow its listed ticker?
+
+*#73 forward_pending*
+
+- `PREREGISTRATION_HIP3TRACK.md`
+- `PREREGISTRATION_HIP3TRACK.md.ots`
+
+## #74 — What a fill costs on trade.xyz perps
+
+*#74 forward_pending*
+
+- `PREREGISTRATION_HIP3COST.md`
+- `PREREGISTRATION_HIP3COST.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

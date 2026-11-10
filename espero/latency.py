@@ -301,6 +301,14 @@ ROWS: Tuple[Row, ...] = (
         "each live-from-tape event the engine emits, against the next day's batch", "the raw tape, the archive",
         "none", None, "a measurement", "none", None, False, "nothing until the engine runs", None, False,
         "a measurement, information only", NOT_TRADABLE),
+    Row("73", "a trade.xyz perp against its listed ticker", "research/PREREGISTRATION_HIP3TRACK.md",
+        "each hour's return of the perp against the ticker's", "Hyperliquid's candles, Yahoo's bars",
+        "none", None, "a measurement", "none", None, False, "nothing until it is run once", None, False,
+        "a measurement, information only", NOT_TRADABLE),
+    Row("74", "what a fill costs on trade.xyz perps", "research/PREREGISTRATION_HIP3COST.md",
+        "each minute's recorded book, walked for three order sizes", "the second raw tape",
+        "none", None, "a measurement", "none", None, False, "nothing until the recorder has 14 days", None, False,
+        "a measurement, information only", NOT_TRADABLE),
 )
 
 

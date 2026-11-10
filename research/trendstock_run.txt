@@ -1,0 +1,62 @@
+#78, run 2026-11-10 09:47 UTC, as registered in research/PREREGISTRATION_TRENDSTOCK.md
+37 markets; 38,547 daily bars
+entries from 2022-04 to 2026-10: 164 trades, 4 still open at the end of the data
+
+== The registered criteria, on 164 trades
+1. profit factor over every trade, net: 4.774 (need >= 1.5)
+2. mean net trade +33.62%, t 2.12 clustered over 46 entry months, p 0.0397, BH q 0.1133 over 40 tests (need mean > 0, t >= 3.0, q < 0.05)
+3. random entries held as long: 2000 draws (1 s), median mean +29.16%; the rule +33.62%; 33.1% of draws at or above it (need under 5%)
+4. halves: +11.99% then +55.24%
+5. markets with 5+ trades and a mean net trade above zero: 22 of 26
+
+VERDICT: FAIL
+  missed 2: mean 0.336165, t 2.1186830539999293, q 0.11334621537610501 (need mean > 0, t >= 3.0, q < 0.05)
+  missed 3: 33.1% of random draws at or above it (need under 5%)
+
+== Information only
+win rate 0.439; average win +96.86%, average loss -15.88%; mean days held 135
+no costs, no funding: 164 trades, mean +37.60%, profit factor 5.933
+growth-mode fee (0.9 bps) + 5 bps slippage: 164 trades, mean +33.78%, profit factor 4.831
+share of the days a market was held (median across markets): 0.44
+per market from the first possible entry: buy and hold, median +102.38%; the rule's trades compounded, median +26.79%
+
+per market: trades, mean net trade
+  NVDA       7  +25.35%
+  SOXL       6  +19.94%
+  SNDK       1  +2307.37%
+  MU         3  +111.32%
+  AMD        4  +39.83%
+  DRAM       0  -
+  SPCX       0  -
+  SKHY       0  -
+  GOOGL      6  +6.74%
+  KORU       5  +41.60%
+  INTC       6  +14.47%
+  TSLA       4  +7.26%
+  META       5  +19.38%
+  EWY        5  +23.57%
+  MRNA       5  +53.72%
+  NBIS       2  +43.04%
+  CRCL       0  -
+  AAPL       5  +6.44%
+  IBM        8  -7.82%
+  CRWV       1  -19.58%
+  MRVL       6  +6.70%
+  AMZN       7  -7.60%
+  MSFT       6  +2.17%
+  RKLB       5  +59.61%
+  CBRS       0  -
+  COIN       5  -4.15%
+  MSTR       6  +12.35%
+  HIMS       6  +1.78%
+  LITE       5  +121.51%
+  AVGO       6  +8.61%
+  HOOD       6  +10.29%
+  IREN       5  +19.95%
+  BE         6  +21.50%
+  ORCL       5  +5.89%
+  PLTR       5  +39.72%
+  TSM        7  +2.76%
+  EWZ        5  -5.50%
+
+wrote research/trendstock_bars.csv.gz and research/trendstock_trades.csv

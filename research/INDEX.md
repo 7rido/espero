@@ -725,11 +725,15 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #78 — A daily breakout trend rule on the stock perps
 
-*#78 (not in trials.csv)*
+*#78 fail*
 
 - `PREREGISTRATION_TRENDSTOCK.md`
 - `PREREGISTRATION_TRENDSTOCK.md.ots`
+- `RESULTS_TRENDSTOCK.md`
 - `trendstock.py`  (rule: `espero/trendstock.py`)
+- `trendstock_bars.csv.gz`
+- `trendstock_run.txt`
+- `trendstock_trades.csv`
 
 ## Cross-cutting
 

@@ -697,6 +697,7 @@ espero/
     cascade.py        # #72: does open interest forecast tomorrow's cascade beyond volatility? …
     dealrange.py      # #75: buy the discount half of an hourly dealing range at its proximal line …
     nightshift.py     # #76: the night shift, the stock perps held from the official close to the next official open
+    nightweek.py      # #77: nightweek (research/PREREGISTRATION_NIGHTWEEK.md).
     # forward: the daily job's steps: record a day, rebuild a ledger, decide nothing until 2027-03-31
     liqfwd.py         # #22's forward paper test (research/FORWARD_LIQ.md): record aggr's hourly bars
     lowsfwd.py        # #24's forward paper test (research/FORWARD_LOWS.md): record Binance's daily

@@ -711,6 +711,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `nightshift_nights.csv`
 - `nightshift_run.txt`
 
+## #77 — The slow night shift: Monday's close to Friday's open, once a week
+
+*#77 (not in trials.csv)*
+
+- `PREREGISTRATION_NIGHTWEEK.md`
+- `PREREGISTRATION_NIGHTWEEK.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

@@ -1,0 +1,103 @@
+#76, run 2026-11-10 06:10 UTC, as registered in research/PREREGISTRATION_NIGHTSHIFT.md
+37 markets; 38,547 daily bars
+  NVDA      1254 bars  2021-11-10 -> 2026-11-09
+  SOXL      1254 bars  2021-11-10 -> 2026-11-09
+  SNDK       437 bars  2025-02-13 -> 2026-11-09
+  MU        1254 bars  2021-11-10 -> 2026-11-09
+  AMD       1254 bars  2021-11-10 -> 2026-11-09
+  DRAM       153 bars  2026-04-02 -> 2026-11-09
+  SPCX       104 bars  2026-06-12 -> 2026-11-09
+  SKHY        86 bars  2026-07-10 -> 2026-11-09
+  GOOGL     1254 bars  2021-11-10 -> 2026-11-09
+  KORU      1254 bars  2021-11-10 -> 2026-11-09
+  INTC      1254 bars  2021-11-10 -> 2026-11-09
+  TSLA      1254 bars  2021-11-10 -> 2026-11-09
+  META      1254 bars  2021-11-10 -> 2026-11-09
+  EWY       1254 bars  2021-11-10 -> 2026-11-09
+  MRNA      1254 bars  2021-11-10 -> 2026-11-09
+  NBIS       515 bars  2024-10-21 -> 2026-11-09
+  CRCL       360 bars  2025-06-05 -> 2026-11-09
+  AAPL      1254 bars  2021-11-10 -> 2026-11-09
+  IBM       1254 bars  2021-11-10 -> 2026-11-09
+  CRWV       407 bars  2025-03-28 -> 2026-11-09
+  MRVL      1254 bars  2021-11-10 -> 2026-11-09
+  AMZN      1254 bars  2021-11-10 -> 2026-11-09
+  MSFT      1254 bars  2021-11-10 -> 2026-11-09
+  RKLB      1254 bars  2021-11-10 -> 2026-11-09
+  CBRS       124 bars  2026-05-14 -> 2026-11-09
+  COIN      1254 bars  2021-11-10 -> 2026-11-09
+  MSTR      1254 bars  2021-11-10 -> 2026-11-09
+  HIMS      1254 bars  2021-11-10 -> 2026-11-09
+  LITE      1254 bars  2021-11-10 -> 2026-11-09
+  AVGO      1254 bars  2021-11-10 -> 2026-11-09
+  HOOD      1254 bars  2021-11-10 -> 2026-11-09
+  IREN      1249 bars  2021-11-17 -> 2026-11-09
+  BE        1254 bars  2021-11-10 -> 2026-11-09
+  ORCL      1254 bars  2021-11-10 -> 2026-11-09
+  PLTR      1254 bars  2021-11-10 -> 2026-11-09
+  TSM       1254 bars  2021-11-10 -> 2026-11-09
+  EWZ       1254 bars  2021-11-10 -> 2026-11-09
+
+== The registered criteria, on 1252 nights from 2021-11-11 to 2026-11-06 (38,473 market-nights)
+1. profit factor over every market-night, net: 0.778 (need >= 1.5)
+2. the portfolio's mean net night -20.93 bps, Newey-West t -5.07 (7 lags), p 4.053e-07, BH q 3.08e-06 over 38 tests (need mean > 0, t >= 3.0, q < 0.05)
+3. the night -20.93 bps against the day -22.93 bps, both net
+4. halves: -30.96 bps then -10.90 bps
+5. markets with 250+ nights and a mean net night above zero: 4 of 33
+
+VERDICT: FAIL
+  missed 1: profit factor 0.778 under 1.5
+  missed 2: mean -0.002093, t -5.06646849608449, q 3.080004765993833e-06 (need mean > 0, t >= 3.0, q < 0.05)
+  missed 4: halves -0.003096 / -0.001090
+  missed 5: 4 of 33 markets above zero
+
+== Information only
+gross: the night +10.32 bps, the day +5.81 bps (portfolio means)
+growth-mode fee (0.9 bps) + 5 bps slippage, 10% funding: mean night -4.73 bps, NW t -1.15
+no costs, no funding: mean night +10.32 bps, NW t 2.50
+14 bps a fill, funding at 5.5%: mean night -19.47 bps, NW t -4.71
+gross, over a weekend or holiday: 275 nights, mean +10.14 bps; weeknights: 977, mean +10.37 bps
+gross night by calendar year: 2021 +6.88 bps, 2022 -14.47 bps, 2023 +8.31 bps, 2024 +23.44 bps, 2025 +22.18 bps, 2026 +12.98 bps
+of the equal-weight portfolio's log return, the nights gave +1.130 and the days +0.423
+deflated Sharpe on the nightly net series (N = 38): nightly Sharpe -0.1305, DSR 0.000
+
+per market: nights, mean gross night, mean net night
+  NVDA      1252    +15.44 bps    -15.81 bps
+  SOXL      1252    +19.27 bps    -11.98 bps
+  SNDK       435    +45.44 bps    +14.19 bps
+  MU        1252    +16.37 bps    -14.88 bps
+  AMD       1252    +13.09 bps    -18.16 bps
+  DRAM       151    +38.00 bps     +6.80 bps
+  SPCX       102    -18.83 bps    -50.04 bps
+  SKHY        84    +13.00 bps    -18.14 bps
+  GOOGL     1252     +1.13 bps    -30.12 bps
+  KORU      1252     +5.21 bps    -26.04 bps
+  INTC      1252     +4.89 bps    -26.36 bps
+  TSLA      1252     +6.39 bps    -24.86 bps
+  META      1252     +4.62 bps    -26.63 bps
+  EWY       1252     +3.41 bps    -27.84 bps
+  MRNA      1252     -5.95 bps    -37.20 bps
+  NBIS       513    +54.25 bps    +23.00 bps
+  CRCL       358    +29.27 bps     -1.97 bps
+  AAPL      1252     -4.01 bps    -35.26 bps
+  IBM       1252     -2.87 bps    -34.12 bps
+  CRWV       405    +43.55 bps    +12.32 bps
+  MRVL      1252    +16.34 bps    -14.91 bps
+  AMZN      1252     +6.71 bps    -24.54 bps
+  MSFT      1252     +3.94 bps    -27.31 bps
+  RKLB      1252    +23.67 bps     -7.58 bps
+  CBRS       122    -56.42 bps    -87.67 bps
+  COIN      1252     +1.73 bps    -29.52 bps
+  MSTR      1252    +16.92 bps    -14.33 bps
+  HIMS      1252     +1.53 bps    -29.72 bps
+  LITE      1252    +16.97 bps    -14.28 bps
+  AVGO      1252    +18.61 bps    -12.64 bps
+  HOOD      1252     +1.88 bps    -29.37 bps
+  IREN      1247    +34.69 bps     +3.44 bps
+  BE        1252    +23.61 bps     -7.64 bps
+  ORCL      1252    +11.09 bps    -20.16 bps
+  PLTR      1252     +4.24 bps    -27.01 bps
+  TSM       1252    +14.18 bps    -17.07 bps
+  EWZ       1252     -2.14 bps    -33.39 bps
+
+wrote research/nightshift_bars.csv.gz and research/nightshift_nights.csv

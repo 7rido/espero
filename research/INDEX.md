@@ -701,11 +701,15 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #76 — The night shift: hold the stock perps from the close to the next open
 
-*#76 (not in trials.csv)*
+*#76 fail*
 
 - `PREREGISTRATION_NIGHTSHIFT.md`
 - `PREREGISTRATION_NIGHTSHIFT.md.ots`
+- `RESULTS_NIGHTSHIFT.md`
 - `nightshift.py`  (rule: `espero/nightshift.py`)
+- `nightshift_bars.csv.gz`
+- `nightshift_nights.csv`
+- `nightshift_run.txt`
 
 ## Cross-cutting
 

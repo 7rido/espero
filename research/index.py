@@ -166,7 +166,7 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
                                                                "hip3track_inputs.csv.gz", "RESULTS_HIP3TRACK.md"]),
     "74": ("What a fill costs on trade.xyz perps", ["PREREGISTRATION_HIP3COST.md", "PREREGISTRATION_HIP3COST.md.ots"]),
     "78": ("A daily breakout trend rule on the stock perps", ["PREREGISTRATION_TRENDSTOCK.md",
-                                                              "PREREGISTRATION_TRENDSTOCK.md.ots"]),
+                                                              "PREREGISTRATION_TRENDSTOCK.md.ots", "trendstock.py"]),
     "77": ("The slow night shift: Monday's close to Friday's open, once a week", ["PREREGISTRATION_NIGHTWEEK.md",
                                                                                   "PREREGISTRATION_NIGHTWEEK.md.ots", "nightweek.py",
                                                                                   "nightweek_run.txt", "nightweek_weeks.csv",

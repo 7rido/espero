@@ -729,6 +729,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `PREREGISTRATION_TRENDSTOCK.md`
 - `PREREGISTRATION_TRENDSTOCK.md.ots`
+- `trendstock.py`  (rule: `espero/trendstock.py`)
 
 ## Cross-cutting
 

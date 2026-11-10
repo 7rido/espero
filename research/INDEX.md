@@ -699,6 +699,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `dealrange_run.txt`
 - `dealrange_trades.csv`
 
+## #76 — The night shift: hold the stock perps from the close to the next open
+
+*#76 (not in trials.csv)*
+
+- `PREREGISTRATION_NIGHTSHIFT.md`
+- `PREREGISTRATION_NIGHTSHIFT.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

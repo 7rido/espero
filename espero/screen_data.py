@@ -486,6 +486,26 @@ def paper(state: Path) -> List[Tuple[str, float, float]]:
     return out
 
 
+HIP3_TESTS = ("75", "76", "77")
+
+
+def hip3_verdicts(path: Optional[Path] = None) -> List[Tuple[str, str, str, str]]:
+    """(test, name, status, what it found) for the HIP-3 strategy tests, from research/trials.csv."""
+    import csv
+
+    path = path or Path(__file__).resolve().parents[1] / "research" / "trials.csv"
+    with Path(path).open(newline="", encoding="utf-8") as fh:
+        rows = {r["test"]: r for r in csv.DictReader(fh)}
+    return [(k, rows[k]["name"], rows[k]["status"], rows[k]["primary_stat"]) for k in HIP3_TESTS if k in rows]
+
+
+def hip3paper(state: Path) -> Optional[dict]:
+    """The last HIP-3 paper run (espero/hip3paper.py), or None before the first."""
+    from . import hip3paper as hp
+
+    return hp.read(state)
+
+
 def judgment_days(now: Optional[float] = None) -> int:
     """Days until the forward tests are judged, after 2027-03-31."""
     now = time.time() if now is None else now

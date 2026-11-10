@@ -24,6 +24,16 @@ def payload(*rows):
     return {"universe": [r[0] for r in rows]}, [r[1] for r in rows]
 
 
+class TestHip3(unittest.TestCase):
+    def test_the_hip3_verdicts_come_from_the_ledger(self):
+        import tempfile
+        from pathlib import Path
+        p = Path(tempfile.mkdtemp()) / "trials.csv"
+        p.write_text("test,name,status,primary_stat\n75,a rule,fail,lost\n76,a night,pass,won\n99,other,fail,x\n")
+        self.assertEqual(D.hip3_verdicts(p), [("75", "a rule", "fail", "lost"), ("76", "a night", "pass", "won")])
+        self.assertIsNone(D.hip3paper(Path(tempfile.mkdtemp())))
+
+
 class TestMarket(unittest.TestCase):
     def test_stocks_are_the_most_traded_on_the_builder_exchange_without_its_prefix(self):
         asked = []

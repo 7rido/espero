@@ -189,6 +189,21 @@ class TestRawrecHip3Agent(unittest.TestCase):
 
 
 @unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
+class TestHip3PaperAgent(unittest.TestCase):
+    def test_every_hour_at_minute_33_from_the_repo_never_kept_alive(self):
+        out = subprocess.run(["bash", str(ROOT / "scripts" / "install-hip3paper-launchd.sh"), "--print"],
+                             capture_output=True, text=True, check=True,
+                             env={"PATH": "/usr/bin:/bin", "HOME": "/tmp", "PYTHON": "/x/python"}).stdout
+        p = plistlib.loads(out.encode())
+        self.assertEqual(p["Label"], "com.espero.hip3paper")
+        self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "hip3paper", "--once"])
+        self.assertEqual(p["StartCalendarInterval"], {"Minute": 33})
+        self.assertNotIn("KeepAlive", p)
+        self.assertEqual(p["WorkingDirectory"], str(ROOT))
+        self.assertTrue(p["StandardOutPath"].endswith("hip3paper.log"))
+
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
 class TestMfCanaryAgent(unittest.TestCase):
     def test_kept_alive_stepping_the_canary_with_its_journal_in_the_repo(self):
         out = subprocess.run(["bash", str(ROOT / "scripts" / "install-mf-canary-launchd.sh"), "--print"],

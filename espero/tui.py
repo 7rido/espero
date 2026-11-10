@@ -63,6 +63,31 @@ def pays(funding_h: float) -> str:
     return f"{'longs' if funding_h > 0 else 'shorts'} pay {abs(funding_h) * 24 * 365:.0%} a year"
 
 
+def hip3_block(state: Path) -> Text:
+    """The HIP-3 strategies: each backtest's verdict, then the paper books that watch #75 and #76 live."""
+    out = Text("\n")
+    out.append("Stock perps (HIP-3)", style=f"bold {ACCENT}")
+    out.append("  backtests, then paper on the perps' own prices\n", style=MUTED)
+    for test, name, status, what in D.hip3_verdicts():
+        out.append(f"#{test} ", style="bold")
+        out.append(f"{status.upper()}  ", style="red" if status == "fail" else "green" if status == "pass" else "")
+        out.append(f"{name}\n")
+        out.append(f"    {what.split('(')[0].strip()[:150]}\n", style=MUTED)
+    book = D.hip3paper(state)
+    if not book:
+        out.append("Paper books: not run yet (espero hip3paper --once, or install its loop)\n", style=MUTED)
+        return out
+    for k, unit in (("75", "R"), ("76", "bps")):
+        s = book[k]["score"]
+        rows = book[k]["trades" if k == "75" else "nights"]
+        live = sum(1 for x in rows if x["open"] and not x.get("warmup"))
+        mean = "-" if s["mean"] is None else f"{s['mean']:+.2f} {unit}"
+        pf = "-" if s["pf"] is None else f"{s['pf']:.2f}"
+        out.append(f"Paper #{k}: {s['n']} closed, mean {mean}, profit factor {pf}, {live} open\n")
+    out.append("Paper books watch failed rules on live prices; they decide nothing.\n", style=MUTED)
+    return out
+
+
 def money(x: float) -> str:
     a = abs(x)
     return f"${a / 1e9:,.1f}B" if a >= 1e9 else f"${a / 1e6:,.1f}M" if a >= 1e6 else f"${a / 1e3:,.0f}K" if a >= 1e3 \
@@ -469,7 +494,7 @@ class EsperoApp(App):
         tail = Text(f"\nForward tests: judged once, after 2027-03-31, in {D.judgment_days(self.src.now())} days. "
                     "Their running numbers are not results.", style=MUTED)
         from rich.console import Group
-        self.query_one("#books-body", Static).update(Group(out, t, tail))
+        self.query_one("#books-body", Static).update(Group(out, t, hip3_block(self.state), tail))
 
     # -------------------------------------------------------------- Research and Settings
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:

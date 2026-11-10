@@ -1572,6 +1572,13 @@ def _cmd_hip3rec(args: argparse.Namespace) -> int:
     return hip3rec.main(["--loop" if args.loop else "--coins"])
 
 
+def _cmd_hip3paper(args: argparse.Namespace) -> int:
+    """The HIP-3 paper books (espero/hip3paper.py): #75 and #76 watched live on the perps, information only."""
+    from . import hip3paper
+
+    return hip3paper.main(["--state-dir", str(args.state_dir)] + (["--once"] if args.once else []))
+
+
 def _cmd_hip3(args: argparse.Namespace) -> int:
     """Hyperliquid's stock, index and commodity perps (espero/hip3.py): the markets now, or the 30-day screen."""
     from . import hip3
@@ -2129,6 +2136,12 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--loop", action="store_true", help="record until stopped (what launchd runs)")
     g.add_argument("--coins", action="store_true", help="the markets that qualify now, and what the folder lists")
     h3r.set_defaults(func=_cmd_hip3rec)
+
+    h3p = sub.add_parser("hip3paper", help="paper books for #75 and #76 (both failed their backtests) on the "
+                                          "trade.xyz perps' own prices; information only, nothing is sent")
+    h3p.add_argument("--once", action="store_true", help="fetch new candles (about 10 minutes), rewrite the books")
+    h3p.add_argument("--state-dir", default=None)
+    h3p.set_defaults(func=_cmd_hip3paper)
 
     rps = sub.add_parser("replay-stack", help="a recorded day's #71 events through the risk gate to the recorded "
                                               "Hyperliquid book; orders and refusals only, nothing sent")

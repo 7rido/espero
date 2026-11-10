@@ -214,6 +214,22 @@ class TestTheScreen(unittest.IsolatedAsyncioTestCase):
             self.assertIn("aggr did not answer", str(app.query_one("#liqs", tui.Static).render()))
 
 
+class TestHip3Block(unittest.TestCase):
+    @unittest.skipIf(tui is None, "needs the tui extra")
+    def test_verdicts_then_the_paper_books(self):
+        state = Path(tempfile.mkdtemp())
+        text = tui.hip3_block(state).plain
+        self.assertIn("#75 FAIL", text)
+        self.assertIn("not run yet", text)
+        from espero import hip3paper as hp
+        hp.write(state, {"75": {"trades": [{"open": True, "warmup": False}, {"open": True, "warmup": True}],
+                                "score": {"n": 3, "mean": -0.5, "pf": 0.6}},
+                         "76": {"nights": [], "score": {"n": 0, "mean": None, "pf": None}}})
+        text = tui.hip3_block(state).plain
+        self.assertIn("Paper #75: 3 closed, mean -0.50 R, profit factor 0.60, 1 open", text)
+        self.assertIn("Paper #76: 0 closed, mean -, profit factor -, 0 open", text)
+
+
 class TestWords(unittest.TestCase):
     @unittest.skipIf(tui is None, "needs the tui extra")
     def test_plain_words_for_numbers(self):

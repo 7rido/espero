@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.espero.hip3paper</string>
+
+    <!-- the HIP-3 paper books (espero/hip3paper.py): #75 and #76, which failed their backtests, watched on the
+         trade.xyz perps' own prices, information only. It reads public candles, paced, and writes only
+         state/hip3paper.json and state/hip3paper/; nothing signs or trades.
+         scripts/install-hip3paper-launchd.sh renders this. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>-m</string>
+        <string>espero</string>
+        <string>hip3paper</string>
+        <string>--once</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+
+    <!-- every hour at minute 33: the hourly bars end on the half hour, and the run (about ten minutes, one
+         request every 15 seconds) ends before the collector's sweep at minute 19 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Minute</key>
+        <integer>33</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>__LOG_DIR__/hip3paper.log</string>
+    <key>StandardErrorPath</key>
+    <string>__LOG_DIR__/hip3paper.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

@@ -723,6 +723,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `nightweek_run.txt`
 - `nightweek_weeks.csv`
 
+## #78 — A daily breakout trend rule on the stock perps
+
+*#78 (not in trials.csv)*
+
+- `PREREGISTRATION_TRENDSTOCK.md`
+- `PREREGISTRATION_TRENDSTOCK.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

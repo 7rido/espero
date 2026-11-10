@@ -674,6 +674,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `PREREGISTRATION_HIP3TRACK.md`
 - `PREREGISTRATION_HIP3TRACK.md.ots`
+- `hip3track.py`  (rule: `espero/hip3track.py`)
 
 ## #74 — What a fill costs on trade.xyz perps
 

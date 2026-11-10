@@ -723,6 +723,7 @@ espero/
     tapewatch.py      # The live tape on one screen: spread, depth, taker flow, liquidations and lag per venue.
     deribit.py        # The Deribit recorder: every listed option's open interest, mark and implied volatility, and …
     hip3.py           # Hyperliquid's builder-deployed perps (HIP-3): what is listed, what a fill costs in fees, which …
+    hip3rec.py        # The second raw recorder: trade.xyz's books and trades, into a folder of its own, for #74.
     # measure: costs on prints, fills on tape, the point-in-time store and the ledger of every trial
     markout.py        # What a fill costs, measured on prints (#39, research/PREREGISTRATION_MARKOUT.md).
     execsim.py        # What a fill would have cost, replayed on the venue's own prints and quotes.

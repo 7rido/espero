@@ -338,6 +338,25 @@ day of Binance tape (about four minutes on this Mac). A running engine keeps the
 line, run again, restarts it on the current code. Each start reads yesterday's whole tape first: about five minutes
 at full CPU, and a peak near 1 GB while it catches up with the current hour.
 
+## The second recorder: trade.xyz's books (#74)
+
+`espero hip3rec --loop` records the books and trades of Hyperliquid's stock, index and commodity perps (trade.xyz)
+over one public websocket, for #74's cost measurement (research/PREREGISTRATION_HIP3COST.md). It is the raw
+recorder's code with one feed and a folder of its own, named by `ESPERO_RAW_DIR_HIP3`: it refuses the first
+recorder's folder, anything inside or around it, and the repo's `data/`. The first recorder is not restarted or
+touched. `espero hip3rec --coins` shows which markets qualify now (in `research/hip3_map.csv`, $5M or more in
+the last 24 hours); the folder's `coins.json` keeps the list, which only grows. The account holder installs it:
+
+```bash
+cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp/Espero Trading QuantBot/espero-raw" ESPERO_RAW_DIR_HIP3="/Users/fredp/Espero Trading QuantBot/espero-raw-hip3" ./scripts/install-rawrec-hip3-launchd.sh
+```
+
+It asks the venue one question per start; everything else arrives over the websocket, which the venue's request
+limit does not count. A 12-second trial on 2026-11-10 wrote 57 markets' books at 20 levels a side; expect on the
+order of a gigabyte a day, to be read off the folder after the first day. The watchdog lists the agent, so until
+it is installed `espero watchdog` reports `agent:com.espero.rawrec-hip3` as not loaded. Removing it is the same
+script with `--uninstall`; the recordings stay.
+
 ## The full-stack replay
 
 `espero replay-stack --day DAY` sends #71's events from a recorded day through the live path in miniature: the

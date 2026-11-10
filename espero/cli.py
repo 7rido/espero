@@ -1565,6 +1565,13 @@ def _cmd_replay_stack(args: argparse.Namespace) -> int:
     return replay_stack.main(["--day", args.day, "--capital", str(args.capital)])
 
 
+def _cmd_hip3rec(args: argparse.Namespace) -> int:
+    """The second raw recorder (espero/hip3rec.py): trade.xyz's books and trades into ESPERO_RAW_DIR_HIP3."""
+    from . import hip3rec
+
+    return hip3rec.main(["--loop" if args.loop else "--coins"])
+
+
 def _cmd_hip3(args: argparse.Namespace) -> int:
     """Hyperliquid's stock, index and commodity perps (espero/hip3.py): the markets now, or the 30-day screen."""
     from . import hip3
@@ -2115,6 +2122,13 @@ def build_parser() -> argparse.ArgumentParser:
                     help="also fetch each market's days for the 30-day liquidity screen (about 10 s a market)")
     h3.add_argument("--state-dir", default=None)
     h3.set_defaults(func=_cmd_hip3)
+
+    h3r = sub.add_parser("hip3rec", help="the second raw recorder: trade.xyz's books and trades into "
+                                         "ESPERO_RAW_DIR_HIP3, for #74; public data, nothing is placed")
+    g = h3r.add_mutually_exclusive_group(required=True)
+    g.add_argument("--loop", action="store_true", help="record until stopped (what launchd runs)")
+    g.add_argument("--coins", action="store_true", help="the markets that qualify now, and what the folder lists")
+    h3r.set_defaults(func=_cmd_hip3rec)
 
     rps = sub.add_parser("replay-stack", help="a recorded day's #71 events through the risk gate to the recorded "
                                               "Hyperliquid book; orders and refusals only, nothing sent")

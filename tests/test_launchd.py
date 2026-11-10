@@ -163,6 +163,32 @@ class TestLivesigAgent(unittest.TestCase):
 
 
 @unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
+class TestRawrecHip3Agent(unittest.TestCase):
+    SCRIPT = str(ROOT / "scripts" / "install-rawrec-hip3-launchd.sh")
+
+    def render(self, **env):
+        return subprocess.run(["bash", self.SCRIPT, "--print"], capture_output=True, text=True,
+                              env={"PATH": "/usr/bin:/bin", "HOME": "/tmp", "PYTHON": "/x/python", **env})
+
+    def test_kept_alive_writing_a_folder_of_its_own(self):
+        p = plistlib.loads(self.render(ESPERO_RAW_DIR_HIP3="/tape-hip3", ESPERO_RAW_DIR="/tape").stdout.encode())
+        self.assertEqual(p["Label"], "com.espero.rawrec-hip3")
+        self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "hip3rec", "--loop"])
+        self.assertTrue(p["KeepAlive"] and p["RunAtLoad"])
+        self.assertEqual(p["EnvironmentVariables"]["ESPERO_RAW_DIR_HIP3"], "/tape-hip3")
+        self.assertEqual(p["EnvironmentVariables"]["ESPERO_RAW_DIR"], "/tape")
+        self.assertTrue(p["StandardOutPath"].endswith("rawrec-hip3.log"))
+
+    def test_it_refuses_no_folder_the_first_tape_and_the_repos_data(self):
+        for env in ({}, {"ESPERO_RAW_DIR_HIP3": "/tape", "ESPERO_RAW_DIR": "/tape"},
+                    {"ESPERO_RAW_DIR_HIP3": "/tape/hip3", "ESPERO_RAW_DIR": "/tape"},
+                    {"ESPERO_RAW_DIR_HIP3": "/t", "ESPERO_RAW_DIR": "/t/tape"},
+                    {"ESPERO_RAW_DIR_HIP3": str(ROOT / "data" / "x")}):
+            self.assertNotEqual(self.render(**env).returncode, 0, env)
+        self.assertEqual(self.render(ESPERO_RAW_DIR_HIP3="/tape-hip3", ESPERO_RAW_DIR="/tape").returncode, 0)
+
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
 class TestMfCanaryAgent(unittest.TestCase):
     def test_kept_alive_stepping_the_canary_with_its_journal_in_the_repo(self):
         out = subprocess.run(["bash", str(ROOT / "scripts" / "install-mf-canary-launchd.sh"), "--print"],

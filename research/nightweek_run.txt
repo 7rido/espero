@@ -1,0 +1,64 @@
+#77, run 2026-11-10 06:40 UTC, as registered in research/PREREGISTRATION_NIGHTWEEK.md
+37 markets and SPY; 38,547 daily bars
+
+== The registered criteria, on 261 weeks from 2021-11-08 to 2026-11-02 (8,017 market-weeks)
+1. profit factor over every market-week, net: 0.990 (need >= 1.5)
+2. the portfolio's mean net week -2.3 bps, Newey-West t -0.08 (4 lags), p 0.9341, BH q 1 over 39 tests (need mean > 0, t >= 3.0, q < 0.05)
+3. the net week -2.3 bps against SPY's gross +8.7 bps over the same hours
+4. halves: -16.5 bps then +11.9 bps
+5. markets with 100+ weeks and a mean net week above zero: 12 of 30
+
+VERDICT: FAIL
+  missed 1: profit factor 0.99 under 1.5
+  missed 2: mean -0.000234, t -0.08266352794938193, q 1.0 (need mean > 0, t >= 3.0, q < 0.05)
+  missed 3: the net week -0.000234 not above the market's 0.000872
+  missed 4: halves -0.001648 / +0.001191
+  missed 5: 12 of 30 markets above zero
+
+== Information only
+gross mean week +35.5 bps
+growth-mode fee (0.9 bps) + 5 bps slippage: mean net week +13.9 bps, NW t 0.49
+buy and hold, the same markets, close of the week before to the week's last close: mean +71.9 bps
+net week by year: 2021 -37.8 bps, 2022 -61.1 bps, 2023 +28.2 bps, 2024 +5.4 bps, 2025 +32.3 bps, 2026 -12.9 bps
+deflated Sharpe on the weekly net series (N = 39): weekly Sharpe -0.0056, DSR 0.001
+
+per market: weeks, mean gross week, mean net week
+  NVDA      261     +87.9 bps     +50.1 bps
+  SOXL      261     +65.3 bps     +27.5 bps
+  SNDK       90    +221.8 bps    +184.0 bps
+  MU        261     +53.7 bps     +15.9 bps
+  AMD       261     +32.2 bps      -5.6 bps
+  DRAM       31     +38.4 bps      +0.5 bps
+  SPCX       21    -209.7 bps    -247.5 bps
+  SKHY       17    +154.6 bps    +116.6 bps
+  GOOGL     261      +8.3 bps     -29.5 bps
+  KORU      261      +7.1 bps     -30.8 bps
+  INTC      261     +23.3 bps     -14.5 bps
+  TSLA      261     -19.2 bps     -57.1 bps
+  META      261     +26.7 bps     -11.1 bps
+  EWY       261     +10.2 bps     -27.6 bps
+  MRNA      261     +39.5 bps      +1.7 bps
+  NBIS      107    +143.6 bps    +105.7 bps
+  CRCL       74     -59.2 bps     -97.1 bps
+  AAPL      261     +23.3 bps     -14.5 bps
+  IBM       261     +10.8 bps     -27.0 bps
+  CRWV       84     -14.3 bps     -52.2 bps
+  MRVL      261     +80.7 bps     +42.9 bps
+  AMZN      261     +12.8 bps     -25.0 bps
+  MSFT      261     +14.2 bps     -23.6 bps
+  RKLB      261     +29.3 bps      -8.5 bps
+  CBRS       25    -289.5 bps    -327.2 bps
+  COIN      261     -12.7 bps     -50.5 bps
+  MSTR      261      +3.7 bps     -34.1 bps
+  HIMS      261      +1.6 bps     -36.2 bps
+  LITE      261     +60.6 bps     +22.8 bps
+  AVGO      261     +60.9 bps     +23.1 bps
+  HOOD      261      -4.0 bps     -41.8 bps
+  IREN      260     +79.2 bps     +41.4 bps
+  BE        261    +124.6 bps     +86.8 bps
+  ORCL      261     +25.8 bps     -12.0 bps
+  PLTR      261     +67.5 bps     +29.7 bps
+  TSM       261     +76.0 bps     +38.2 bps
+  EWZ       261     +10.4 bps     -27.4 bps
+
+wrote research/nightweek_bars.csv.gz and research/nightweek_weeks.csv

@@ -713,11 +713,15 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #77 — The slow night shift: Monday's close to Friday's open, once a week
 
-*#77 (not in trials.csv)*
+*#77 fail*
 
 - `PREREGISTRATION_NIGHTWEEK.md`
 - `PREREGISTRATION_NIGHTWEEK.md.ots`
+- `RESULTS_NIGHTWEEK.md`
 - `nightweek.py`  (rule: `espero/nightweek.py`)
+- `nightweek_bars.csv.gz`
+- `nightweek_run.txt`
+- `nightweek_weeks.csv`
 
 ## Cross-cutting
 

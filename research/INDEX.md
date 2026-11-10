@@ -717,6 +717,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `PREREGISTRATION_NIGHTWEEK.md`
 - `PREREGISTRATION_NIGHTWEEK.md.ots`
+- `nightweek.py`  (rule: `espero/nightweek.py`)
 
 ## Cross-cutting
 

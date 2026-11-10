@@ -96,6 +96,49 @@ class TestOneTrade(unittest.TestCase):
         self.assertAlmostEqual(t.r, 0.75 - 0.5)
 
 
+class TestLimit(unittest.TestCase):
+    def test_the_fill_bar_reaches_no_target_and_the_next_bar_can(self):
+        o, h, low, c = bars((101, 104, 99.5, 103), (103, 105.7, 102.5, 105))
+        t = B.simulate_limit(o, h, low, c, 0, 100.0, 1, 2.0, PLAIN)
+        self.assertEqual((t.entry_i, t.exit_i, t.entry, t.signal_i), (0, 1, 100.0, -1))
+        self.assertAlmostEqual(t.r, 0.5 * 1.5 + 0.5 * 2.8)            # both targets on the bar after the fill
+        one = B.simulate_limit(o[:1], h[:1], low[:1], c[:1], 0, 100.0, 1, 2.0, PLAIN)
+        self.assertEqual(one.outcome, "end of data")                  # 104 on the fill bar is not a target
+        self.assertAlmostEqual(one.r, 1.5)
+
+    def test_a_target_reached_on_the_fill_bar_does_not_move_the_stop(self):
+        o, h, low, c = bars((101, 104, 99.5, 103), (101, 101.5, 97.5, 98))
+        t = B.simulate_limit(o, h, low, c, 0, 100.0, 1, 2.0, PLAIN)
+        self.assertEqual(t.outcome, "stop")
+        self.assertAlmostEqual(t.r, -1.0)                              # not half at 1.5R and the rest at breakeven
+
+    def test_the_fill_bar_can_be_stopped(self):
+        o, h, low, c = bars((101, 101, 97.5, 98))
+        t = B.simulate_limit(o, h, low, c, 0, 100.0, 1, 2.0, PLAIN)
+        self.assertEqual(t.outcome, "stop")
+        self.assertAlmostEqual(t.r, -1.0)
+
+    def test_a_fill_bar_opening_through_the_stop_leaves_at_the_open(self):
+        o, h, low, c = bars((97, 97.5, 96, 97))
+        t = B.simulate_limit(o, h, low, c, 0, 100.0, 1, 2.0, PLAIN, signal_i=-3)
+        self.assertEqual((t.outcome, t.signal_i), ("stop", -3))
+        self.assertAlmostEqual(t.r, -1.5)                              # 100 to 97, worse than the stop at 98
+        o, h, low, c = bars((98.5, 99.5, 98.2, 99), (99, 99.2, 97.9, 98))
+        self.assertAlmostEqual(B.simulate_limit(o, h, low, c, 0, 100.0, 1, 2.0, PLAIN).r, -1.0)
+
+    def test_a_short_resting_order_mirrors_it(self):
+        o, h, low, c = bars((99, 100.5, 96, 97), (97, 97.5, 94.3, 95))
+        self.assertAlmostEqual(B.simulate_limit(o, h, low, c, 0, 100.0, -1, 2.0, PLAIN).r, 0.5 * 1.5 + 0.5 * 2.8)
+        o, h, low, c = bars((103, 104, 102, 103))
+        self.assertAlmostEqual(B.simulate_limit(o, h, low, c, 0, 100.0, -1, 2.0, PLAIN).r, -1.5)
+
+    def test_a_fill_outside_the_bars_is_refused(self):
+        with self.assertRaises(ValueError):
+            B.simulate_limit([1.0], [1.0], [1.0], [1.0], 1, 1.0, 1, 0.5, PLAIN)
+        with self.assertRaises(ValueError):
+            B.simulate_limit([1.0], [1.0], [1.0], [1.0], 0, 1.0, 1, 0.0, PLAIN)
+
+
 class TestMany(unittest.TestCase):
     def test_one_at_a_time(self):
         rows = [(100, 100.5, 99.5, 100)] * 3 + [(100, 100.5, 97.5, 98)] + [(98, 98.5, 97.5, 98)] * 3

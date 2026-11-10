@@ -61,14 +61,32 @@ class Trade:
 
 def simulate(o: Sequence[float], h: Sequence[float], low: Sequence[float], c: Sequence[float], signal_i: int,
              side: int, risk: float, b: Bracket, day: Optional[Sequence] = None) -> Optional[Trade]:
-    """One bracket from a signal at bar `signal_i`'s close; None when no next bar exists to enter on."""
+    """One bracket from a signal at bar `signal_i`'s close, entered at the next bar's open; None when no next
+    bar exists to enter on."""
+    if signal_i + 1 >= len(o):
+        if side not in (1, -1) or not risk > 0:
+            raise ValueError("a trade needs a side and a positive stop distance")
+        return None
+    return _play(o, h, low, c, signal_i, signal_i + 1, float(o[signal_i + 1]), side, risk, b, day, limit=False)
+
+
+def simulate_limit(o: Sequence[float], h: Sequence[float], low: Sequence[float], c: Sequence[float], fill_i: int,
+                   price: float, side: int, risk: float, b: Bracket, day: Optional[Sequence] = None,
+                   signal_i: Optional[int] = None) -> Trade:
+    """One bracket from a resting order filled at `price` inside bar `fill_i`. Inside the fill bar, against the
+    trade: it can be stopped but cannot reach a target, since the bar's best price may have come before the fill;
+    and when the bar opens at or beyond the stop, the trade leaves at that open, worse than the stop."""
+    if not 0 <= fill_i < len(o):
+        raise ValueError("the fill bar is outside the bars")
+    return _play(o, h, low, c, fill_i - 1 if signal_i is None else signal_i, fill_i, float(price), side, risk, b,
+                 day, limit=True)
+
+
+def _play(o, h, low, c, signal_i: int, e: int, entry: float, side: int, risk: float, b: Bracket, day,
+          limit: bool) -> Trade:
     if side not in (1, -1) or not risk > 0:
         raise ValueError("a trade needs a side and a positive stop distance")
-    e = signal_i + 1
     n = len(o)
-    if e >= n:
-        return None
-    entry = float(o[e])
     stop = entry - side * risk
     tps = [(entry + side * r * risk, share) for r, share in b.targets]
     left, pnl, hits = 1.0, 0.0, 0
@@ -84,7 +102,7 @@ def simulate(o: Sequence[float], h: Sequence[float], low: Sequence[float], c: Se
         return "breakeven" if stop == entry else "stop"
 
     for i in range(e, n):
-        if i > e and side * (o[i] - stop) <= 0:            # gapped through the stop: out at the open
+        if (i > e or limit) and side * (o[i] - stop) <= 0:  # gapped through the stop: out at the open
             reason = stopped()
             out(float(o[i]), left)
             return Trade(side, signal_i, e, i, entry, risk, (pnl - cost) / risk, reason)
@@ -94,7 +112,7 @@ def simulate(o: Sequence[float], h: Sequence[float], low: Sequence[float], c: Se
             out(stop, left)
             return Trade(side, signal_i, e, i, entry, risk, (pnl - cost) / risk, reason)
         best = h[i] if side > 0 else low[i]
-        while hits < len(tps) and side * (best - tps[hits][0]) >= 0:
+        while hits < len(tps) and not (limit and i == e) and side * (best - tps[hits][0]) >= 0:
             out(tps[hits][0], min(tps[hits][1], left))
             hits += 1
         if left <= 1e-12:

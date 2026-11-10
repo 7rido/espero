@@ -31,7 +31,7 @@ LAYERS: Dict[str, Tuple[str, List[str]]] = {
                "degen", "polyhour", "ethena", "horizons", "catchup", "bookwalk", "patterns", "trend", "factors",
                "signals", "regimes", "rate", "ladder", "liqvault", "oi5m", "volf", "edgewatch",
                "listdrift", "cascade", "dealrange", "nightshift", "nightweek", "trendstock", "trendblind",
-               "fundspread"]),
+               "fundspread", "volprem"]),
     "forward": ("the daily job's steps: record a day, rebuild a ledger, decide nothing until 2027-03-31",
                 ["liqfwd", "lowsfwd", "liqbreak", "fundsplit", "postclose", "bidsfwd", "settlefwd", "liqhold"]),
     "accounts": ("paper books and the machinery that holds a position honestly",

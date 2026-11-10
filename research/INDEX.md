@@ -759,6 +759,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `fundspread_run.txt`
 - `fundspread_weeks.csv`
 
+## #81 — The BTC volatility premium, sold every week with wings
+
+*#81 (not in trials.csv)*
+
+- `PREREGISTRATION_VOLPREM.md`
+- `PREREGISTRATION_VOLPREM.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

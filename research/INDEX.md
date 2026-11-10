@@ -735,6 +735,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `trendstock_run.txt`
 - `trendstock_trades.csv`
 
+## #79 — The trend rule on names chosen blind: the Dow 30 of November 2021
+
+*#79 (not in trials.csv)*
+
+- `PREREGISTRATION_TRENDBLIND.md`
+- `PREREGISTRATION_TRENDBLIND.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

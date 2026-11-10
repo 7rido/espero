@@ -1,0 +1,102 @@
+#75, run 2026-11-10 05:33 UTC, as registered in research/PREREGISTRATION_DEALRANGE.md
+37 markets; bars from 2023-12-12 to 2026-11-09; 133,528 bars
+  NVDA      5083 bars  2023-12-12 -> 2026-11-09
+  SOXL      5082 bars  2023-12-12 -> 2026-11-09
+  SNDK      2999 bars  2025-02-24 -> 2026-11-09
+  MU        5083 bars  2023-12-12 -> 2026-11-09
+  AMD       5083 bars  2023-12-12 -> 2026-11-09
+  DRAM      1071 bars  2026-04-02 -> 2026-11-09
+  SPCX       726 bars  2026-06-12 -> 2026-11-09
+  SKHY       595 bars  2026-07-13 -> 2026-11-09
+  GOOGL     5083 bars  2023-12-12 -> 2026-11-09
+  KORU      5081 bars  2023-12-12 -> 2026-11-09
+  INTC      5083 bars  2023-12-12 -> 2026-11-09
+  TSLA      5083 bars  2023-12-12 -> 2026-11-09
+  META      5083 bars  2023-12-12 -> 2026-11-09
+  EWY       5082 bars  2023-12-12 -> 2026-11-09
+  MRNA      5083 bars  2023-12-12 -> 2026-11-09
+  NBIS      3476 bars  2024-11-11 -> 2026-11-09
+  CRCL      2499 bars  2025-06-05 -> 2026-11-09
+  AAPL      3476 bars  2024-11-11 -> 2026-11-09
+  IBM       3475 bars  2024-11-11 -> 2026-11-09
+  CRWV      2828 bars  2025-03-28 -> 2026-11-09
+  MRVL      3476 bars  2024-11-11 -> 2026-11-09
+  AMZN      3476 bars  2024-11-11 -> 2026-11-09
+  MSFT      3476 bars  2024-11-11 -> 2026-11-09
+  RKLB      3476 bars  2024-11-11 -> 2026-11-09
+  CBRS       866 bars  2026-05-14 -> 2026-11-09
+  COIN      3476 bars  2024-11-11 -> 2026-11-09
+  MSTR      3476 bars  2024-11-11 -> 2026-11-09
+  HIMS      3475 bars  2024-11-11 -> 2026-11-09
+  LITE      3476 bars  2024-11-11 -> 2026-11-09
+  AVGO      3476 bars  2024-11-11 -> 2026-11-09
+  HOOD      3476 bars  2024-11-11 -> 2026-11-09
+  IREN      3476 bars  2024-11-11 -> 2026-11-09
+  BE        3472 bars  2024-11-11 -> 2026-11-09
+  ORCL      3475 bars  2024-11-11 -> 2026-11-09
+  PLTR      3476 bars  2024-11-11 -> 2026-11-09
+  TSM       3475 bars  2024-11-11 -> 2026-11-09
+  EWZ       3475 bars  2024-11-11 -> 2026-11-09
+
+== The registered criteria, on 1287 trades from 4827 orders armed
+1. profit factor 0.440 (need >= 1.5)
+2. mean R -0.5831, t -9.14 clustered over 489 entry days, p 0.0000, BH q 0.0000 over 37 tests (need mean > 0, t >= 3.0, q < 0.05)
+3. random entries: 2000 draws (seed 0, 40 s), median mean R -0.2559; the rule -0.3272 above it; 100.0% of draws at or above the rule (need under 5%)
+4. halves: -0.5009 then -0.6655
+5. markets with 5+ trades and a mean R above zero: 4 of 37
+
+VERDICT: FAIL
+  missed 1: profit factor 0.44 under 1.5
+  missed 2: mean -0.5831147486715484, t -9.138036596369481, q 7.8435578957022585e-19 (need mean > 0, t >= 3.0, q < 0.05)
+  missed 3: 100.0% of random draws at or above it (need under 5%)
+  missed 4: halves -0.501 / -0.665
+  missed 5: 4 of 37 markets above zero
+
+== Information only
+win rate 0.335; total -750.5R; outcomes: stop 847, target 255, breakeven 185
+no costs: 1287 trades, mean R -0.3729, profit factor 0.585
+growth-mode fee (0.9 bps) + 5 bps slippage: 1287 trades, mean R -0.4615, profit factor 0.518
+closed the day they opened: 596, mean R -1.3528; held overnight or longer: 691, mean R 0.0807
+mean bars held (fill bar to exit bar): 8.7
+deflated Sharpe on the daily R series (N = 37; the trials' Sharpes, annualised, scaled to a day for their variance): daily Sharpe -0.3038, DSR 0.000
+
+per market: trades, mean R
+  NVDA       44  -0.708
+  SOXL       46  -0.420
+  SNDK       22  0.003
+  MU         47  -0.119
+  AMD        47  -0.912
+  DRAM        9  -0.263
+  SPCX        9  -0.105
+  SKHY        6  0.340
+  GOOGL      51  -0.872
+  KORU       34  -1.004
+  INTC       45  -0.969
+  TSLA       60  -0.387
+  META       59  -0.607
+  EWY        43  -1.368
+  MRNA       45  -0.321
+  NBIS       36  -0.110
+  CRCL       36  -0.412
+  AAPL       36  0.112
+  IBM        42  -1.572
+  CRWV       32  -0.085
+  MRVL       37  -0.511
+  AMZN       32  -0.780
+  MSFT       35  -1.048
+  RKLB       39  -0.459
+  CBRS        6  -0.892
+  COIN       36  -0.552
+  MSTR       43  -0.440
+  HIMS       34  -0.303
+  LITE       31  -0.324
+  AVGO       29  -1.105
+  HOOD       26  -0.293
+  IREN       37  -0.380
+  BE         39  -0.408
+  ORCL       28  -1.350
+  PLTR       30  0.057
+  TSM        21  -0.375
+  EWZ        35  -1.026
+
+wrote research/dealrange_bars.csv.gz and research/dealrange_trades.csv

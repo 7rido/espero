@@ -689,11 +689,15 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #75 — Buy the discount half of an hourly dealing range at its proximal line
 
-*#75 (not in trials.csv)*
+*#75 fail*
 
 - `PREREGISTRATION_DEALRANGE.md`
 - `PREREGISTRATION_DEALRANGE.md.ots`
+- `RESULTS_DEALRANGE.md`
 - `dealrange.py`  (rule: `espero/dealrange.py`)
+- `dealrange_bars.csv.gz`
+- `dealrange_run.txt`
+- `dealrange_trades.csv`
 
 ## Cross-cutting
 

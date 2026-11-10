@@ -687,6 +687,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `PREREGISTRATION_HIP3COST.md`
 - `PREREGISTRATION_HIP3COST.md.ots`
 
+## #75 — Buy the discount half of an hourly dealing range at its proximal line
+
+*#75 (not in trials.csv)*
+
+- `PREREGISTRATION_DEALRANGE.md`
+- `PREREGISTRATION_DEALRANGE.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

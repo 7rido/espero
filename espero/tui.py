@@ -263,11 +263,22 @@ class EsperoApp(App):
         top.append(sysd.line, style=MUTED if sysd.fresh else "green" if sysd.ok else "bold red")
         self.query_one("#topbar", Static).update(top)
 
-        self.items = D.waiting(self.state, int(now))
         table = self.query_one("#waiting", DataTable)
+        row = table.cursor_row
+        picked = self.items[row].id if row is not None and 0 <= row < len(self.items) else None
+        self.items = D.waiting(self.state, int(now))
+        refused = D.refusals(self.state) if self.sent else {}
         table.clear()
         for i, w in enumerate(self.items):
-            table.add_row(str(i + 1), w.what, w.who, w.by, Text(self.sent.get(w.id, ""), style="green"), key=w.id)
+            label, at = self.sent.get(w.id, ("", 0))
+            no = refused.get(w.id)
+            mark = Text(no[1], style="bold red") if label and no and no[0] >= at else Text(label, style="green")
+            table.add_row(str(i + 1), w.what, w.who, w.by, mark, key=w.id)
+        # rebuilding the table puts the cursor on row 1: put it back on the proposal that was picked, so `a` never
+        # answers a different one than the holder chose (the 30-second refresh, or the refresh after each answer)
+        ids = [w.id for w in self.items]
+        if picked in ids:
+            table.move_cursor(row=ids.index(picked), animate=False)
         table.display = bool(self.items)
         note = self.query_one("#waiting-note", Static)
         if self.items:
@@ -303,7 +314,7 @@ class EsperoApp(App):
             from . import approvals as ap
             post = self._post or ap.post
             post(self.state, ap.Reply(w.id, answer, code, reason, None, "tui", int(self.src.now())))
-            self.sent[w.id] = "approval sent" if answer == "approve" else "rejection sent"
+            self.sent[w.id] = ("approval sent" if answer == "approve" else "rejection sent", int(self.src.now()))
             self.notify(f"{verb} sent for {w.what}. The canary takes it within 5 minutes.", timeout=6)
             self.refresh_today()
 
@@ -437,14 +448,32 @@ class EsperoApp(App):
         with self.suspend():
             console = Console()
             console.rule(label)
-            try:
-                fn(console, self.state)
-            except KeyboardInterrupt:
-                pass
-            except Exception as exc:  # noqa: BLE001 - a tool failing returns to the screen
-                console.print(f"[red]{type(exc).__name__}: {exc}[/red]")
+            run_apart(fn, console, self.state)
             input("\nPress Enter to go back to espero ")
         self.action_reload()
+
+
+def run_apart(fn, console, state) -> None:
+    """Run one of the old menu's tools in a thread of its own and wait for it. The old tools ask their questions
+    with questionary, which starts an event loop; this screen's loop is already running in the main thread, and
+    Python refuses a second one there ("asyncio.run() cannot be called from a running event loop")."""
+    import threading
+
+    def body() -> None:
+        try:
+            fn(console, state)
+        except KeyboardInterrupt:
+            pass
+        except Exception as exc:  # noqa: BLE001 - a tool failing returns to the screen
+            console.print(f"{type(exc).__name__}: {exc}", style="red", markup=False)
+
+    t = threading.Thread(target=body, name="espero-tool")
+    t.start()
+    try:
+        while t.is_alive():
+            t.join(0.2)
+    except KeyboardInterrupt:
+        pass
 
 
 def main(state: Path) -> int:

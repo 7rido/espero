@@ -10,6 +10,7 @@ from espero.hl_exchange import OrderResult
 
 MON = 1793577600                      # Monday 2026-11-02 00:00 UTC
 SUN = "2026-11-01"
+W2, W3 = MON + 7 * 86_400 + 3600, MON + 14 * 86_400 + 3600
 KEY = b"0123456789abcdefghij"
 PX = {"BTC": 60_000.0, "ETH": 3_000.0, "SOL": 150.0, "ETC": 20.0, "NEAR": 3.0, "BCH": 400.0}
 
@@ -276,19 +277,118 @@ class TestExitsAndTheRung(unittest.TestCase):
         self.assertEqual(r.leg("BTC", "exit")["status"], "stuck")
         self.assertTrue(any("stuck" in t for t, _ in r.notes))
 
-    def test_a_partial_exit_sells_only_what_is_left(self):
+    def test_a_partial_exit_under_the_minimum_waits_as_dust_then_sells_and_both_orders_count(self):
         r = Run(picks=("ETH",))
         self.own(r)
         r.picks = []
         held = r.canary.held()["ETH"]
         r.ex.fill_ratio = 0.5
-        r.canary.step(MON + 7 * 86_400 + 3600)
+        r.canary.step(W2)
         first = r.ex.sent[-1]["size"]
-        r.ex.fill_ratio = 1.0
-        r.canary.step(MON + 7 * 86_400 + 3660)
         self.assertAlmostEqual(first, held)
+        r.ex.fill_ratio = 1.0
+        n = len(r.ex.sent)
+        r.canary.step(W2 + 300)
+        r.canary.step(W2 + 600)
+        self.assertEqual(len(r.ex.sent), n)                      # about $6 left: the venue would refuse it
+        self.assertEqual(r.leg("ETH", "exit")["status"], "dust")
+        self.assertEqual(len([t for t, _ in r.notes if "waiting" in t]), 1)       # told once, not every step
+        self.assertIn("ETH", r.canary.held())
+        was = PX["ETH"]
+        PX["ETH"] = was * 2
+        try:
+            r.canary.step(W2 + 900)
+        finally:
+            PX["ETH"] = was
         self.assertAlmostEqual(r.ex.sent[-1]["size"], round(held - round(first * 0.5, 8), 4), places=4)
+        leg = r.leg("ETH", "exit")
+        self.assertEqual(leg["status"], "filled")
+        self.assertEqual(len(C.leg_oids(leg)), 2)
+        rung = r.canary.rung()
+        self.assertEqual((rung["round_trips"], rung["breaks"]), (1, []))
+
+    def test_a_leg_journaled_before_oids_counts_by_its_last_order(self):
+        self.assertEqual(C.leg_oids({"oid": 7, "oids": None}), [7])
+        self.assertEqual(C.leg_oids({"oid": 7, "oids": "[5, 7]"}), [5, 7])
+        self.assertEqual(C.leg_oids({"oid": None}), [])
+        fills = [{"oid": 5, "sz": "1", "px": "1", "crossed": True}, {"oid": 7, "sz": "2", "px": "1", "crossed": True}]
+        leg = {"id": 1, "coin": "X", "filled": 3.0, "oid": 7, "oids": "[5, 7]"}
+        self.assertEqual(C.matched([leg], fills, {"X": 1.0}), {1: True})
+        self.assertEqual(C.matched([leg], fills[1:], {"X": 1.0}), {1: False})      # one of its orders is missing
+        self.assertEqual(C.matched([dict(leg, oids=None)], fills, {"X": 1.0}), {1: False})
+
+    def test_an_old_journal_gains_the_oids_column(self):
+        import sqlite3
+        d = Path(tempfile.mkdtemp())
+        db = sqlite3.connect(d / C.DB)
+        db.executescript(C.SCHEMA)                               # the schema as journals had it before 2026-11-09
+        self.assertNotIn("oids", {r[1] for r in db.execute("PRAGMA table_info(legs)")})
+        db.commit()
+        db.close()
+        c = C.Canary(d, FakeTestnet(), lambda s: None, key=KEY, log=lambda s: None)
+        self.assertIn("oids", {r[1] for r in c.db.execute("PRAGMA table_info(legs)")})
+        c.close()
+
+    def test_an_exit_waiting_on_an_empty_book_is_not_written_twice_and_sells_once(self):
+        r = Run(picks=("BTC", "ETH"))
+        self.own(r)
+        held = r.canary.held()["ETH"]
+        r.picks = ["BTC"]
+        r.ex.no_book = ("ETH",)
+        r.canary.step(W2)                                        # dropped, but no book all week
+        r.canary.step(W3)                                        # dropped still: no second leg
+        self.assertEqual(len(r.canary.legs("coin='ETH' AND kind='exit'")), 1)
+        r.ex.no_book = ()
+        r.canary.step(W3 + 300)
+        r.canary.step(W3 + 600)
+        sells = [o for o in r.ex.sent if o["side"] == "sell" and o["coin"] == "ETH"]
+        self.assertEqual(len(sells), 1)
+        self.assertAlmostEqual(sells[0]["size"], held)
+        self.assertNotIn("ETH", r.canary.held())
+
+    def test_a_pending_exit_is_withdrawn_when_rule_8_picks_the_coin_again(self):
+        r = Run(picks=("BTC", "ETH"))
+        self.own(r)
+        r.picks = ["BTC"]
+        r.ex.no_book = ("ETH",)
+        r.canary.step(W2)
+        r.picks = ["BTC", "ETH"]
+        r.canary.step(W3)
+        r.ex.no_book = ()
+        r.canary.step(W3 + 300)
+        self.assertEqual(r.leg("ETH", "exit")["status"], "withdrawn")
+        self.assertEqual([o for o in r.ex.sent if o["side"] == "sell"], [])
+        self.assertIn("ETH", r.canary.held())
+        self.assertEqual(len(r.canary.legs("coin='ETH' AND kind='entry'")), 1)      # held already: not bought again
+
+    def test_a_coin_the_testnet_dropped_is_never_called_sold(self):
+        r = Run(picks=("BTC", "ETH"))
+        self.own(r)
+        r.picks = ["BTC"]
+        sd = r.ex.meta.pop("ETH")
+        r.canary.step(W2)
+        r.canary.step(W2 + 300)
+        leg = r.leg("ETH", "exit")
+        self.assertEqual((leg["status"], leg["filled"] or 0.0), ("unlisted", 0.0))
+        self.assertIn("ETH", r.canary.held())
+        self.assertEqual(len([t for t, _ in r.notes if "waiting" in t]), 1)
+        r.canary.step(W3)
+        self.assertEqual(len(r.canary.legs("coin='ETH' AND kind='exit'")), 1)
+        r.ex.meta["ETH"] = sd                                    # listed again: it sells
+        r.canary.step(W3 + 300)
         self.assertEqual(r.leg("ETH", "exit")["status"], "filled")
+        self.assertNotIn("ETH", r.canary.held())
+
+    def test_a_late_week_proposes_nothing_and_still_sells_what_rule_8_dropped(self):
+        r = Run(picks=("BTC", "ETH"))
+        self.own(r)
+        r.picks = ["BTC", "SOL"]
+        r.canary.step(W2 + C.ANSWER_WINDOW_S + 60)               # the Mac slept through Monday
+        w = r.canary.db.execute("SELECT status FROM weeks ORDER BY sunday DESC").fetchone()
+        self.assertEqual(w["status"], "late")
+        self.assertIsNone(r.leg("SOL"))                          # no entry, no proposal
+        self.assertEqual(r.leg("ETH", "exit")["status"], "filled")
+        self.assertEqual(sorted(r.canary.held()), ["BTC"])
 
 
 class TestStopAndRestart(unittest.TestCase):

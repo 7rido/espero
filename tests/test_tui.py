@@ -80,7 +80,65 @@ class TestTheScreen(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(len(posted), 1)
             r = posted[0]
             self.assertEqual((r.proposal, r.answer, r.code, r.channel), ("p1", "approve", "123456", "tui"))
-            self.assertEqual(app.sent["p1"], "approval sent")
+            self.assertEqual(app.sent["p1"], ("approval sent", int(NOW)))
+
+    async def test_a_refresh_keeps_the_cursor_on_the_proposal_that_was_picked(self):
+        # 2026-11-09 audit: the 30-second refresh put the cursor back on row 1, so `a` answered another coin
+        state = Path(tempfile.mkdtemp())
+        ledger_with(state, "BTC", "ETH", "SOL")
+        posted = []
+        app = tui.EsperoApp(state, sources(), post=lambda st, reply: posted.append(reply))
+        async with app.run_test() as pilot:
+            await pilot.press("down", "down")
+            app.refresh_today()                                               # the timer
+            await pilot.pause()
+            self.assertEqual(app.query_one("#waiting", tui.DataTable).cursor_row, 2)
+            await pilot.press("a", *"123456", "enter")
+            await pilot.pause()
+            self.assertEqual(posted[0].proposal, "p2")
+            self.assertEqual(app.query_one("#waiting", tui.DataTable).cursor_row, 2)   # and after the answer
+
+    async def test_a_reply_the_canary_refused_is_shown_as_refused_not_as_sent(self):
+        state = Path(tempfile.mkdtemp())
+        ledger_with(state, "BTC", "ETH")
+        app = tui.EsperoApp(state, sources(), post=lambda st, reply: None)
+        async with app.run_test() as pilot:
+            await pilot.press("a", *"123456", "enter")
+            await pilot.pause()
+            table = app.query_one("#waiting", tui.DataTable)
+            self.assertEqual(str(table.get_row_at(0)[4]), "approval sent")
+            led = approvals.Ledger.open(state / approvals.LEDGER)             # the canary reads it: a wrong code
+            led.answer(approvals.Reply("p0", "approve", "000000", "", None, "tui", int(NOW)), b"k" * 20, int(NOW) + 60)
+            led.db.close()
+            app.refresh_today()
+            await pilot.pause()
+            self.assertEqual(str(table.get_row_at(0)[4]), "code not accepted: use a new code")
+            self.assertEqual(str(table.get_row_at(1)[4]), "")
+
+    def test_an_old_tool_that_starts_its_own_event_loop_runs_apart_from_the_screens(self):
+        import asyncio
+        seen = []
+
+        async def inside():                                                   # the screen's loop is running here
+            async def ask():
+                return "answered"
+
+            tui.run_apart(lambda console, state: seen.append(asyncio.run(ask())), None, None)
+
+        asyncio.run(inside())
+        self.assertEqual(seen, ["answered"])
+
+    def test_an_old_tool_that_fails_prints_its_error_and_returns(self):
+        import io
+
+        from rich.console import Console
+        out = io.StringIO()
+
+        def boom(console, state):
+            raise RuntimeError("no such file [/Users/x]")                     # markup-like text must not raise
+
+        tui.run_apart(boom, Console(file=out), None)
+        self.assertIn("RuntimeError: no such file [/Users/x]", out.getvalue())
 
     async def test_a_rejection_needs_a_reason_and_escape_sends_nothing(self):
         state = Path(tempfile.mkdtemp())

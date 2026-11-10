@@ -190,6 +190,39 @@ class TestToday(unittest.TestCase):
         self.assertIn("over 30 minutes", D.system(state, NOW).problems[0])
         self.assertEqual(D.system(state, NOW).line, "1 thing needs a look")
 
+    def test_a_failed_daily_step_counts_once_and_a_warning_does_not_count(self):
+        # 2026-11-08: "3 things need a look" was one failed step, reported twice, and a clock 0.4 s off
+        state = Path(tempfile.mkdtemp())
+        checks = [{"name": "daily", "ok": False, "note": "the last run had a failed step: lowsfwd",
+                   "severity": "alarm"},
+                  {"name": "clock", "ok": False, "note": "off by -0.397 s", "severity": "warn"}]
+        (state / "watchdog.json").write_text(json.dumps({"at": NOW - 60, "checks": checks}))
+        (state / "health.json").write_text(json.dumps({"ok": False, "steps": {"lowsfwd": {"ok": False}}}))
+        s = D.system(state, NOW)
+        self.assertEqual((s.line, s.problems), ("1 thing needs a look", ("the daily job failed: lowsfwd",)))
+        checks[1] = {"name": "clock", "ok": False, "note": "off by -5.7 s: trading is refused",
+                     "severity": "refuse trading"}
+        (state / "watchdog.json").write_text(json.dumps({"at": NOW - 60, "checks": checks}))
+        self.assertEqual(D.system(state, NOW).line, "2 things need a look")
+        # the job's own report is fine but the watchdog says it is overdue: still said, once
+        (state / "watchdog.json").write_text(json.dumps({"at": NOW - 60, "checks": [
+            {"name": "daily", "ok": False, "note": "newest 100,000 s ago, allowed 93,600 s", "severity": "alarm"}]}))
+        (state / "health.json").write_text(json.dumps({"ok": True, "steps": {}}))
+        self.assertEqual(D.system(state, NOW).problems, ("daily: newest 100,000 s ago, allowed 93,600 s",))
+
+    def test_refusals_are_read_in_plain_words_and_a_bad_ledger_shows_none(self):
+        state = Path(tempfile.mkdtemp())
+        self.assertEqual(D.refusals(state), {})
+        led = approvals.Ledger.open(state / approvals.LEDGER)
+        p = approvals.propose("8", "mf-canary", "BTC", "buy", 12.0, 100.0, 9.0, None, int(NOW))
+        led.record(p)
+        led.answer(approvals.Reply(p.id, "approve", "000000", "", None, "tui", int(NOW)), b"k" * 20, int(NOW) + 5)
+        led.db.close()
+        self.assertEqual(D.refusals(state), {p.id: (int(NOW) + 5, "code not accepted: use a new code")})
+        self.assertEqual(D.plain_refusal("too old: the reply waited over 10 minutes"), "arrived too late: answer again")
+        (state / approvals.LEDGER).write_bytes(b"not a database")
+        self.assertEqual(D.refusals(state), {})
+
 
 class TestBooks(unittest.TestCase):
     def test_the_canary_from_its_journal(self):

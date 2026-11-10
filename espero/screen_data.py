@@ -66,6 +66,38 @@ def waiting(state: Path, now: Optional[int] = None) -> List[Waiting]:
         ledger.db.close()
 
 
+def refusals(state: Path) -> Dict[str, Tuple[int, str]]:
+    """Each proposal's latest refused reply: (when, why in plain words). Read only. The screen says "sent" when it
+    leaves a reply in the inbox; this is how it learns the sleeve did not take it."""
+    from . import approvals as ap
+
+    db = Path(state) / ap.LEDGER
+    if not db.exists():
+        return {}
+    out: Dict[str, Tuple[int, str]] = {}
+    try:
+        ledger = ap.Ledger.read_only(db)
+        try:
+            for e in ledger.events():
+                if e["event"] == "refused":
+                    out[e["proposal"]] = (int(e["ts"]), plain_refusal(e["reason"] or ""))
+        finally:
+            ledger.db.close()
+    except Exception:  # noqa: BLE001 - a ledger that cannot be read shows no refusals; it never closes the screen
+        return {}
+    return out
+
+
+def plain_refusal(reason: str) -> str:
+    if reason.startswith("unauthenticated"):
+        return "code not accepted: use a new code"
+    if reason.startswith("too old"):
+        return "arrived too late: answer again"
+    if reason.startswith("too late"):
+        return "past the deadline"
+    return reason.split(";")[0][:60]
+
+
 @dataclass(frozen=True)
 class System:
     ok: bool
@@ -84,6 +116,7 @@ def system(state: Path, now: Optional[float] = None) -> System:
     if not (state / "watchdog.json").exists() and not (state / "health.json").exists():
         return System(True, "a fresh copy: nothing runs in the background yet", (), fresh=True)
     problems: List[str] = []
+    daily_note = ""
     if (state / "KILL").exists():
         problems.append("paused: the KILL file is set")
     try:
@@ -91,8 +124,12 @@ def system(state: Path, now: Optional[float] = None) -> System:
         if now - float(w.get("at", 0)) > WATCH_STALE_S:
             problems.append("the watchdog has not checked in for over 30 minutes")
         for c in w.get("checks", []):
-            if not c.get("ok"):
+            # a warning (the clock a fraction of a second off) is the watchdog's to log, not the holder's to look at;
+            # and the daily job's failed step is reported once, below, from the job's own report
+            if not c.get("ok") and c.get("severity") != "warn" and c.get("name") != "daily":
                 problems.append(f"{c.get('name')}: {c.get('note', 'not ok')}")
+            elif not c.get("ok") and c.get("name") == "daily":
+                daily_note = str(c.get("note", "not ok"))
     except (OSError, ValueError):
         problems.append("no watchdog report yet")
     try:
@@ -100,6 +137,8 @@ def system(state: Path, now: Optional[float] = None) -> System:
         if not h.get("ok"):
             bad = [k for k, v in (h.get("steps") or {}).items() if not v.get("ok")]
             problems.append("the daily job failed" + (f": {', '.join(bad)}" if bad else ""))
+        elif daily_note:  # the job's last run was fine, but the watchdog says it is overdue
+            problems.append(f"daily: {daily_note}")
     except (OSError, ValueError):
         problems.append("the daily job has not run here yet")
     if not problems:

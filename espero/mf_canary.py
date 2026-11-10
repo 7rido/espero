@@ -64,6 +64,8 @@ CREATE TABLE IF NOT EXISTS legs (
 """
 
 
+LIVE_EXITS = "('due', 'retry', 'dust', 'unlisted')"   # an exit still owed: at most one per coin
+
 # ------------------------------------------------------------------------------------------------------- pure
 def cloid(sunday: str, coin: str, kind: str, n: int) -> str:
     """A client order id fixed by the week, the coin, the leg and the try: 0x + 32 hex, the canary's own prefix."""
@@ -108,9 +110,23 @@ def matched(legs: Sequence[dict], fills: Sequence[dict], step: Dict[str, float])
     for leg in legs:
         if not leg.get("filled"):
             continue
-        ex = theirs.get(int(leg["oid"])) if leg.get("oid") is not None else None
-        out[leg["id"]] = ex is not None and abs(ex["sz"] - float(leg["filled"])) <= step.get(leg["coin"], 1e-9) / 2
+        ids = leg_oids(leg)
+        got = [theirs[i] for i in ids if i in theirs]
+        out[leg["id"]] = (bool(ids) and len(got) == len(ids)
+                          and abs(sum(g["sz"] for g in got) - float(leg["filled"])) <= step.get(leg["coin"], 1e-9) / 2)
     return out
+
+
+def leg_oids(leg: dict) -> List[int]:
+    """Every venue order id the leg filled on: an exit can fill over several IOC tries, each its own order. A leg
+    journaled before `oids` existed has only its last one."""
+    try:
+        ids = [int(i) for i in json.loads(leg.get("oids") or "[]")]
+    except (ValueError, TypeError):
+        ids = []
+    if not ids and leg.get("oid") is not None:
+        ids = [int(leg["oid"])]
+    return ids
 
 
 def round_trips(legs: Sequence[dict], ok: Dict[int, bool]) -> int:
@@ -155,6 +171,8 @@ class Canary:
         self.db = sqlite3.connect(self.state / DB)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
+        if "oids" not in {r[1] for r in self.db.execute("PRAGMA table_info(legs)")}:
+            self.db.execute("ALTER TABLE legs ADD COLUMN oids TEXT")     # journals from before 2026-11-09
         self.db.commit()
         self.ledger = approvals.Ledger.open(self.state / approvals.LEDGER)
         self.ex, self.decide, self.key = exchange, decide, key
@@ -209,7 +227,9 @@ class Canary:
         sunday = time.strftime("%Y-%m-%d", time.gmtime(monday - DAY_S))
         if self.db.execute("SELECT 1 FROM weeks WHERE sunday=?", (sunday,)).fetchone():
             return
-        if now >= deadline(monday):
+        late = now >= deadline(monday)
+        held = self.held()
+        if late and not held:  # nothing to sell, and too late to buy: no decision is needed
             self.db.execute(
                 "INSERT INTO weeks (sunday, decided, status, note) VALUES (?,?,?,?)",
                 (sunday, now, "late", "decided after the budget: nothing proposed"),
@@ -220,8 +240,21 @@ class Canary:
         if got is None:  # the Sunday bar or too many coins missing: tried again next step
             return
         picks, shadow_held, px = got
-        held = self.held()
         entries, exits = plan(picks, held)
+        exits = self._exits_to_write(exits, picks, now, out)
+        if late:  # exits never wait (research/CANARY_MF.md): a late week proposes nothing and still sells
+            self.db.execute(
+                "INSERT INTO weeks (sunday, decided, held_in, picks, shadow, status, note) VALUES (?,?,?,?,?,?,?)",
+                (sunday, now, json.dumps(sorted(held)), json.dumps(sorted(picks)), json.dumps(sorted(shadow_held)),
+                 "late", "decided after the budget: nothing proposed"),
+            )
+            for coin in exits:
+                self.db.execute(
+                    "INSERT INTO legs (sunday, coin, kind, side, size, status, created) VALUES (?,?,?,?,?,?,?)",
+                    (sunday, coin, "exit", "sell", held[coin], "due", now),
+                )
+            out.append(f"#8 canary {sunday}: late, nothing proposed, exits {len(exits)}")
+            return
         self.db.execute(
             "INSERT INTO weeks (sunday, decided, held_in, picks, shadow, status, note) VALUES (?,?,?,?,?,?,?)",
             (
@@ -258,6 +291,18 @@ class Canary:
                 "\n".join(made) + f"\nanswer by {time.strftime('%H:%M UTC', time.gmtime(deadline(monday)))}"
                 f" ({time.strftime('%a %H:%M %Z', time.localtime(deadline(monday)))} here)",
             )
+
+    def _exits_to_write(self, exits: Sequence[str], picks: Sequence[str], now: int, out: List[str]) -> List[str]:
+        """The dropped coins that need a new exit leg. A coin whose earlier exit is still live (waiting on an empty
+        book, under the venue's minimum, or unlisted) keeps that one leg: two legs for one holding would sell it
+        twice, on an account shared with other sleeves. And a live exit for a coin rule 8 picked again is withdrawn,
+        so last week's sell cannot go out in a week the rule holds the coin."""
+        live = {leg["coin"]: leg for leg in self.legs(f"kind='exit' AND status IN {LIVE_EXITS}")}
+        for coin, leg in live.items():
+            if coin in picks:
+                self._set(leg["id"], status="withdrawn", done=now, note="rule 8 picked the coin again before it sold")
+                out.append(f"#8 canary {coin}: its pending exit is withdrawn, rule 8 picked it again")
+        return [c for c in exits if c not in live]
 
     def _gate(self, coin: str, capital: float) -> risk.Ruling:
         held = self.held()
@@ -373,7 +418,10 @@ class Canary:
         avg = (
             avg_px if not leg["filled"] else ((leg["avg_px"] or 0.0) * leg["filled"] + (avg_px or 0.0) * filled) / total
         )
-        self._set(leg["id"], filled=total, avg_px=avg, oid=oid if oid is not None else leg["oid"])
+        ids = leg_oids(leg)
+        if oid is not None and int(oid) not in ids:
+            ids.append(int(oid))
+        self._set(leg["id"], filled=total, avg_px=avg, oid=oid if oid is not None else leg["oid"], oids=json.dumps(ids))
         return total
 
     def _enter(self, now: int, out: List[str]) -> None:
@@ -421,13 +469,17 @@ class Canary:
         if self.stopped():  # sell everything the canary holds, nothing else
             sunday = time.strftime("%Y-%m-%d", time.gmtime(now))
             for coin, size in self.held().items():
-                if not self.legs("coin=? AND kind='exit' AND status IN ('due', 'retry')", (coin,)):
+                if not self.legs(f"coin=? AND kind='exit' AND status IN {LIVE_EXITS}", (coin,)):
                     self.db.execute(
                         "INSERT OR IGNORE INTO legs (sunday, coin, kind, side, size, status, created, note) "
                         "VALUES (?,?,?,?,?,?,?,?)",
                         (f"stop-{sunday}", coin, "exit", "sell", size, "due", now, "the stop file"),
                     )
-        for leg in self.legs("kind='exit' AND status IN ('due', 'retry')"):
+        for leg in self.legs(f"kind='exit' AND status IN {LIVE_EXITS}"):
+            sd = self.ex.meta.get(leg["coin"])
+            if sd is None:  # the testnet dropped the coin: nothing can be sold, and it is not called sold
+                self._wait(leg, "unlisted", "the testnet no longer lists it: still held, nothing sold")
+                continue
             known = self._known(leg)
             if known is not None:
                 self._resolve(leg, known)
@@ -435,14 +487,17 @@ class Canary:
                 self._set(leg["id"], inflight=None)
             leg = self.legs("id=?", (leg["id"],))[0]
             left = float(leg["size"]) - float(leg["filled"] or 0.0)
-            sd = self.ex.meta.get(leg["coin"])
-            if sd is None or left <= 10**-sd / 2:
+            if left <= 10**-sd / 2:
                 self._set(leg["id"], status="filled", done=now)
                 continue
             try:
                 bid, ask = self.ex.book(leg["coin"])
             except ValueError as exc:
                 self._set(leg["id"], note=str(exc))
+                continue
+            if round_size(left, sd) * bid < MIN_NOTIONAL:  # the venue refuses it; it waits for a higher price
+                self._wait(leg, "dust", f"{left:g} left is under the venue's ${MIN_NOTIONAL:.0f} minimum at {bid:g}: "
+                                        "still held, waiting for a higher price")
                 continue
             slip = EXIT_SLIPS[min(int(leg["tries"]), len(EXIT_SLIPS) - 1)]
             filled, avg, oid, err = self._send(
@@ -458,6 +513,13 @@ class Canary:
                 self.notify("espero: a canary exit is stuck", f"{leg['coin']}: {err or 'no fill'}")
             else:
                 self._set(leg["id"], status="retry")
+
+    def _wait(self, leg: dict, status: str, note: str) -> None:
+        """An exit that cannot be sent now stays live under a status that says why; the operator is told once."""
+        if leg["status"] != status:
+            self._set(leg["id"], status=status, note=note)
+            self.notify("espero: a canary exit is waiting", f"{leg['coin']}: {note}")
+            self.log(f"#8 canary {leg['coin']}: exit waiting, {note}")
 
     # -------------------------------------------------------------- the rung
     def rung(self, since: int = 0) -> dict:

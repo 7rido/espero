@@ -110,6 +110,11 @@ class TestBars(Base):
         self.assertEqual(json.loads(path.read_text())["chart"]["result"][0]["timestamp"], times)
         self.assertEqual(sorted(p.name for p in self.dir.iterdir()), ["NVDA_730d_1h.json", "cells.csv"])
 
+    def test_hourly_bars_are_asked_by_dates_inside_the_window(self):
+        self.assertEqual(F.chart_query("730d", "1h", 2_000_000_000.5),
+                         {"period1": 2_000_000_000 - 729 * 86_400, "period2": 2_000_000_000, "interval": "1h"})
+        self.assertEqual(F.chart_query("5y", "1d", 0.0), {"range": "5y", "interval": "1d"})
+
     def test_a_market_left_out_is_never_fetched(self):
         with self.assertRaises(F.NotAllowed):
             F.hourly("ARM", fetch=lambda *a: 1 / 0, cache_dir=self.dir, cells=self.cells)

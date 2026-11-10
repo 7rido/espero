@@ -83,8 +83,18 @@ def parse(payload) -> List[dict]:
     return sorted(out, key=lambda r: r["ts"])
 
 
+def chart_query(rng: str, interval: str, now: float) -> dict:
+    """Yahoo's query for a span. Hourly bars are asked by explicit start and end inside the last 730 days:
+    for a ticker listed a little over 730 days ago (NBIS, 2026-11-10), `range=730d` moves the start back to the
+    listing and is then refused as outside the window."""
+    if interval == "1h" and rng.endswith("d"):
+        end = int(now)
+        return {"period1": end - (int(rng[:-1]) - 1) * 86_400, "period2": end, "interval": interval}
+    return {"range": rng, "interval": interval}
+
+
 def _chart(ticker: str, rng: str, interval: str) -> dict:
-    q = urllib.parse.urlencode({"range": rng, "interval": interval})
+    q = urllib.parse.urlencode(chart_query(rng, interval, time.time()))
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ticker)}?{q}"
     return data.http_json(url, headers={"User-Agent": "Mozilla/5.0"})
 

@@ -25,7 +25,7 @@ START, END = "<!-- layers:start -->", "<!-- layers:end -->"
 LAYERS: Dict[str, Tuple[str, List[str]]] = {
     "core": ("market data, venues and the causal primitives every rule is built from",
              ["data", "hyperliquid", "kraken_futures", "coinbase_fees", "aggr", "coinm", "panel", "features",
-              "indicators", "ops", "venues", "costs", "costs_table", "cash"]),
+              "indicators", "ops", "venues", "costs", "costs_table", "cash", "tradfi", "brackets"]),
     "rules": ("one module per hypothesis: the frozen rule and its criteria, pure, no I/O",
               ["liq", "liqspike", "lows", "bids", "settle", "oi", "levetf", "levpush", "sweeps", "fillcost", "carry",
                "degen", "polyhour", "ethena", "horizons", "catchup", "bookwalk", "patterns", "trend", "factors",

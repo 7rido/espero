@@ -705,6 +705,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `PREREGISTRATION_NIGHTSHIFT.md`
 - `PREREGISTRATION_NIGHTSHIFT.md.ots`
+- `nightshift.py`  (rule: `espero/nightshift.py`)
 
 ## Cross-cutting
 

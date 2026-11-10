@@ -747,6 +747,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `trendblind_run.txt`
 - `trendblind_trades.csv`
 
+## #80 — The funding spread between trade.xyz's markets: short the payers, long the payees
+
+*#80 (not in trials.csv)*
+
+- `PREREGISTRATION_FUNDSPREAD.md`
+- `PREREGISTRATION_FUNDSPREAD.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

@@ -700,6 +700,7 @@ espero/
     nightweek.py      # #77: the slow night shift, the stock perps held from the week's first close to its last open …
     trendstock.py     # #78: a daily breakout trend rule on the stock perps (research/PREREGISTRATION_TRENDSTOCK.md).
     trendblind.py     # #79: #78's trend rule on names chosen blind, the Dow Jones 30 of November 2021
+    fundspread.py     # #80: fundspread (research/PREREGISTRATION_FUNDSPREAD.md).
     # forward: the daily job's steps: record a day, rebuild a ledger, decide nothing until 2027-03-31
     liqfwd.py         # #22's forward paper test (research/FORWARD_LIQ.md): record aggr's hourly bars
     lowsfwd.py        # #24's forward paper test (research/FORWARD_LOWS.md): record Binance's daily

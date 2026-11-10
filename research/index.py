@@ -165,6 +165,8 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
                                                                "hip3track_run.txt", "hip3track_cells.csv",
                                                                "hip3track_inputs.csv.gz", "RESULTS_HIP3TRACK.md"]),
     "74": ("What a fill costs on trade.xyz perps", ["PREREGISTRATION_HIP3COST.md", "PREREGISTRATION_HIP3COST.md.ots"]),
+    "80": ("The funding spread between trade.xyz's markets: short the payers, long the payees", ["PREREGISTRATION_FUNDSPREAD.md",
+                                                                                                 "PREREGISTRATION_FUNDSPREAD.md.ots"]),
     "79": ("The trend rule on names chosen blind: the Dow 30 of November 2021", ["PREREGISTRATION_TRENDBLIND.md",
                                                                                 "PREREGISTRATION_TRENDBLIND.md.ots", "trendblind.py",
                                                                                 "trendblind_run.txt", "trendblind_trades.csv",

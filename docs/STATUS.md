@@ -1,10 +1,10 @@
-# Status — generated 2026-11-04 08:13 UTC by `scripts/status.py`
+# Status — generated 2026-11-10 02:34 UTC by `scripts/status.py`
 
 Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `state/health.json`.
 
 ## The ledger
 
-71 tests: 27 fail, 22 forward_pending, 13 measurement, 7 pass, 1 exploratory, 1 provisional.
+73 tests: 27 fail, 23 forward_pending, 14 measurement, 7 pass, 1 exploratory, 1 provisional.
 
 | # | status | what | document |
 |---|---|---|---|
@@ -17,39 +17,39 @@ Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `
 | 43 | pass | At which holding period do real signals pay? | `research/RESULTS_HORIZONS.md` |
 | 66 | pass | HAR volatility forecast from 5-minute bars against #8's 30-day trailing variance, next week | `research/RESULTS_VOLF.md` |
 
-**Forward, judged once after 2027-03-31:** #22, #23, #24, #27, #29, #31, #32, #34, #38, #45, #49, #58, #59, #60, #61, #62, #63, #64, #65, #69, #70, #71. Their running numbers decide nothing and are not shown here.
+**Forward, judged once after 2027-03-31:** #22, #23, #24, #27, #29, #31, #32, #34, #38, #45, #49, #58, #59, #60, #61, #62, #63, #64, #65, #69, #70, #71, #74. Their running numbers decide nothing and are not shown here.
 
 ## The last daily run
 
-`last_run` 2026-11-03T12:32:29+00:00 — ok; `last_success` 2026-11-03T12:32:29+00:00
+`last_run` 2026-11-09T12:37:27+00:00 — ok; `last_success` 2026-11-09T12:37:27+00:00
 
 | step | ok | note |
 |---|---|---|
 | tsmom | yes | mark |
-| xs | yes | mark |
-| mf | yes | mark |
-| mf-hl | yes | rebalance |
-| liqfwd | yes | mark: longs 25 trades on 4 days (+14.7 bps a day); shorts 26 trades on 4 days (+39.0 bps a day) (paper, gross; decides nothing) |
-| lowsfwd | yes | mark: 258 paper trades on 4 days (+18.8 bps a day, gross; decides nothing); 5 coin-days not published yet |
-| liqbreak | yes | mark: 159 breaks on 4 days; forced down-breaks bought: 43, +5.7 bps an hour (decides nothing) |
+| xs | yes | rebalance |
+| mf | yes | rebalance |
+| mf-hl | yes | mark |
+| liqfwd | yes | mark: longs 47 trades on 10 days (+3.4 bps a day); shorts 54 trades on 10 days (+27.4 bps a day) (paper, gross; decides nothing) |
+| lowsfwd | yes | mark: 713 paper trades on 10 days (+19.3 bps a day, gross; decides nothing); 7 coin-days not published yet |
+| liqbreak | yes | mark: 443 breaks on 10 days; forced down-breaks bought: 120, -3.8 bps an hour (decides nothing) |
 | fundsplit | yes | mark: 15 forced down-breaks, 0 after crowded funding |
-| postclose | yes | mark: 2 trading days (BTC+ETH after the close -1.0 bps in 15 min; decides nothing) |
-| levpush | yes | mark: 2 trading days (SOL+XRP into the close -3.1 bps; decides nothing) |
-| bidsfwd | yes | mark: 80 fills of 252 breakdowns on 4 days (+30.9 bps a fill net; decides nothing) |
+| postclose | yes | mark: 6 trading days (BTC+ETH after the close +8.8 bps in 15 min; decides nothing) |
+| levpush | yes | mark: 6 trading days (SOL+XRP into the close +8.3 bps; decides nothing) |
+| bidsfwd | yes | mark: 295 fills of 713 breakdowns on 10 days (+10.2 bps a fill net; decides nothing) |
 | settlefwd | yes | mark: 3 shorts-paying settlements of 240 (-32.2 bps in 30 min; decides nothing) |
-| liqhold | yes | mark: forced down-breaks held, net trade-weighted: 4h -4.3 bps over 43; 12h -35.5 bps over 29; 1d -95.6 bps over 29 (decides nothing) |
-| publish | yes | not Monday |
+| liqhold | yes | mark: forced down-breaks held, net trade-weighted: 4h +18.4 bps over 108; 12h +38.2 bps over 104; 1d +18.2 bps over 103 (decides nothing) |
+| publish | yes | published: https://github.com/7rido/espero/releases/tag/data-2026-11-09 |
 | dashboard | yes | wrote /Users/fredp/Espero Trading QuantBot/espero/state/dashboard.html |
 
 ## Recorded on disk (cannot be fetched again)
 
 | folder | files |
 |---|---|
-| `data/hlcollect` | 2637 |
-| `data/deribit` | 1662 |
-| `data/hlbook` | 1197 |
-| `data/aggr/forward` | 4 |
-| `data/aggr/forward5m` | 4 |
-| `data/lows/forward` | 205 |
+| `data/hlcollect` | 5556 |
+| `data/deribit` | 6642 |
+| `data/hlbook` | 2857 |
+| `data/aggr/forward` | 10 |
+| `data/aggr/forward5m` | 10 |
+| `data/lows/forward` | 455 |
 
 Verdicts, costs and what a pass leads to: `research/INDEX.md`, `research/FORWARD_FAMILY.md`.

@@ -670,11 +670,15 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #73 — Does a trade.xyz perp follow its listed ticker?
 
-*#73 forward_pending*
+*#73 measurement*
 
 - `PREREGISTRATION_HIP3TRACK.md`
 - `PREREGISTRATION_HIP3TRACK.md.ots`
+- `RESULTS_HIP3TRACK.md`
 - `hip3track.py`  (rule: `espero/hip3track.py`)
+- `hip3track_cells.csv`
+- `hip3track_inputs.csv.gz`
+- `hip3track_run.txt`
 
 ## #74 — What a fill costs on trade.xyz perps
 

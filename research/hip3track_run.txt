@@ -1,0 +1,198 @@
+#73, run 2026-11-10 02:33 UTC; window 2026-09-21 to 2026-11-07 (UTC, end excluded)
+122 live markets; 50 are mapped, of a measured kind, and at $5M in the last 24 hours
+
+left out, first candle after the window's start: none
+
+market    ticker    session       pairs   corr  median    95th  drift  follows   (gaps in bps)
+NVDA      NVDA      after-hours      85  0.992     2.8    10.6  -0.97  too few
+NVDA      NVDA      pre-market      208  0.614    19.1    66.1  -0.91  NO
+NVDA      NVDA      regular         245  0.996     2.1     7.8   0.24  yes
+XYZ100    NQ=F      futures hours   737  0.757     0.8     4.6   0.11  NO
+SOXL      SOXL      after-hours      86  0.998     6.0    24.1   0.73  too few
+SOXL      SOXL      pre-market      208  0.569    81.0   283.0   0.79  NO
+SOXL      SOXL      regular         245  0.996     6.8    45.4  -1.01  yes
+SP500     ES=F      futures hours   740  0.795     0.7     3.4   0.16  NO
+CL        CL=F      futures hours   734  0.991     2.1     8.4  -0.39  yes
+BRENTOIL  BZ=F      futures hours   733  0.717     4.1    17.7  -0.55  NO
+SNDK      SNDK      after-hours      85  0.988     4.3    26.3   0.51  too few
+SNDK      SNDK      pre-market      208  0.564    37.3   154.2  -0.94  NO
+SNDK      SNDK      regular         245  0.999     3.1    14.4  -0.40  yes
+MU        MU        after-hours      85  0.995     3.3     9.5  -0.79  too few
+MU        MU        pre-market      208  0.586    34.5   125.1   0.03  NO
+MU        MU        regular         245  0.997     2.6    12.1  -0.27  yes
+AMD       AMD       after-hours      85  0.996     4.3    20.4  -0.51  too few
+AMD       AMD       pre-market      208  0.633    32.3   110.9  -0.94  NO
+AMD       AMD       regular         245  0.998     3.4    13.1   0.01  yes
+DRAM      DRAM      after-hours      86  0.876     6.0    20.4  -0.36  too few
+DRAM      DRAM      pre-market      208  0.503    28.1   109.6   0.30  NO
+DRAM      DRAM      regular         245  0.996     2.7    10.3  -0.05  yes
+SPCX      SPCX      after-hours      85  0.997     2.5     9.5  -0.13  too few
+SPCX      SPCX      pre-market      208  0.466    24.4   114.6   2.40  NO
+SPCX      SPCX      regular         245  0.995     2.3     8.9  -0.67  yes
+SKHY      SKHY      after-hours      85  0.993     4.7    15.7   0.03  too few
+SKHY      SKHY      pre-market      208  0.562    29.3   125.0   0.45  NO
+SKHY      SKHY      regular         245  0.993     2.9    14.2   0.20  yes
+GOOGL     GOOGL     after-hours      85  0.999     2.5     8.1   0.17  too few
+GOOGL     GOOGL     pre-market      208  0.586    14.7    69.4  -0.58  NO
+GOOGL     GOOGL     regular         245  0.998     1.9     6.6   0.07  yes
+KORU      KORU      after-hours      86  0.994    10.8    34.8  -1.14  too few
+KORU      KORU      pre-market      208  0.426    65.1   231.8   1.94  NO
+KORU      KORU      regular         245  0.998     6.8    22.6   0.06  yes
+INTC      INTC      after-hours      85  0.999     3.3    13.9   0.71  too few
+INTC      INTC      pre-market      208  0.537    41.1   149.3   2.77  NO
+INTC      INTC      regular         245  0.997     3.2    14.5  -0.95  yes
+SILVER    SI=F      futures hours   735  0.993     2.2     8.4   0.34  yes
+TSLA      TSLA      after-hours      85  0.363     2.5    11.9  -0.50  too few
+TSLA      TSLA      pre-market      208  0.662    18.9    82.9  -1.14  NO
+TSLA      TSLA      regular         245  0.998     2.5    10.8  -0.11  yes
+META      META      after-hours      85  0.995     4.4    16.2   0.56  too few
+META      META      pre-market      208  0.618    21.0   127.5   0.36  NO
+META      META      regular         245  0.995     2.3     9.9  -0.90  yes
+GOLD      GC=F      futures hours   739  0.990     1.9     6.9   0.17  yes
+NATGAS    NG=F      futures hours   739  0.686     5.1    39.4  -1.36  NO
+EWY       EWY       after-hours      84  0.961     8.1    33.4  -0.16  too few
+EWY       EWY       pre-market      208  0.456    20.6    86.3   1.12  NO
+EWY       EWY       regular         245  0.994     4.3    13.7   0.22  yes
+MRNA      MRNA      after-hours      85  0.939     9.3    32.7   0.07  too few
+MRNA      MRNA      pre-market      208  0.503    41.6   159.0   0.31  NO
+MRNA      MRNA      regular         245  0.998     8.5    34.3  -1.63  yes
+NBIS      NBIS      after-hours      85  0.995     4.9    26.4  -0.19  too few
+NBIS      NBIS      pre-market      208  0.498    45.8   211.2  -1.36  NO
+NBIS      NBIS      regular         245  0.998     5.0    17.4   0.46  yes
+CRCL      CRCL      after-hours      86  0.977     9.3    29.5   0.88  too few
+CRCL      CRCL      pre-market      208  0.594    40.2   140.1   0.42  NO
+CRCL      CRCL      regular         245  0.998     4.8    20.1  -0.77  yes
+AAPL      AAPL      after-hours      85  0.995     2.3     9.2   0.34  too few
+AAPL      AAPL      pre-market      208  0.710    11.3    53.4   0.45  NO
+AAPL      AAPL      regular         245  0.984     2.0     8.3  -0.52  yes
+IBM       IBM       after-hours      84  0.976     8.1    28.8   1.01  too few
+IBM       IBM       pre-market      181  0.767    15.7    68.8   1.12  NO
+IBM       IBM       regular         245  0.979     6.5    24.2  -0.61  yes
+CRWV      CRWV      after-hours      85  0.996     4.5    19.8  -0.13  too few
+CRWV      CRWV      pre-market      208  0.552    48.6   218.6  -1.57  NO
+CRWV      CRWV      regular         245  0.998     4.9    23.5  -0.47  yes
+MRVL      MRVL      after-hours      85  0.990     9.4    23.5  -0.19  too few
+MRVL      MRVL      pre-market      208  0.587    39.4   156.6   0.52  NO
+MRVL      MRVL      regular         245  0.995     4.8    25.5   0.22  yes
+AMZN      AMZN      after-hours      85  0.997     3.5    12.4   0.46  too few
+AMZN      AMZN      pre-market      208  0.546    13.7    74.2   1.98  NO
+AMZN      AMZN      regular         245  0.996     2.3     9.2  -0.38  yes
+MSFT      MSFT      after-hours      85  0.982     4.4    18.7   0.39  too few
+MSFT      MSFT      pre-market      208  0.623    15.7    66.6  -0.54  NO
+MSFT      MSFT      regular         245  0.997     2.3     9.3   0.16  yes
+RKLB      RKLB      after-hours      85  0.988     7.3    27.0  -0.62  too few
+RKLB      RKLB      pre-market      208  0.486    42.0   160.1   1.94  NO
+RKLB      RKLB      regular         245  0.995     6.7    34.2  -0.47  yes
+SNXX      SNXX      after-hours      86  0.986    12.8    50.9   0.37  too few
+SNXX      SNXX      pre-market      208  0.565    76.0   289.2  -1.20  NO
+SNXX      SNXX      regular         245  0.991    20.7    91.9   1.18  NO
+CBRS      CBRS      after-hours      85  0.964    10.2    38.8  -2.50  too few
+CBRS      CBRS      pre-market      206  0.556    39.2   153.5   2.57  NO
+CBRS      CBRS      regular         245  0.995     8.2    42.5   0.96  yes
+COIN      COIN      after-hours      85  0.942     9.5    30.5   0.70  too few
+COIN      COIN      pre-market      208  0.600    35.1   120.8  -0.91  NO
+COIN      COIN      regular         245  0.995     6.6    24.3   0.06  yes
+MSTR      MSTR      after-hours      85  0.985     6.5    28.2  -0.26  too few
+MSTR      MSTR      pre-market      208  0.474    40.8   166.4   0.12  NO
+MSTR      MSTR      regular         245  0.998     4.8    17.2  -0.43  yes
+HIMS      HIMS      after-hours      86  0.360    13.7    30.9  -0.50  too few
+HIMS      HIMS      pre-market      206  0.422    28.5   145.1   1.45  NO
+HIMS      HIMS      regular         245  0.995     7.5    34.3  -0.33  yes
+LITE      LITE      after-hours      85  0.997    10.7    29.1   2.04  too few
+LITE      LITE      pre-market      206  0.612    46.5   171.7   5.44  NO
+LITE      LITE      regular         245  0.993     8.8    34.3  -0.09  yes
+AVGO      AVGO      after-hours      85  0.974     6.8    23.0  -0.31  too few
+AVGO      AVGO      pre-market      208  0.616    23.0    75.6   0.90  NO
+AVGO      AVGO      regular         245  0.989     5.2    20.9   0.38  yes
+COPPER    HG=F      futures hours   733  0.974     3.1    12.4  -0.26  yes
+HOOD      HOOD      after-hours      85  0.941     6.2    23.8  -0.08  too few
+HOOD      HOOD      pre-market      208  0.588    33.1   107.6   3.79  NO
+HOOD      HOOD      regular         245  0.994     5.3    19.8  -0.97  yes
+IREN      IREN      after-hours      85  0.988     9.5    32.9  -3.19  too few
+IREN      IREN      pre-market      208  0.480    46.2   203.5   0.11  NO
+IREN      IREN      regular         245  0.995     8.5    34.7   0.04  yes
+BE        BE        after-hours      86  0.994     7.2    31.2  -0.69  too few
+BE        BE        pre-market      208  0.605    47.2   221.2   1.11  NO
+BE        BE        regular         245  0.996    10.0    35.7   0.64  yes
+ORCL      ORCL      after-hours      86  0.473     5.9    22.9   0.09  too few
+ORCL      ORCL      pre-market      208  0.523    30.6   132.1   0.13  NO
+ORCL      ORCL      regular         245  0.995     6.0    26.9  -0.44  yes
+AAOI      AAOI      after-hours      85  0.989    13.5    47.2   0.24  too few
+AAOI      AAOI      pre-market      208  0.541    51.1   230.5   0.26  NO
+AAOI      AAOI      regular         245  0.994    10.2    48.4   0.66  NO
+ARM       ARM       after-hours      85  0.984     9.9    27.6  -0.71  too few
+ARM       ARM       pre-market      206  0.567    38.9   156.6   1.45  NO
+ARM       ARM       regular         245  0.991    10.2    30.2  -0.90  NO
+PURRDAT   PURR      after-hours      85  0.948    21.6    65.3   0.23  too few
+PURRDAT   PURR      pre-market      202  0.520    51.2   227.2  -8.65  NO
+PURRDAT   PURR      regular         245  0.993    10.8    41.4  -1.72  NO
+PLTR      PLTR      after-hours      85  0.994     4.0    13.9   0.97  too few
+PLTR      PLTR      pre-market      208  0.561    22.4    91.7  -0.22  NO
+PLTR      PLTR      regular         245  0.996     4.7    19.7  -0.40  yes
+TSM       TSM       after-hours      86  0.382     7.0   433.7  -2.00  too few
+TSM       TSM       pre-market      208  0.601    19.9    76.5  -0.09  NO
+TSM       TSM       regular         245  0.990     3.9    19.3   0.41  yes
+USAR      USAR      after-hours      84  0.782    13.1    59.6  -2.80  too few
+USAR      USAR      pre-market      208  0.546    37.8   162.5  -0.23  NO
+USAR      USAR      regular         245  0.976    15.4    49.9   1.45  NO
+EWZ       EWZ       after-hours      75  0.815     9.3    50.4  -0.64  too few
+EWZ       EWZ       pre-market      185  0.884    22.4    89.7   2.94  NO
+EWZ       EWZ       regular         245  0.980     6.2    23.4   0.05  yes
+
+sessions (a session stands in when 80% of the markets with 100 pairs follow):
+  pre-market    does not stand in  0 of 42 follow; median of medians 34.8 bps; too few pairs: 0; halves (information only): 0/40 then 0/40
+  regular       STANDS IN          37 of 42 follow; median of medians 4.9 bps; too few pairs: 0; halves (information only): 37/42 then 35/42
+  after-hours   no market with enough pairs 0 of 0 follow; median of medians    - bps; too few pairs: 42; halves (information only): 0/0 then 0/0
+  futures hours does not stand in  4 of 8 follow; median of medians 2.2 bps; too few pairs: 0; halves (information only): 6/8 then 4/8
+
+at the bell, 42 stocks and ETFs (medians of each market's daily gaps, bps):
+market    days   open  close overnight
+NVDA        35    3.5    3.5       3.8
+SOXL        35    4.8    6.5       6.6
+SNDK        35    7.4    4.1       3.8
+MU          35    5.0    3.2       3.0
+AMD         35    4.5    3.2       5.5
+DRAM        35    4.0    8.4       9.9
+SPCX        35    5.4    4.1       4.3
+SKHY        35    6.6    4.6       5.8
+GOOGL       35    5.3    4.9       5.2
+KORU        35   10.5    8.3      10.2
+INTC        35    7.7    4.1       5.8
+TSLA        35    3.4    2.7       3.0
+META        35    4.3    4.2       4.4
+EWY         35    4.7    5.0       7.4
+MRNA        35   11.7    6.6      14.3
+NBIS        35    8.3    6.9       8.5
+CRCL        35    9.4    5.1       9.4
+AAPL        35    3.0    2.1       3.4
+IBM         35   11.6    8.1      11.8
+CRWV        35    6.4    4.3       7.7
+MRVL        35    6.8    3.0       8.1
+AMZN        35    5.2    5.2       5.0
+MSFT        35    3.0    2.3       4.3
+RKLB        35    8.5    6.5       6.9
+SNXX        35   21.4   13.6      25.2
+CBRS        35   12.1    7.3      11.1
+COIN        35    8.0    5.5      10.6
+MSTR        35    6.4    5.9       7.3
+HIMS        35   21.0    7.1      17.3
+LITE        35   12.2    5.3      12.7
+AVGO        35    5.2    6.3       6.4
+HOOD        35    7.5    5.9       7.5
+IREN        35   13.8   12.0      18.4
+BE          35   13.6    7.0      13.0
+ORCL        35    7.8    7.1      12.6
+AAOI        35   15.6   10.0      21.2
+ARM         35   11.6    5.1      11.4
+PURRDAT     35   18.5    7.5      20.5
+PLTR        35    6.2    6.2       9.6
+TSM         35    6.8    4.5       8.0
+USAR        35   20.2    9.9      21.1
+EWZ         35    7.7    4.9       8.7
+  the open: STANDS IN; median across markets 7.4 bps
+  the close: STANDS IN; median across markets 5.4 bps
+  the overnight return's median difference, across markets (information only): 8.0 bps
+
+share of the perps' dollar volume by session (information only): regular 46%, overnight 18%, pre-market 18%, after-hours 12%, weekend 5%
+
+wrote research/hip3track_cells.csv

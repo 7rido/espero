@@ -765,6 +765,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `PREREGISTRATION_VOLPREM.md`
 - `PREREGISTRATION_VOLPREM.md.ots`
+- `volprem.py`  (rule: `espero/volprem.py`)
 
 ## Cross-cutting
 

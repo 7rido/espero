@@ -693,6 +693,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `PREREGISTRATION_DEALRANGE.md`
 - `PREREGISTRATION_DEALRANGE.md.ots`
+- `dealrange.py`  (rule: `espero/dealrange.py`)
 
 ## Cross-cutting
 

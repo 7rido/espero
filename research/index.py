@@ -166,7 +166,7 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
                                                                "hip3track_inputs.csv.gz", "RESULTS_HIP3TRACK.md"]),
     "74": ("What a fill costs on trade.xyz perps", ["PREREGISTRATION_HIP3COST.md", "PREREGISTRATION_HIP3COST.md.ots"]),
     "75": ("Buy the discount half of an hourly dealing range at its proximal line", ["PREREGISTRATION_DEALRANGE.md",
-                                                                                  "PREREGISTRATION_DEALRANGE.md.ots"]),
+                                                                                  "PREREGISTRATION_DEALRANGE.md.ots", "dealrange.py"]),
     "72": ("Open interest as a next-day cascade forecast, beyond volatility", ["EXPLORE_CASCADE.md", "cascade.py", "cascade_design_run.txt", "PREREGISTRATION_CASCADE.md", "PREREGISTRATION_CASCADE.md.ots",
                                                                            "RESULTS_CASCADE.md", "cascade_run.txt", "cascade_series.csv", "cascade_cells.csv.gz"]),
 }

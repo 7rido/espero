@@ -167,6 +167,7 @@ class Ruling:
     reasons: Tuple[str, ...]
     checks: Mapping[str, Tuple[float, float]]   # check -> (room left before the order, the cap), USD
     policy_hash: str
+    order: Optional["Order"] = None     # the order it ruled on: a ruling passes that order and no other (hl_mainnet)
 
 
 def stop_state(account: Account, policy: Policy = POLICY) -> str:
@@ -219,7 +220,7 @@ def check(order: Order, account: Account, policy: Policy = POLICY) -> Ruling:
     h = policy_hash(policy)
 
     def refuse(why: str, checks=None) -> Ruling:
-        return Ruling(False, 0.0, (why,), checks or {}, h)
+        return Ruling(False, 0.0, (why,), checks or {}, h, order)
 
     if order.side not in (1, -1) or not order.notional > 0:
         return refuse("an order needs a side and a size")
@@ -228,7 +229,8 @@ def check(order: Order, account: Account, policy: Policy = POLICY) -> Ruling:
                    and p.leg == order.leg and p.side == -order.side)
         if held <= 0:
             return refuse("reduce-only, but there is nothing on that side to reduce")
-        return Ruling(True, min(order.notional, held), ("reduce-only: it passes the caps, and is journaled",), {}, h)
+        return Ruling(True, min(order.notional, held), ("reduce-only: it passes the caps, and is journaled",), {}, h,
+                      order)
 
     if account.capital <= 0:
         return refuse("no capital allocated (docs/HOLDER_INPUTS.md): the default is 0")
@@ -287,7 +289,7 @@ def check(order: Order, account: Account, policy: Policy = POLICY) -> Ruling:
         return refuse(f"below the venue's ${order.min_notional:,.2f} minimum after the caps"
                       + (f" ({'; '.join(binding)})" if binding else ""), room)
     reasons = tuple(binding) if binding else ("within every cap",)
-    return Ruling(True, float(allowed), reasons, room, h)
+    return Ruling(True, float(allowed), reasons, room, h, order)
 
 
 def hedge_breaks(positions: Tuple[Position, ...], policy: Policy = POLICY) -> List[str]:

@@ -30,12 +30,13 @@ def lift_named_at_head():
     m = re.search(r"^\|\s*`mainnet_lift`\s*\|[^|]*\|([^|]*)\|", page.stdout, re.M)
     rel = m.group(1).strip().strip("`") if m else ""
     return rel if rel and git("cat-file", "-e", f"HEAD:{rel}").returncode == 0 else None
-SDK = r"(hyperliquid\.exchange|eth_account)\b"
+SDK = r"(hyperliquid\.(exchange|utils)|eth_account|eth_keys|coincurve|web3)\b"
 SIGNING = re.compile(
-    rf"^\s*(from\s+{SDK}|import\s+{SDK})"                           # the SDK's signer or the account library
-    rf"|^\s*from\s+hyperliquid\s+import\b[^\n]*\bexchange\b"        # the signer's module by its short name
-    rf"|\b(import_module|__import__)\(\s*['\"](hyperliquid|eth_account)"  # imported by name at run time
-    r"|\bExchange\(",                                                  # the signer built, whatever it is called
+    rf"^\s*(from\s+{SDK}|import\s+[^\n#]*{SDK})"                     # the signer or a key library, in any import line
+    r"|^\s*from\s+hyperliquid\s+import\s*(\([^)]*\b(exchange|utils)\b|[^\n(]*\b(exchange|utils)\b)"   # brackets or not
+    r"|^\s*import\s+[^\n#]*(?<![.\w])hyperliquid\b(?!\.info)"         # the SDK itself (espero's own is `from . import`)
+    rf"|\b(import_module|__import__)\(\s*['\"](hyperliquid|eth_account|eth_keys|coincurve|web3)"   # by name at run time
+    r"|\bExchange\s*\(",                                                # the signer built, whatever it is called
     re.M)
 
 
@@ -57,9 +58,22 @@ class TestNoMainnetPath(unittest.TestCase):
         self.assertIsNotNone(rel, "hl_mainnet.py exists but HEAD's holder page names no lift that HEAD holds")
         if git("rev-parse", "--is-shallow-repository").stdout.strip() == "true":
             return                                     # a shallow clone (CI) has no history to read a signature from
-        commit = git("log", "-1", "--format=%H", "--", rel).stdout.strip()
-        body = git("cat-file", "commit", commit).stdout
-        self.assertIn("-----BEGIN SSH SIGNATURE-----", body, f"the lift's last commit {commit[:12]} is not signed")
+        for path in (rel, "config/mainnet_allowlist.json", "docs/HOLDER_INPUTS.md"):
+            commit = git("log", "-1", "--full-history", "--format=%H", "--", path).stdout.strip()
+            # the header, not the message: anyone writes a message
+            header = git("cat-file", "commit", commit).stdout.split("\n\n", 1)[0]
+            self.assertIn("\ngpgsig -----BEGIN SSH SIGNATURE-----", "\n" + header,
+                          f"{path}'s last commit {commit[:12]} is not signed")
+
+    def test_the_signing_pattern_knows_the_spellings(self):
+        for line in ("import os, eth_account", "from hyperliquid import (\n    exchange,\n)", "x = Exchange (w)",
+                     "from hyperliquid.utils import signing", "import hyperliquid", "from eth_keys import keys",
+                     "import_module('eth_account')", "from hyperliquid.exchange import Exchange"):
+            self.assertTrue(SIGNING.search(line), line)
+        for line in ("from . import hyperliquid as hl", "from .hyperliquid import post",
+                     "from espero import hyperliquid",
+                     "# the Exchange is built elsewhere", "from .hl_exchange import TestnetExchange"):
+            self.assertFalse(SIGNING.search(line), line)
 
     def test_the_mainnet_module_is_built_on_the_mainnet_constant_only(self):
         if not MAINNET.exists():

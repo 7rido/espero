@@ -26,8 +26,12 @@ ROWS = [{"venue": "hyperliquid", "coin": c, "max_order_usd": 30, "max_position_u
 HAVE_SSH_KEYGEN = shutil.which("ssh-keygen") is not None
 
 
-def ruling(notional=30.0, allowed=True, policy_hash=None):
-    return risk.Ruling(allowed, notional, () if allowed else ("a reason",), {}, policy_hash or risk.policy_hash())
+def ruling(notional=30.0, allowed=True, policy_hash=None, coin="BTC", side=1, rule="8", venue="hyperliquid",
+           reduce_only=False):
+    """A fresh ruling, as risk.check gives one: made for one order, good for that order once."""
+    order = risk.Order("mf-canary", rule, venue, coin, side, notional, reduce_only=reduce_only)
+    return risk.Ruling(allowed, notional, () if allowed else ("a reason",), {}, policy_hash or risk.policy_hash(),
+                       order)
 
 
 def blank_page() -> str:
@@ -94,6 +98,8 @@ class Repo:
         kw.setdefault("today", TODAY)
         kw.setdefault("machine", MACHINE)
         kw.setdefault("state", self.base / "state")
+        kw.setdefault("signers", self.signers)
+        kw.setdefault("policy_committed", lambda: True)
         return M.MainnetExchange(env=dict(ENV) if env is None else env, root=self.root, **kw)
 
 
@@ -158,10 +164,9 @@ class TestTheGuardsInOrder(unittest.TestCase):
     def test_guard_3_the_allowed_signers_must_live_outside_the_repo(self):
         inside = self.r.root / "allowed_signers"
         inside.write_text(self.r.signers.read_text())
-        self.r.git("config", "gpg.ssh.allowedSignersFile", str(inside))
-        self.refused("does not verify")
-        self.r.git("config", "--unset", "gpg.ssh.allowedSignersFile")
-        self.refused("does not verify")
+        self.refused("does not verify", signers=inside)
+        self.refused("does not verify", signers=Path("allowed_signers"))          # a relative path: refused
+        self.refused("does not verify", signers=self.r.base / "missing")
 
     def test_guard_4_the_allow_list_is_signed_and_committed(self):
         self.r.allow(ROWS[:1])
@@ -319,6 +324,293 @@ class TestLive(unittest.TestCase):
         self.assertEqual((coin, is_buy, sz, tif, reduce_only), ("BTC", False, 0.0005, "Ioc", True))
         self.assertLess(px, 59990)                                            # below the bid: crossing to close
         self.assertEqual(fx.cancelled, [("ETH", 7)])                         # resting orders go first
+
+
+class RaisingEx(FakeEx):
+    def order(self, coin, is_buy, sz, px, kind, reduce_only=False, **kw):
+        self.sent.append((coin, is_buy, sz, px, kind["limit"]["tif"], reduce_only))
+        raise TimeoutError("read timed out")
+
+
+@unittest.skipUnless(HAVE_SSH_KEYGEN, "needs ssh-keygen")
+class TestTheAuditOf20261109(unittest.TestCase):
+    """docs/AUDIT_2026-11-09.md, M1 to M12: each finding as the reviewer reproduced it, now refused."""
+
+    def setUp(self):
+        self.r = Repo()
+
+    def refused(self, needle, **kw):
+        with self.assertRaises(M.MainnetRefused) as cm:
+            self.r.exchange(**kw)
+        self.assertIn(needle, str(cm.exception))
+
+    def live(self, orders=(), held=(), fx=None, info=None):
+        fx = fx or FakeEx()
+        ex = self.r.exchange(dry_run=False, exchange=fx, info=info or FakeInfo(orders), meta={"BTC": 5, "ETH": 4},
+                             positions=lambda: {"positions": list(held)})
+        return ex, fx
+
+    # ---- M1
+    def test_m1_resting_orders_count_against_the_position_and_venue_caps(self):
+        ex, fx = self.live(orders=[{"coin": "BTC", "oid": 1, "sz": "0.0005", "limitPx": "60000"}])
+        res = ex.limit("BTC", "buy", 0.0004, 60_000.0, ruling=ruling())           # 30 resting + 24 > 50
+        self.assertIn("held and resting", res.error)
+        self.assertEqual(ex.limit("BTC", "buy", 0.0003, 60_000.0, ruling=ruling()).status, "filled")  # 30 + 18
+        ex, fx = self.live(orders=[{"coin": "ETH", "oid": 2, "sz": "0.02", "limitPx": "2250"}])      # $45 resting
+        self.assertIn("venue_loss_usd", ex.limit("BTC", "buy", 0.0002, 60_000.0, ruling=ruling()).error)
+        self.assertEqual(fx.sent, [])
+
+    def test_m1_under_kill_resting_orders_are_cancelled(self):
+        ex, fx = self.live(orders=[{"coin": "BTC", "oid": 9, "sz": "0.0001", "limitPx": "60000"}])
+        (self.r.base / "state" / "KILL").write_text("")
+        self.assertIn("KILL", ex.limit("BTC", "buy", 0.0002, 60_000.0, ruling=ruling()).error)
+        self.assertEqual(fx.cancelled, [("BTC", 9)])
+
+    # ---- M2
+    def test_m2_a_sell_priced_far_below_the_market_counts_at_the_market(self):
+        ex, fx = self.live()
+        res = ex.limit("BTC", "sell", 0.001, 20.0, tif="Ioc", ruling=ruling(side=-1))   # "$0.02", really $59.99
+        self.assertIn("largest order", res.error)
+        self.assertEqual(fx.sent, [])
+        self.assertEqual(ex.limit("BTC", "sell", 0.0004, 20.0, tif="Ioc", ruling=ruling(side=-1)).status, "filled")
+
+    def test_m2_no_book_no_order(self):
+        class NoBook(FakeInfo):
+            def l2_snapshot(self, coin):
+                raise ConnectionError("down")
+        ex, fx = self.live(info=NoBook())
+        self.assertIn("could not be read", ex.limit("BTC", "sell", 0.0002, 60_000.0, ruling=ruling(side=-1)).error)
+        self.assertEqual(fx.sent, [])
+
+    # ---- M3
+    def stranger_lift(self, sign=True):
+        self.r.lift(dict(FIELDS, max_order_usd="100000", max_position_usd="100000"))
+        self.r.commit("not the holder's", sign=sign, key="stranger")
+        other = self.r.base / "other_signers"                   # trusts the holder and the stranger alike
+        other.write_text(self.r.signers.read_text() + f"holder {(self.r.keys / 'stranger.pub').read_text()}")
+        return other
+
+    def test_m3_git_config_does_not_choose_the_signers(self):
+        other = self.stranger_lift()
+        self.r.git("config", "gpg.ssh.allowedSignersFile", str(other))
+        self.refused("does not verify")
+
+    def test_m3_the_environment_does_not_choose_the_signers_or_the_repository(self):
+        import os
+        from unittest import mock
+        other = self.stranger_lift()
+        with mock.patch.dict(os.environ, {"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "gpg.ssh.allowedSignersFile",
+                                          "GIT_CONFIG_VALUE_0": str(other)}):
+            self.refused("does not verify")
+
+    def test_m3_git_dir_cannot_point_at_a_copy_that_still_holds_an_older_lift(self):
+        import os
+        from unittest import mock
+        old = self.r.base / "old"
+        shutil.copytree(self.r.root, old)                        # a copy from before the holder tightened the lift
+        loose = (self.r.root / "research" / "MAINNET_LIFT.md").read_text()
+        self.r.lift(dict(FIELDS, max_order_usd="11", max_position_usd="12"))
+        self.r.commit("tighter", sign=True)
+        (self.r.root / "research" / "MAINNET_LIFT.md").write_text(loose)           # an uncommitted edit back
+        with mock.patch.dict(os.environ, {"GIT_DIR": str(old / ".git")}):
+            self.refused("uncommitted")
+
+    def test_m3_a_relative_signers_path_is_refused_even_when_a_file_of_that_name_is_here(self):
+        import os
+        here = os.getcwd()
+        os.chdir(self.r.base)                                    # allowed_signers, the good one, is in this folder
+        self.addCleanup(os.chdir, here)
+        self.refused("does not verify", signers=Path("allowed_signers"))
+
+    def test_m3_a_program_that_says_good_signature_is_not_asked(self):
+        fake = self.r.base / "yes.sh"
+        fake.write_text('#!/bin/sh\necho holder\necho \'Good "git" signature for holder with ED25519 key SHA256:x\'\n'
+                        'echo \'Good "git" signature for holder with ED25519 key SHA256:x\' >&2\nexit 0\n')
+        fake.chmod(0o755)
+        for sign in (True, False):                                # signed by a stranger, then not signed at all
+            for key in ("gpg.ssh.program", "gpg.program"):
+                self.r.git("config", "--unset", key, check=False)
+            self.r.lift(dict(FIELDS, max_order_usd="100000", max_position_usd="100000" + "0" * (not sign)))
+            self.r.commit("not the holder's", sign=sign, key="stranger")
+            for key in ("gpg.ssh.program", "gpg.program"):
+                self.r.git("config", key, str(fake))
+            self.refused("does not verify")
+
+    def test_m3_a_replaced_object_is_not_read(self):
+        lift = self.r.root / "research" / "MAINNET_LIFT.md"
+        old = self.r.git("rev-parse", "HEAD:research/MAINNET_LIFT.md").stdout.strip()
+        lift.write_text(F.lift_document(STATEMENT, dict(FIELDS, max_order_usd="100000",
+                                                        max_position_usd="100000"), TODAY))
+        new = self.r.git("hash-object", "-w", str(lift)).stdout.strip()
+        self.r.git("replace", old, new)
+        self.refused("uncommitted")
+
+    # ---- M4
+    def test_m4_the_holder_page_is_the_holders_only(self):
+        self.r.page({"mainnet_lift": "research/MAINNET_LIFT.md", "venue_loss_usd": "5000000", "stop_drawdown": "-3%",
+                     "capital_usd": "50"})
+        self.r.commit("a bigger venue limit, unsigned", sign=False)
+        self.refused("HOLDER_INPUTS.md's commit")
+
+    def test_m4_a_venue_limit_that_does_not_read_is_no_limit_and_no_order(self):
+        for answer in ("50 USD", ""):
+            self.r.page({"mainnet_lift": "research/MAINNET_LIFT.md", "venue_loss_usd": answer,
+                         "stop_drawdown": "-3%", "capital_usd": "50"})
+            self.r.commit(f"venue limit {answer!r}", sign=True)
+            self.refused("venue_loss_usd")
+
+    # ---- M5
+    def test_m5_a_merge_that_brings_an_older_signed_lift_back_is_refused(self):
+        v1 = self.r.git("rev-parse", "HEAD").stdout.strip()
+        self.r.lift(dict(FIELDS, max_order_usd="11", max_position_usd="12"))
+        self.r.commit("tighter", sign=True)
+        v2 = self.r.git("rev-parse", "HEAD").stdout.strip()
+        merge = self.r.git("commit-tree", f"{v1}^{{tree}}", "-p", v2, "-p", v1, "-m", "back to v1").stdout.strip()
+        self.r.git("reset", "-q", "--hard", merge)
+        self.refused("does not verify")
+
+    def test_m5_a_checkout_of_an_older_signed_lift_is_refused_once_a_newer_one_was_accepted(self):
+        v1 = self.r.git("rev-parse", "HEAD").stdout.strip()
+        self.r.lift(dict(FIELDS, max_order_usd="11", max_position_usd="12"))
+        self.r.commit("tighter", sign=True)
+        self.assertEqual(self.r.exchange().lift.max_order_usd, 11.0)              # accepted, and remembered
+        self.r.git("reset", "-q", "--hard", v1)
+        self.refused("accepted here before")
+        self.r.git("reset", "-q", "--hard", "HEAD@{1}")
+        self.assertEqual(self.r.exchange().lift.max_order_usd, 11.0)              # the newer one still passes
+
+    # ---- M6
+    def test_m6_a_running_exchange_stops_when_the_lift_lapses_or_is_tightened(self):
+        ex = self.r.exchange(positions=lambda: {"positions": []})
+        self.assertEqual(ex.limit("BTC", "buy", 0.0004, 60_000.0, sz_decimals=5, ruling=ruling()).status, "dry")
+        self.r.lift(dict(FIELDS, max_order_usd="11", max_position_usd="12"))
+        self.r.commit("tighter", sign=True)
+        self.assertIn("largest order", ex.limit("BTC", "buy", 0.0004, 60_000.0, sz_decimals=5,
+                                                ruling=ruling()).error)             # $24 > $11 now
+        self.r.allow([])
+        self.r.commit("nothing allowed", sign=True)
+        self.assertIn("allow-list", ex.limit("BTC", "buy", 0.0001, 60_000.0, sz_decimals=5, ruling=ruling()).error)
+        ex._today = date(2027, 2, 1)
+        self.assertIn("lapsed", ex.limit("BTC", "buy", 0.0001, 60_000.0, sz_decimals=5, ruling=ruling()).error)
+        self.assertEqual(ex.limit("BTC", "sell", 0.0001, 60_000.0, sz_decimals=5, reduce_only=True).status, "dry")
+
+    def test_m6_expiry_is_judged_on_the_utc_day(self):
+        self.assertEqual(M.utc_today(), __import__("datetime").datetime.now(__import__("datetime").timezone.utc).date())
+
+    # ---- M7
+    def test_m7_a_ruling_passes_its_own_order_once(self):
+        ex = self.r.exchange(positions=lambda: {"positions": []})
+
+        def send(r, coin="BTC", side="buy"):
+            return ex.limit(coin, side, 0.0002, 60_000.0, sz_decimals=5, ruling=r)
+        one = ruling()
+        self.assertEqual(send(one).status, "dry")
+        self.assertIn("already used", send(one).error)
+        self.assertIn("another order", send(ruling(coin="ETH")).error)
+        self.assertIn("another order", send(ruling(side=-1)).error)
+        self.assertIn("another order", send(ruling(venue="binance")).error)
+        self.assertIn("another order", send(ruling(reduce_only=True)).error)
+        self.assertIn("rule 999", send(ruling(rule="999")).error)
+        bare = risk.Ruling(True, 30.0, (), {}, risk.policy_hash())
+        self.assertIn("names no order", send(bare).error)
+        refused = ruling()
+        ex.limit("BTC", "buy", 0.001, 60_000.0, sz_decimals=5, ruling=refused)     # refused: too large
+        self.assertEqual(send(refused).status, "dry")                              # a refusal does not spend it
+
+    def test_m7_an_uncommitted_risk_gate_is_a_different_policy(self):
+        ex = self.r.exchange(positions=lambda: {"positions": []}, policy_committed=lambda: False)
+        self.assertIn("different policy", ex.limit("BTC", "buy", 0.0002, 60_000.0, sz_decimals=5,
+                                                   ruling=ruling()).error)
+        self.assertIsInstance(M.policy_at_head(), bool)
+
+    # ---- M8
+    def test_m8_an_order_whose_answer_never_came_is_journaled_with_its_client_id(self):
+        ex, fx = self.live(fx=RaisingEx())
+        res = ex.limit("BTC", "buy", 0.0002, 60_000.0, tif="Ioc", ruling=ruling())
+        self.assertEqual(res.status, "unknown")
+        self.assertEqual(len(fx.sent), 1)
+        status, cloid, error = ex.db.execute("SELECT status, cloid, error FROM mainnet_orders").fetchone()
+        self.assertEqual(status, "unknown")
+        self.assertRegex(cloid, r"^0x[0-9a-f]{32}$")
+        self.assertIn(cloid, error)
+
+    def test_m8_flatten_closes_the_other_coins_when_one_fails_and_says_when_it_is_not_flat(self):
+        class OneBadBook(FakeInfo):
+            def l2_snapshot(self, coin):
+                if coin == "ETH":
+                    raise ConnectionError("down")
+                return super().l2_snapshot(coin)
+        held = [{"coin": "ETH", "size": 0.01, "notional": 22.0}, {"coin": "BTC", "size": -0.0005, "notional": 30.0}]
+        ex, fx = self.live(held=held, info=OneBadBook())
+        with self.assertRaises(M.NotFlat) as cm:
+            ex.flatten(tries=2, sleep=lambda s: None)
+        self.assertIn("BTC, ETH", str(cm.exception))
+        self.assertEqual([(s[0], s[1], s[5]) for s in fx.sent], [("BTC", True, True)] * 2)   # the short is bought back
+        self.assertEqual(len(cm.exception.tries), 4)
+
+    # ---- M9
+    def test_m9_live_needs_the_account_named(self):
+        self.refused("HL_WALLET_ADDRESS", env=dict(ENV, HL_MAINNET_PRIVATE_KEY="0x" + "1" * 64), dry_run=False)
+        self.refused("HL_WALLET_ADDRESS", env=dict(ENV, HL_MAINNET_PRIVATE_KEY="0x" + "1" * 64,
+                                                   HL_WALLET_ADDRESS="not-an-address"), dry_run=False)
+
+    def test_m9_a_position_row_without_its_value_is_sized_from_its_entry(self):
+        ex = self.r.exchange(positions=lambda: {"positions": [{"coin": "BTC", "size": -0.0005, "entry": 60_000.0}]})
+        self.assertAlmostEqual(ex.held_usd("BTC"), 30.0)
+        self.assertIn("largest position", ex.limit("BTC", "buy", 0.0004, 60_000.0, sz_decimals=5,
+                                                   ruling=ruling()).error)
+
+    # ---- M10
+    def test_m10_the_lift_says_which_rule_and_who_approves(self):
+        import re
+        lift = self.r.root / "research" / "MAINNET_LIFT.md"
+        good = lift.read_text()
+        for field in ("approval", "rule"):                        # the form refuses these; a hand-edited lift may not
+            blank = re.sub(rf"^(\|\s*`?{field}`?\s*\|)[^|\n]*\|", r"\1  |", good, flags=re.M)
+            self.assertNotEqual(blank, good)
+            lift.write_text(blank)
+            self.r.commit(f"no {field}", sign=True)
+            self.refused("which rule")
+
+    # ---- M11
+    def test_m11_a_dry_run_with_a_reader_builds_nothing_of_the_testnets(self):
+        ex = self.r.exchange(meta={"BTC": 5})
+        self.assertIsNone(ex.venue.ex)
+        self.assertEqual(ex.limit("BTC", "buy", 0.0002, 60_000.0, ruling=ruling()).status, "dry")
+        fx = FakeEx()
+        dry = self.r.exchange(exchange=fx, info=FakeInfo(), meta={"BTC": 5}, positions=lambda: {"positions": []})
+        self.assertEqual(dry.limit("BTC", "buy", 0.0002, 60_000.0, ruling=ruling()).status, "dry")
+        self.assertEqual(fx.sent, [])                                             # a dry run sends nothing
+        self.assertTrue((self.r.base / "state" / M.DRY_DB).exists())
+        self.assertFalse((self.r.base / "state" / M.LIVE_DB).exists())
+
+    # ---- M12
+    def test_m12_the_tighter_of_the_lift_and_the_allow_list_binds_each_cap(self):
+        def error(lift, allow, size, held=()):
+            r = Repo()
+            r.lift(dict(FIELDS, max_order_usd=str(lift[0]), max_position_usd=str(lift[1])))
+            r.allow([dict(row, max_order_usd=allow[0], max_position_usd=allow[1]) for row in ROWS])
+            if r.git("status", "--porcelain").stdout.strip():
+                r.commit("caps", sign=True)
+            ex = r.exchange(positions=lambda: {"positions": list(held)})
+            return ex.limit("BTC", "buy", size, 60_000.0, sz_decimals=5, ruling=ruling()).error or ""
+        self.assertIn("largest order ($20.00)", error((30, 50), (20, 50), 0.0004))
+        self.assertIn("largest order ($20.00)", error((20, 50), (30, 50), 0.0004))
+        short = [{"coin": "BTC", "size": -0.0003, "notional": -18.0}]              # a short is held too
+        self.assertIn("largest position", error((30, 50), (30, 40), 0.0004, short))   # 18 + 24 > 40
+        self.assertIn("largest position", error((30, 40), (30, 50), 0.0004, short))
+        self.assertEqual(error((30, 50), (30, 50), 0.0004, short), "")
+
+    def test_m12_a_kill_file_that_cannot_be_read_still_kills(self):
+        import os
+        if os.geteuid() == 0:
+            self.skipTest("root reads any file")
+        ex = self.r.exchange()
+        k = self.r.base / "state" / "KILL"
+        k.write_text("")
+        k.chmod(0)
+        self.addCleanup(lambda: k.chmod(0o600))
+        self.assertEqual(ex.kill_state(), "kill")
 
 
 class TestPure(unittest.TestCase):

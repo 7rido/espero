@@ -14,6 +14,7 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import os
 import secrets
 import sqlite3
@@ -22,7 +23,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Union
+from typing import Iterable, List, Optional, Sequence, Union
 
 from . import latency
 
@@ -32,6 +33,8 @@ TOTP_DIGITS = 6
 TOTP_WINDOWS = 1               # the current 30-second window's code, or the one before it
 REPLY_MAX_AGE_S = 600          # a reply waits in the inbox until the sleeve's next step (every five minutes);
                                # its code is checked at the moment it was typed, and a reply older than this is refused
+MAX_WRONG_CODES = 5            # this many wrong codes inside WRONG_CODE_WINDOW_S and no code is looked at until the
+WRONG_CODE_WINDOW_S = 600      # window has passed: a million guesses would take years, where they took one batch
 EXECUTION_ALLOWANCE_S = 300    # an approved order still has to be placed and filled inside the budget
 MAX_WAIT_S = 24 * 3600         # no proposal waits longer than a day
 LEDGER = "approvals.db"        # in the state folder: one ledger for every operator-paced sleeve
@@ -53,6 +56,9 @@ CREATE TABLE IF NOT EXISTS used_codes (step INTEGER PRIMARY KEY, ts INTEGER);
 CREATE TRIGGER IF NOT EXISTS approval_events_no_update BEFORE UPDATE ON approval_events
     BEGIN SELECT RAISE(ABORT, 'approval_events is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS approval_events_no_delete BEFORE DELETE ON approval_events
+    BEGIN SELECT RAISE(ABORT, 'approval_events is append-only'); END;
+CREATE TRIGGER IF NOT EXISTS approval_events_no_replace BEFORE INSERT ON approval_events
+    WHEN NEW.n > 0 AND EXISTS (SELECT 1 FROM approval_events WHERE n >= NEW.n)
     BEGIN SELECT RAISE(ABORT, 'approval_events is append-only'); END;
 """
 
@@ -274,6 +280,21 @@ class Ledger:
             self.db.execute("INSERT INTO used_codes (step, ts) VALUES (?, ?)", (step, now))
         return step
 
+    def _locked(self, now: int) -> bool:
+        """Too many wrong codes lately: no code is looked at until the window has passed. Counted from the journal,
+        so a batch of replies read in one step is limited like replies spread over time."""
+        n = self.db.execute("SELECT COUNT(*) FROM approval_events WHERE event='refused' AND reason LIKE "
+                            "'unauthenticated%' AND ts > ?", (now - WRONG_CODE_WINDOW_S,)).fetchone()[0]
+        return n >= MAX_WRONG_CODES
+
+    def outcome(self, pid: str) -> Optional[str]:
+        """What the journal says became of a proposal: approved, modified, rejected or silence, or None while it is
+        open. A sleeve trades on this, never on the proposals table's status column, which no hash covers."""
+        row = self.db.execute("SELECT event FROM approval_events WHERE proposal=? AND event IN "
+                              "('approved', 'modified', 'rejected', 'silence') ORDER BY n DESC LIMIT 1",
+                              (pid,)).fetchone()
+        return row["event"] if row else None
+
     def record(self, p: Proposal) -> Outcome:
         with self._tx():
             self.db.execute("INSERT INTO proposals (id, created, expires, rule, body, digest) VALUES (?,?,?,?,?,?)",
@@ -302,6 +323,13 @@ class Ledger:
         """Apply an operator's reply. A refused reply leaves the proposal open: it can still be answered, or lapse."""
         body = json.dumps({k: v for k, v in asdict(reply).items() if k != "code"}, sort_keys=True)
         with self._tx():
+            # the code is looked at first and spent whatever becomes of the reply: one typed against a mistyped id,
+            # or for a proposal already answered, is not left good for whoever reads it next. It is checked against
+            # the moment the reply was made, not the moment the sleeve reads it: a sleeve that steps every five
+            # minutes would otherwise find every code expired (2026-11-09, the canary)
+            locked = self._locked(now)
+            too_old = bool(reply.at) and now - reply.at > REPLY_MAX_AGE_S
+            step = None if locked else self._authenticate(key, reply.code, min(reply.at, now) if reply.at else now)
             p = self.proposal(reply.proposal)
             if p is None:
                 return self._refuse(now, reply.proposal, body, "no such proposal")
@@ -315,12 +343,13 @@ class Ledger:
                 return self._refuse(now, p.id, body, "an override needs a reason")
             if reply.answer == "modify" and not (reply.notional is not None and 0 < reply.notional < p.notional):
                 return self._refuse(now, p.id, body, "modify only sizes down, to more than zero")
-            if reply.at and now - reply.at > REPLY_MAX_AGE_S:
+            if too_old:
                 return self._refuse(now, p.id, body, f"too old: the reply waited over {REPLY_MAX_AGE_S // 60} minutes "
                                                      "in the inbox; counts as silence")
-            # the code is checked against the moment the reply was made, not the moment the sleeve reads it: a
-            # sleeve that steps every five minutes would otherwise find every code expired (2026-11-09, the canary)
-            if self._authenticate(key, reply.code, min(reply.at, now) if reply.at else now) is None:
+            if locked:
+                return self._refuse(now, p.id, body, f"locked: {MAX_WRONG_CODES} wrong codes in "
+                                                     f"{WRONG_CODE_WINDOW_S // 60} minutes; counts as silence")
+            if step is None:
                 return self._refuse(now, p.id, body, "unauthenticated: no valid one-time code; counts as silence")
             event, notional = {"approve": ("approved", p.notional), "reject": ("rejected", 0.0),
                                "modify": ("modified", float(reply.notional or 0.0))}[reply.answer]
@@ -347,6 +376,9 @@ class Ledger:
                     return self._refuse(now, pid, body, "the risk gate gave no size")
                 if order.notional > gate_notional:
                     return self._refuse(now, pid, body, f"above the risk gate's size ({gate_notional:.2f})")
+            if self._locked(now):
+                return self._refuse(now, pid, body, f"locked: {MAX_WRONG_CODES} wrong codes in "
+                                                    f"{WRONG_CODE_WINDOW_S // 60} minutes")
             if self._authenticate(key, order.code, now) is None:
                 return self._refuse(now, pid, body, "unauthenticated: no valid one-time code")
             kind = "exit" if order.kind == "exit" else "operator"
@@ -413,18 +445,48 @@ def take(state: Union[str, Path]) -> List[Union[Reply, OperatorOrder]]:
     if not box.is_dir():
         return out
     for f in sorted(box.glob("*.json")):
+        d = None
         try:
-            d: Dict = json.loads(f.read_text(encoding="utf-8"))
-            kind = d.pop("type")
-            out.append(Reply(**d) if kind == "reply" else OperatorOrder(**d))
+            d = json.loads(f.read_text(encoding="utf-8"))
+            if not isinstance(d, dict):
+                raise ValueError("not an object")
+            fields = dict(d)
+            kind = fields.pop("type")
+            out.append(_checked(Reply(**fields) if kind == "reply" else OperatorOrder(**fields)))
         except (ValueError, TypeError, KeyError, OSError):   # OSError: a file the runner may not read
-            try:
-                f.rename(f.with_suffix(".unreadable"))
-            except OSError:
-                pass
+            _set_aside(f, d)
             continue
         f.unlink()
     return out
+
+
+def _checked(item: Union[Reply, OperatorOrder]) -> Union[Reply, OperatorOrder]:
+    """A reply or order whose fields are what the ledger expects, or ValueError: one odd file (a text `at`, a
+    number for a code) is set aside here, and cannot stop the step that also carries the holder's real answer."""
+    texts = ("proposal", "answer", "code", "reason", "channel") if isinstance(item, Reply) else (
+        "rule", "sleeve", "coin", "side", "kind", "reason", "code", "channel")
+    for name in texts:
+        if not isinstance(getattr(item, name), str):
+            raise ValueError(f"{name} is not text")
+    if not (item.code.isascii() and item.code.isdigit() and len(item.code) == TOTP_DIGITS):
+        raise ValueError("the code is not six digits")
+    if isinstance(item.at, bool) or not isinstance(item.at, int) or item.at < 0:
+        raise ValueError("at is not a time")
+    n = item.notional
+    if isinstance(item, OperatorOrder) or n is not None:
+        if isinstance(n, bool) or not isinstance(n, (int, float)) or not math.isfinite(n) or n <= 0:
+            raise ValueError("notional is not a positive number")
+    return item
+
+
+def _set_aside(f: Path, d) -> None:
+    """Keep a file the runner could not use, for the operator to look at, without the one-time code it carried."""
+    try:
+        if isinstance(d, dict) and "code" in d:
+            f.write_text(json.dumps({**d, "code": "(removed)"}), encoding="utf-8")
+        f.rename(f.with_suffix(".unreadable"))
+    except OSError:
+        pass
 
 
 def describe(p: Proposal) -> str:

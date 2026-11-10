@@ -158,6 +158,58 @@ class TestAnswers(LedgerCase):
         out = self.led.answer(A.Reply(p.id, "approve", code(ahead), "", None, "tui", ahead), KEY, NOW)
         self.assertEqual(out.event, "refused")
 
+    def test_a_code_is_spent_even_by_a_reply_refused_for_another_reason(self):
+        # 2026-11-09 audit: a code typed against a mistyped id stayed good for ten minutes for any other proposal
+        p = self.proposal()
+        typo = self.led.answer(A.Reply("nosuch", "approve", code(), "", None, "cli", NOW), KEY, NOW)
+        self.assertEqual(typo.reason, "no such proposal")
+        again = self.led.answer(A.Reply(p.id, "approve", code(), "", None, "cli", NOW), KEY, NOW + 300)
+        self.assertIn("unauthenticated", again.reason)
+        self.assertEqual(self.led.status(p.id), "open")
+        self.assertEqual(self.reply(p, t=NOW + 330).event, "approved")
+
+    def test_wrong_codes_lock_every_code_out_for_a_while_even_in_one_batch(self):
+        # 2026-11-09 audit: a refusal left the proposal open with no limit, so every code could be tried in a batch
+        p = self.proposal()
+        for i in range(A.MAX_WRONG_CODES):
+            self.assertIn("unauthenticated", self.reply(p, c=f"{i:06d}").reason)
+        right = self.reply(p)                                    # the right code, same step: not even looked at
+        self.assertIn("locked", right.reason)
+        self.assertEqual(self.led.status(p.id), "open")
+        still = self.reply(p, t=NOW + A.WRONG_CODE_WINDOW_S - 1)
+        self.assertIn("locked", still.reason)
+        self.assertEqual(self.reply(p, t=NOW + A.WRONG_CODE_WINDOW_S).event, "approved")    # a lock adds no wrong code
+
+    def test_refusals_for_other_reasons_do_not_lock(self):
+        p = self.proposal()
+        for _ in range(A.MAX_WRONG_CODES + 1):
+            self.assertEqual(self.reply(p, "reject", c="000000").reason, "an override needs a reason")
+        self.assertEqual(self.reply(p, t=NOW + 30).event, "approved")
+
+    def test_fewer_wrong_codes_than_the_limit_do_not_lock(self):
+        p = self.proposal()
+        for i in range(A.MAX_WRONG_CODES - 1):
+            self.reply(p, c=f"{i:06d}")
+        self.assertEqual(self.reply(p, t=NOW + 30).event, "approved")
+
+    def test_the_outcome_comes_from_the_journal_not_the_status_column(self):
+        p = self.proposal()
+        self.assertIsNone(self.led.outcome(p.id))
+        self.led.db.execute("UPDATE proposals SET status='approved' WHERE id=?", (p.id,))   # no code, no event
+        self.assertIsNone(self.led.outcome(p.id))
+        q = self.proposal()
+        self.reply(q)
+        self.assertEqual(self.led.outcome(q.id), "approved")
+
+    def test_an_event_cannot_be_replaced_in_place(self):
+        p = self.proposal()
+        with self.assertRaises(sqlite3.DatabaseError):
+            self.led.db.execute("INSERT OR REPLACE INTO approval_events (n, ts, event, proposal, body, reason, prev, "
+                                "hash) VALUES (1, 0, 'approved', ?, '', '', '', '')", (p.id,))
+        self.assertEqual([e["event"] for e in self.led.events()], ["proposed"])
+        self.assertEqual(self.reply(p).event, "approved")        # appending still works
+        self.assertEqual(self.led.verify(), [])
+
     def test_an_override_needs_a_reason(self):
         p = self.proposal()
         self.assertEqual(self.reply(p, "reject").reason, "an override needs a reason")
@@ -168,7 +220,7 @@ class TestAnswers(LedgerCase):
         p = self.proposal()
         for n in (None, 0.0, 100.0, 150.0):
             self.assertEqual(self.reply(p, "modify", reason="smaller", notional=n).event, "refused")
-        out = self.reply(p, "modify", reason="half", notional=50.0)
+        out = self.reply(p, "modify", t=NOW + 30, reason="half", notional=50.0)   # a refused reply spent its code
         self.assertEqual((out.event, out.notional), ("modified", 50.0))
 
     def test_an_exit_is_not_an_answer_to_an_entry(self):
@@ -309,6 +361,33 @@ class TestInbox(unittest.TestCase):
             self.addCleanup(lambda: locked.exists() and locked.chmod(0o600))
             self.assertEqual([r.proposal for r in A.take(d)], ["abc"])
             self.assertFalse(a.exists())
+
+    def test_an_odd_file_is_set_aside_without_its_code_and_the_real_reply_beside_it_is_taken(self):
+        # 2026-11-09 audit: `null` raised on every step; a text `at` raised in the ledger after every file was deleted
+        with tempfile.TemporaryDirectory() as d:
+            good = A.Reply("abc", "approve", "123456", at=5)
+            A.post(d, good)
+            box = A.inbox(d)
+            odd = {"a-null": "null", "b-list": "[1]", "c-text": '"x"',
+                   "d-at": json.dumps({"type": "reply", "proposal": "p", "answer": "approve", "code": "111111",
+                                       "at": "soon"}),
+                   "e-code": json.dumps({"type": "reply", "proposal": "p", "answer": "approve", "code": 111111}),
+                   "f-nan": '{"type": "reply", "proposal": "p", "answer": "modify", "code": "111111", "notional": NaN}',
+                   "g-wide": json.dumps({"type": "reply", "proposal": "p", "answer": "approve",
+                                         "code": "\uff11\uff12\uff13\uff14\uff15\uff16"}),
+                   "h-reason": json.dumps({"type": "reply", "proposal": "p", "answer": "reject", "code": "111111",
+                                           "reason": None}),
+                   "i-neg": json.dumps({"type": "reply", "proposal": "p", "answer": "approve", "code": "111111",
+                                        "at": -5})}
+            for name, text in odd.items():
+                (box / f"{name}.json").write_text(text, encoding="utf-8")
+            self.assertEqual(A.take(d), [good])
+            aside = sorted(box.glob("*.unreadable"))
+            self.assertEqual(len(aside), len(odd))
+            self.assertEqual(list(box.glob("*.json")), [])
+            self.assertEqual(json.loads((box / "d-at.unreadable").read_text())["code"], "(removed)")
+            self.assertNotIn("111111", "".join(f.read_text() for f in aside if f.name[0] in "dfhi"))
+            self.assertEqual(A.take(d), [])                      # and the next step is not stopped by them
 
     def test_an_empty_state_has_nothing_waiting(self):
         with tempfile.TemporaryDirectory() as d:

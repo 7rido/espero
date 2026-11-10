@@ -178,6 +178,7 @@ class Canary:
         self.ex, self.decide, self.key = exchange, decide, key
         self.holder_capital = holder_capital
         self.notify, self.log, self.rows = notify, log, rows
+        self.broken = False
 
     def close(self) -> None:
         self.db.close()
@@ -204,10 +205,21 @@ class Canary:
     def step(self, now: Optional[int] = None) -> List[str]:
         now = int(time.time()) if now is None else int(now)
         out: List[str] = []
-        self._answers(now, out)
+        # the approvals journal is checked before anything is bought on it: with a break in its chain no answer is
+        # taken, nothing is proposed and no entry is sent. Exits never wait, and do not depend on it
+        breaks = self.ledger.verify()
+        if breaks and not self.broken:
+            self.notify("espero: the approvals journal is broken", f"{breaks[0]}: the canary buys nothing until "
+                        "it is looked at")
+        self.broken = bool(breaks)
+        if self.broken:
+            out.append(f"#8 canary: the approvals journal is broken ({breaks[0]}); no answers, no entries")
+        else:
+            self._answers(now, out)
         self._decide(now, out)
-        self._sync(now, out)
-        self._enter(now, out)
+        if not self.broken:
+            self._sync(now, out)
+            self._enter(now, out)
         self._exit(now, out)
         self.db.commit()
         for line in out:
@@ -217,7 +229,11 @@ class Canary:
     def _answers(self, now: int, out: List[str]) -> None:
         for item in approvals.take(self.state):
             if isinstance(item, approvals.Reply):
-                o = self.ledger.answer(item, self.key, now)
+                try:
+                    o = self.ledger.answer(item, self.key, now)
+                except Exception as exc:  # noqa: BLE001 - one reply that cannot be applied never loses the others
+                    out.append(f"a reply for {item.proposal!r} could not be applied ({type(exc).__name__})")
+                    continue
                 out.append(f"answer to {o.proposal}: {o.event} ({o.reason})")
         for o in self.ledger.expire(now):
             out.append(f"{o.proposal}: {o.reason}")
@@ -334,6 +350,8 @@ class Canary:
         """(status, note, proposal id) for one entry."""
         if self.stopped():
             return "stopped", "the stop or KILL file is set", None
+        if self.broken:
+            return "refused_journal", "the approvals journal's chain is broken", None
         if coin not in self.ex.meta:
             return "not_on_testnet", "the testnet does not list it", None
         if not px or not math.isfinite(px) or px <= 0:
@@ -362,7 +380,7 @@ class Canary:
     def _sync(self, now: int, out: List[str]) -> None:
         """Proposals the operator has answered, or that lapsed, become approved, rejected or silence legs."""
         for leg in self.legs("kind='entry' AND status='proposed'"):
-            st = self.ledger.status(leg["proposal"])
+            st = self.ledger.outcome(leg["proposal"])  # from the hash-chained journal, not the status column
             if st in ("approved", "modified"):
                 usd = self._answered_usd(leg["proposal"], leg["usd"])
                 self._set(leg["id"], status="approved", usd=usd)

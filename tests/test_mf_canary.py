@@ -391,6 +391,55 @@ class TestExitsAndTheRung(unittest.TestCase):
         self.assertEqual(sorted(r.canary.held()), ["BTC"])
 
 
+class TestTheJournalIsWhatCounts(unittest.TestCase):
+    def test_a_status_set_by_hand_buys_nothing(self):
+        # 2026-11-09 audit: the canary bought on proposals.status, which no hash covers
+        r = Run(picks=("BTC",))
+        r.canary.step(MON + 3600)
+        r.canary.ledger.db.execute("UPDATE proposals SET status='approved' WHERE id=?", (r.leg("BTC")["proposal"],))
+        r.canary.step(MON + 3900)
+        self.assertEqual(r.ex.sent, [])
+        self.assertEqual(r.leg("BTC")["status"], "proposed")
+
+    def test_a_broken_journal_stops_answers_and_entries_tells_once_and_exits_still_run(self):
+        r = Run(picks=("BTC", "ETH"))
+        r.canary.step(MON + 3600)
+        r.answer(r.leg("BTC")["proposal"], "approve", MON + 3630)
+        r.canary.step(MON + 3630)                                # BTC is held
+        led = r.canary.ledger.db
+        led.execute("DROP TRIGGER approval_events_no_update")
+        led.execute("UPDATE approval_events SET reason='edited' WHERE n=1")
+        r.answer(r.leg("ETH")["proposal"], "approve", MON + 3700)
+        sent = len(r.ex.sent)
+        out = r.canary.step(MON + 3700)
+        r.canary.step(MON + 4000)
+        self.assertEqual(len(r.ex.sent), sent)                   # ETH's valid approval is not acted on
+        self.assertTrue(any("journal is broken" in line for line in out))
+        self.assertEqual(len([t for t, _ in r.notes if "journal is broken" in t]), 1)
+        r.picks = ["SOL"]                                        # next week: nothing proposed, BTC still sold
+        r.canary.step(W2)
+        self.assertEqual(r.leg("SOL")["status"], "refused_journal")
+        self.assertEqual([o["coin"] for o in r.ex.sent if o["side"] == "sell"], ["BTC"])
+
+    def test_a_reply_that_cannot_be_applied_does_not_lose_the_one_after_it(self):
+        r = Run(picks=("BTC", "ETH"))
+        r.canary.step(MON + 3600)
+        r.answer(r.leg("BTC")["proposal"], "approve", MON + 3630)
+        r.answer(r.leg("ETH")["proposal"], "approve", MON + 3660)
+        real, first = r.canary.ledger.answer, []
+
+        def flaky(reply, key, now):
+            if not first:
+                first.append(reply)
+                raise RuntimeError("boom")
+            return real(reply, key, now)
+
+        r.canary.ledger.answer = flaky
+        out = r.canary.step(MON + 3660)
+        self.assertTrue(any("could not be applied" in line for line in out))
+        self.assertEqual(r.leg("ETH")["status"], "filled")
+
+
 class TestStopAndRestart(unittest.TestCase):
     def test_the_stop_file_proposes_nothing_and_sells_only_what_the_canary_holds(self):
         r = Run(picks=("BTC",))

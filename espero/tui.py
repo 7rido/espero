@@ -63,6 +63,29 @@ def pays(funding_h: float) -> str:
     return f"{'longs' if funding_h > 0 else 'shorts'} pay {abs(funding_h) * 24 * 365:.0%} a year"
 
 
+def trade_lines(test: str, rows, closed: int = 5) -> Text:
+    """Each paper book's open positions, then its last few closed ones; warm-up trades are tagged, as in the
+    screenshot the holder shared, and are not in the scorecard."""
+    out = Text()
+    tag = lambda x: "  warm-up" if x.get("warmup") else ""  # noqa: E731
+    live = [x for x in rows if x["open"]]
+    for x in live[:8]:
+        if test == "75":
+            out.append(f"    open  {x['market']:8s} long {x['entry']:.4g}, stop {x['stop']:.4g}, "
+                       f"last {x['last']:.4g}{tag(x)}\n")
+        else:
+            now = (x["sell"] / x["buy"] - 1) * 1e4
+            out.append(f"    open  {x['market']:8s} bought {x['buy']:.4g} on {x['day']}, now {now:+.0f} bps gross\n")
+    done = [x for x in rows if not x["open"]][-closed:]
+    for x in reversed(done):
+        if test == "75":
+            out.append(f"    shut  {x['market']:8s} {x['entry_day']} {x['outcome']}, {x['r']:+.2f} R{tag(x)}\n",
+                       style=MUTED)
+        else:
+            out.append(f"    shut  {x['market']:8s} {x['day']} {x['net'] * 1e4:+.0f} bps net\n", style=MUTED)
+    return out
+
+
 def hip3_block(state: Path) -> Text:
     """The HIP-3 strategies: each backtest's verdict, then the paper books that watch #75 and #76 live."""
     out = Text("\n")
@@ -84,6 +107,7 @@ def hip3_block(state: Path) -> Text:
         mean = "-" if s["mean"] is None else f"{s['mean']:+.2f} {unit}"
         pf = "-" if s["pf"] is None else f"{s['pf']:.2f}"
         out.append(f"Paper #{k}: {s['n']} closed, mean {mean}, profit factor {pf}, {live} open\n")
+        out.append(trade_lines(k, rows))
     out.append("Paper books watch failed rules on live prices; they decide nothing.\n", style=MUTED)
     return out
 

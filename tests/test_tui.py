@@ -222,12 +222,34 @@ class TestHip3Block(unittest.TestCase):
         self.assertIn("#75 FAIL", text)
         self.assertIn("not run yet", text)
         from espero import hip3paper as hp
-        hp.write(state, {"75": {"trades": [{"open": True, "warmup": False}, {"open": True, "warmup": True}],
+        hp.write(state, {"75": {"trades": [{"market": "A", "entry": 1.0, "stop": 0.9, "last": 1.1, "open": True,
+                                            "warmup": False},
+                                           {"market": "B", "entry": 1.0, "stop": 0.9, "last": 1.1, "open": True,
+                                            "warmup": True}],
                                 "score": {"n": 3, "mean": -0.5, "pf": 0.6}},
                          "76": {"nights": [], "score": {"n": 0, "mean": None, "pf": None}}})
         text = tui.hip3_block(state).plain
         self.assertIn("Paper #75: 3 closed, mean -0.50 R, profit factor 0.60, 1 open", text)
         self.assertIn("Paper #76: 0 closed, mean -, profit factor -, 0 open", text)
+
+    @unittest.skipIf(tui is None, "needs the tui extra")
+    def test_each_book_lists_its_open_positions_and_last_closed_ones_with_the_warm_up_tag(self):
+        r75 = [{"market": "NVDA", "entry": 180.5, "stop": 176.0, "last": 181.2, "open": True, "warmup": False},
+               {"market": "AMD", "entry": 500.0, "stop": 490.0, "last": 495.0, "open": True, "warmup": True}]
+        r75 += [{"market": f"M{k}", "entry_day": f"2026-11-0{k}", "outcome": "stop", "r": -1.0 - k / 10, "open": False,
+                 "warmup": k == 1} for k in range(1, 8)]
+        text = tui.trade_lines("75", r75).plain
+        self.assertIn("open  NVDA     long 180.5, stop 176, last 181.2\n", text)
+        self.assertIn("open  AMD      long 500, stop 490, last 495  warm-up", text)
+        self.assertEqual(text.count("shut"), 5)                      # the last five, newest first
+        self.assertLess(text.index("M7"), text.index("M3"))
+        self.assertNotIn("M2 ", text)
+        r76 = [{"market": "MU", "buy": 100.0, "sell": 100.5, "day": "2026-11-10", "open": True},
+               {"market": "AMD", "day": "2026-11-09", "net": -0.0031, "open": False}]
+        text = tui.trade_lines("76", r76).plain
+        self.assertIn("open  MU       bought 100 on 2026-11-10, now +50 bps gross", text)
+        self.assertIn("shut  AMD      2026-11-09 -31 bps net", text)
+        self.assertEqual(tui.trade_lines("76", []).plain, "")
 
 
 class TestWords(unittest.TestCase):

@@ -737,11 +737,15 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #79 — The trend rule on names chosen blind: the Dow 30 of November 2021
 
-*#79 (not in trials.csv)*
+*#79 fail*
 
 - `PREREGISTRATION_TRENDBLIND.md`
 - `PREREGISTRATION_TRENDBLIND.md.ots`
+- `RESULTS_TRENDBLIND.md`
 - `trendblind.py`  (rule: `espero/trendblind.py`)
+- `trendblind_bars.csv.gz`
+- `trendblind_run.txt`
+- `trendblind_trades.csv`
 
 ## Cross-cutting
 

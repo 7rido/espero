@@ -1,10 +1,10 @@
-# Status — generated 2026-11-10 09:48 UTC by `scripts/status.py`
+# Status — generated 2026-11-10 10:16 UTC by `scripts/status.py`
 
 Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `state/health.json`.
 
 ## The ledger
 
-77 tests: 31 fail, 23 forward_pending, 14 measurement, 7 pass, 1 exploratory, 1 provisional.
+78 tests: 32 fail, 23 forward_pending, 14 measurement, 7 pass, 1 exploratory, 1 provisional.
 
 | # | status | what | document |
 |---|---|---|---|
@@ -45,9 +45,9 @@ Nothing here is typed by hand. The ledger is `research/trials.csv`; the run is `
 
 | folder | files |
 |---|---|
-| `data/hlcollect` | 5708 |
-| `data/deribit` | 6882 |
-| `data/hlbook` | 2944 |
+| `data/hlcollect` | 5718 |
+| `data/deribit` | 6900 |
+| `data/hlbook` | 2950 |
 | `data/aggr/forward` | 10 |
 | `data/aggr/forward5m` | 10 |
 | `data/lows/forward` | 455 |

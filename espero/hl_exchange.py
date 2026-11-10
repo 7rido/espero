@@ -26,12 +26,14 @@ import sqlite3
 import time
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 TESTNET_URL = "https://api.hyperliquid-testnet.xyz"
 TESTNET_HOST = "api.hyperliquid-testnet.xyz"
 MAX_SIG_FIGS = 5
 MAX_DECIMALS_PERP = 6
+DEX_NAME = re.compile(r"[a-z0-9]{1,16}")      # a builder exchange's name on the testnet, e.g. "xyz"
+STOP_BAND = 0.05                            # a stop-market's worst fill, as a share of its trigger
 
 
 class TestnetRefused(RuntimeError):
@@ -127,7 +129,12 @@ class TestnetExchange:
     and nothing is built. `meta` is {coin: szDecimals}."""
 
     def __init__(self, env: Optional[dict] = None, exchange=None, info=None,
-                 meta: Optional[Dict[str, int]] = None, address: Optional[str] = None):
+                 meta: Optional[Dict[str, int]] = None, address: Optional[str] = None,
+                 dexes: Sequence[str] = ()):
+        for d in dexes:
+            if not DEX_NAME.fullmatch(d):
+                raise ValueError(f"{d!r} is not a builder exchange name")
+        self.dexes = tuple(dexes)             # builder exchanges (HIP-3) whose coins are named "<dex>:<COIN>"
         if exchange is None:
             key = guard(env)
             from eth_account import Account
@@ -138,9 +145,11 @@ class TestnetExchange:
             # an API (agent) wallet signs for the main account: orders, fills and
             # positions belong to HL_WALLET_ADDRESS, not to the signing key
             account = address or account_address(env_) or wallet.address
+            perp_dexs = ["", *self.dexes] if self.dexes else None
             exchange = Exchange(wallet, base_url=TESTNET_URL,
-                                account_address=account if account.lower() != wallet.address.lower() else None)
-            info = info or Info(base_url=TESTNET_URL, skip_ws=True)
+                                account_address=account if account.lower() != wallet.address.lower() else None,
+                                perp_dexs=perp_dexs)
+            info = info or Info(base_url=TESTNET_URL, skip_ws=True, perp_dexs=perp_dexs)
             address = account
             if getattr(exchange, "base_url", TESTNET_URL) != TESTNET_URL:
                 raise TestnetRefused("exchange is not on the testnet URL; refusing")
@@ -152,8 +161,10 @@ class TestnetExchange:
     @property
     def meta(self) -> Dict[str, int]:
         if self._meta is None:
-            m = self.info.meta()
-            self._meta = {u["name"]: int(u["szDecimals"]) for u in m["universe"]}
+            self._meta = {u["name"]: int(u["szDecimals"]) for u in self.info.meta()["universe"]}
+            for d in self.dexes:
+                self._meta.update({u["name"]: int(u["szDecimals"]) for u in self.info.meta(dex=d)["universe"]
+                                   if not u.get("isDelisted")})
         return self._meta
 
     def limit(self, coin: str, side: str, size: float, price: float, tif: str = "Alo",
@@ -175,6 +186,28 @@ class TestnetExchange:
         resp = self.ex.order(coin, side == "buy", sz, px, {"limit": {"tif": tif}}, reduce_only=reduce_only, **kw)
         p = parse_order_response(resp)
         return OrderResult(coin, side, sz, px, tif, **p)
+
+    def stop(self, coin: str, side: str, size: float, trigger_px: float, cloid: Optional[str] = None) -> OrderResult:
+        """An exchange-side stop-market, always reduce-only: it rests on the venue and fires at `trigger_px` even
+        if this process has died. `side` is the closing side (a sell for a long). Its worst fill is `STOP_BAND`
+        beyond the trigger, so a gap cannot fill it at any price."""
+        if side not in ("buy", "sell"):
+            raise ValueError("side must be buy or sell")
+        if coin not in self.meta:
+            raise ValueError(f"{coin}: not a testnet perp")
+        if trigger_px <= 0:
+            raise ValueError("the trigger must be positive")
+        sd = self.meta[coin]
+        sz = round_size(size, sd)
+        if sz <= 0:
+            raise ValueError(f"{coin}: size {size} rounds to zero at {sd} decimals")
+        trigger = round_price(trigger_px, sd, side)
+        worst = round_price(trigger_px * (1 - STOP_BAND if side == "sell" else 1 + STOP_BAND), sd, side)
+        kw = {"cloid": _cloid(cloid)} if cloid else {}
+        resp = self.ex.order(coin, side == "buy", sz, worst,
+                             {"trigger": {"triggerPx": trigger, "isMarket": True, "tpsl": "sl"}},
+                             reduce_only=True, **kw)
+        return OrderResult(coin, side, sz, trigger, "Stop", **parse_order_response(resp))
 
     def order_status(self, cloid: str) -> dict:
         """The venue's record of an order by client id: {"status": "unknownOid"} if it never arrived."""

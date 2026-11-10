@@ -75,7 +75,8 @@ class FakeExchange:
         self.base_url = hx.TESTNET_URL
 
     def order(self, name, is_buy, sz, px, order_type, reduce_only=False, **kw):
-        self.orders.append((name, "buy" if is_buy else "sell", sz, px, order_type["limit"]["tif"], reduce_only))
+        tif = order_type["limit"]["tif"] if "limit" in order_type else order_type
+        self.orders.append((name, "buy" if is_buy else "sell", sz, px, tif, reduce_only))
         oid = len(self.orders)
         if self.fill:
             st = {"filled": {"oid": oid, "totalSz": str(sz), "avgPx": str(px)}}
@@ -93,13 +94,18 @@ class FakeExchange:
 class FakeInfo:
     def __init__(self):
         self.open, self.fills_ = [], []
-        self.books = {"ETH": (1999.0, 2001.0), "BTC": (79990.0, 80010.0)}
+        self.books = {"ETH": (1999.0, 2001.0), "BTC": (79990.0, 80010.0), "xyz:NVDA": (180.0, 180.1)}
 
     def l2_snapshot(self, coin):
         bid, ask = self.books[coin]
         return {"levels": [[{"px": str(bid), "sz": "1"}], [{"px": str(ask), "sz": "1"}]]}
 
-    def meta(self):
+    def meta(self, dex=""):
+        if dex == "xyz":
+            return {"universe": [{"name": "xyz:NVDA", "szDecimals": 3}, {"name": "xyz:OLD", "szDecimals": 2,
+                                                                       "isDelisted": True}]}
+        if dex:
+            raise ValueError(dex)
         return {"universe": [{"name": "ETH", "szDecimals": 4}, {"name": "BTC", "szDecimals": 5}]}
 
     def open_orders(self, address):
@@ -109,11 +115,11 @@ class FakeInfo:
         return self.fills_
 
 
-def exchange(fill=False):
+def exchange(fill=False, dexes=()):
     info = FakeInfo()
     fake = FakeExchange(fill)
     fake.info = info
-    return hx.TestnetExchange(exchange=fake, info=info, address="0xtest")
+    return hx.TestnetExchange(exchange=fake, info=info, address="0xtest", dexes=dexes)
 
 
 class TestExchange(unittest.TestCase):
@@ -144,6 +150,94 @@ class TestExchange(unittest.TestCase):
         ex = exchange()
         with self.assertRaises(ValueError):
             ex.limit("BTC", "buy", 1, 3e-7)                 # a buy rounds down, to 0.0 at 6 decimals
+
+
+class TestBuilderExchanges(unittest.TestCase):
+    def test_a_builder_exchange_s_coins_are_known_only_when_asked_for(self):
+        self.assertNotIn("xyz:NVDA", exchange().meta)
+        ex = exchange(dexes=("xyz",))
+        self.assertEqual(ex.meta["xyz:NVDA"], 3)
+        self.assertNotIn("xyz:OLD", ex.meta)                          # delisted
+        self.assertEqual(ex.meta["ETH"], 4)                           # the venue's own perps stay
+        r = ex.limit("xyz:NVDA", "buy", 1.23456, 180.123)
+        self.assertEqual(ex.ex.orders[0], ("xyz:NVDA", "buy", 1.234, 180.12, "Alo", False))
+        self.assertEqual(ex.book("xyz:NVDA"), (180.0, 180.1))
+        self.assertEqual(r.status, "resting")
+        with self.assertRaises(ValueError):
+            exchange().limit("xyz:NVDA", "buy", 1, 180)
+
+    def test_only_a_plain_name_is_a_builder_exchange(self):
+        for bad in ("", "XYZ", "xyz:NVDA", "x:y", "x y", "a" * 17, "../x"):
+            with self.assertRaises(ValueError):
+                exchange(dexes=(bad,))
+        self.assertEqual(exchange(dexes=("xyz", "flx")).dexes, ("xyz", "flx"))
+
+    def test_the_testnet_guard_still_comes_first(self):
+        with self.assertRaises(hx.TestnetRefused):
+            hx.TestnetExchange(env={"HL_NETWORK": "mainnet", "HL_PRIVATE_KEY": "x"}, dexes=("xyz",))
+
+
+class TestTheSdkIsToldTheDexes(unittest.TestCase):
+    """The injected fakes skip building the SDK's clients; this builds them from stand-in modules."""
+
+    def build(self, dexes):
+        import sys
+        import types
+        from unittest import mock
+
+        seen = {}
+
+        class Exchange:
+            base_url = hx.TESTNET_URL
+
+            def __init__(self, wallet, base_url=None, account_address=None, perp_dexs=None):
+                seen["exchange"] = (base_url, perp_dexs)
+
+        class Info:
+            def __init__(self, base_url=None, skip_ws=False, perp_dexs=None):
+                seen["info"] = (base_url, perp_dexs)
+
+        wallet = types.SimpleNamespace(address="0x" + "1" * 40)
+        mods = {"eth_account": types.SimpleNamespace(Account=types.SimpleNamespace(from_key=lambda k: wallet)),
+                "hyperliquid": types.ModuleType("hyperliquid"),
+                "hyperliquid.exchange": types.SimpleNamespace(Exchange=Exchange),
+                "hyperliquid.info": types.SimpleNamespace(Info=Info)}
+        with mock.patch.dict(sys.modules, mods):
+            hx.TestnetExchange(env=GOOD, dexes=dexes)
+        return seen
+
+    def test_the_venue_s_own_perps_come_first_and_only_the_named_dexes_follow(self):
+        seen = self.build(("xyz",))
+        self.assertEqual(seen["exchange"], (hx.TESTNET_URL, ["", "xyz"]))
+        self.assertEqual(seen["info"], (hx.TESTNET_URL, ["", "xyz"]))
+        seen = self.build(())
+        self.assertEqual((seen["exchange"][1], seen["info"][1]), (None, None))        # as it always was
+
+
+class TestStop(unittest.TestCase):
+    def test_a_reduce_only_trigger_with_a_worst_price_beyond_it(self):
+        ex = exchange(dexes=("xyz",))
+        r = ex.stop("xyz:NVDA", "sell", 1.23456, 176.789, cloid="0x" + "b" * 32)
+        name, side, sz, worst, kind, reduce_only = ex.ex.orders[0]
+        self.assertEqual((name, side, sz, reduce_only), ("xyz:NVDA", "sell", 1.234, True))
+        self.assertEqual(kind, {"trigger": {"triggerPx": 176.79, "isMarket": True, "tpsl": "sl"}})
+        self.assertEqual(worst, 167.95)                              # 5% under the trigger, rounded for a sell
+        self.assertEqual((r.status, r.tif, r.price), ("resting", "Stop", 176.79))
+
+    def test_a_buy_stop_for_a_short_goes_the_other_way(self):
+        ex = exchange()
+        ex.stop("ETH", "buy", 0.5, 2100.0)
+        _, side, _, worst, kind, reduce_only = ex.ex.orders[0]
+        self.assertEqual((side, worst, reduce_only), ("buy", 2205.0, True))
+        self.assertEqual(kind["trigger"]["triggerPx"], 2100.0)
+
+    def test_refusals(self):
+        ex = exchange()
+        for args in (("DOGE", "sell", 1, 1), ("ETH", "hold", 1, 1), ("ETH", "sell", 1, 0),
+                     ("ETH", "sell", 0.00001, 100)):
+            with self.assertRaises(ValueError):
+                ex.stop(*args)
+        self.assertEqual(ex.ex.orders, [])
 
 
 class TestMirrorGrace(unittest.TestCase):

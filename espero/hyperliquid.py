@@ -110,11 +110,18 @@ def margin_mode(address: str, fetch: Optional[Fetch] = None) -> Dict[str, object
             "spot_hold": float(usdc.get("hold", 0) or 0)}
 
 
-def asset_contexts(fetch: Optional[Fetch] = None) -> List[Dict[str, float]]:
+def perp_dexs(fetch: Optional[Fetch] = None) -> List[Dict[str, object]]:
+    """The builder-deployed perp exchanges (HIP-3) by name, e.g. "xyz"; the venue's own perps, which the
+    endpoint lists first as null, are left out. Their coins are named "<dex>:<COIN>"."""
+    return [d for d in (fetch or post)({"type": "perpDexs"}) if d]
+
+
+def asset_contexts(fetch: Optional[Fetch] = None, dex: str = "") -> List[Dict[str, float]]:
     """One row per listed perp: coin, mark, hourly funding, open interest and
     24h volume in dollars. `metaAndAssetCtxs` returns `[meta, ctxs]` with the
-    two lists aligned by position."""
-    meta, ctxs = (fetch or post)({"type": "metaAndAssetCtxs"})
+    two lists aligned by position. `dex` names a builder-deployed exchange
+    (`perp_dexs`); empty is the venue's own perps, and the request is then as it always was."""
+    meta, ctxs = (fetch or post)({"type": "metaAndAssetCtxs", "dex": dex} if dex else {"type": "metaAndAssetCtxs"})
     out = []
     for m, c in zip(meta["universe"], ctxs):
         if m.get("isDelisted"):

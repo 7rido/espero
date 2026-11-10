@@ -24,6 +24,22 @@ class TestContexts(unittest.TestCase):
         self.assertAlmostEqual(rows[1]["open_interest"], 50000 * 3000)
         self.assertAlmostEqual(rows[0]["funding"], 1.25e-5)
 
+    def test_a_builder_exchange_is_asked_for_by_name_and_the_main_one_as_before(self):
+        asked = []
+
+        def fetch(body):
+            asked.append(body)
+            return fake_ctxs(body)
+
+        hl.asset_contexts(fetch=fetch)
+        hl.asset_contexts(fetch=fetch, dex="xyz")
+        self.assertEqual(asked, [{"type": "metaAndAssetCtxs"}, {"type": "metaAndAssetCtxs", "dex": "xyz"}])
+
+    def test_builder_exchanges_without_the_venues_own(self):
+        answer = {"perpDexs": [None, {"name": "xyz"}, {"name": "para"}]}
+        got = hl.perp_dexs(fetch=lambda body: answer[body["type"]])
+        self.assertEqual([d["name"] for d in got], ["xyz", "para"])
+
     def test_top_by_open_interest(self):
         rows = hl.asset_contexts(fetch=fake_ctxs)
         self.assertEqual(hl.top_by_open_interest(1, rows), ["ETH"])

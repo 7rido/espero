@@ -697,6 +697,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `RECHECK_COSTS.md`
 - `VENUE_CONFIRMATION.md`
 - `VENUE_NONUS.md`
+- `hip3_map.csv`
 
 **From a verdict to an order**
 

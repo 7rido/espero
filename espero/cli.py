@@ -1565,6 +1565,13 @@ def _cmd_replay_stack(args: argparse.Namespace) -> int:
     return replay_stack.main(["--day", args.day, "--capital", str(args.capital)])
 
 
+def _cmd_hip3(args: argparse.Namespace) -> int:
+    """Hyperliquid's stock, index and commodity perps (espero/hip3.py): the markets now, or the 30-day screen."""
+    from . import hip3
+
+    return hip3.main(["--state-dir", str(args.state_dir)] + (["--screen"] if args.screen else []))
+
+
 def _cmd_readout(args: argparse.Namespace) -> int:
     print(dash.READOUT.read_text(encoding="utf-8"))
     return 0
@@ -2101,6 +2108,13 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--loop", action="store_true", help="follow the tape as it is written")
     lsg.add_argument("--state-dir", default=None)
     lsg.set_defaults(func=_cmd_livesig)
+
+    h3 = sub.add_parser("hip3", help="Hyperliquid's stock, index and commodity perps (trade.xyz): price, volume, "
+                                     "fees, and the listed ticker each one follows; a reader, nothing is placed")
+    h3.add_argument("--screen", action="store_true",
+                    help="also fetch each market's days for the 30-day liquidity screen (about 10 s a market)")
+    h3.add_argument("--state-dir", default=None)
+    h3.set_defaults(func=_cmd_hip3)
 
     rps = sub.add_parser("replay-stack", help="a recorded day's #71 events through the risk gate to the recorded "
                                               "Hyperliquid book; orders and refusals only, nothing sent")

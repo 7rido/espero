@@ -39,6 +39,7 @@ MUTED = "grey58"
 class Sources:
     """Where each tab's data comes from; tests replace them."""
     contexts: Callable[[], List[D.Coin]] = D.fetch_contexts
+    stocks: Callable[[], List[D.Coin]] = D.fetch_stocks
     closes: Callable[[str], Sequence[float]] = D.hl_closes
     liquidations: Callable[[], Optional[dict]] = D.last_hour_liquidations
     outlook: Callable[[], List[D.Outlook]] = D.volatility_outlook
@@ -53,6 +54,13 @@ def size_word(sigmas: Optional[float]) -> str:
     a = abs(sigmas)
     word = "normal" if a < 1 else "large" if a < 2 else "very large" if a < 3 else "extreme"
     return f"{word} ({a:.1f}× a normal day)"
+
+
+def pays(funding_h: float) -> str:
+    """Who pays funding on a perp, and about how much a year at the current hourly rate."""
+    if not funding_h:
+        return "-"
+    return f"{'longs' if funding_h > 0 else 'shorts'} pay {abs(funding_h) * 24 * 365:.0%} a year"
 
 
 def money(x: float) -> str:
@@ -179,6 +187,7 @@ class EsperoApp(App):
         self.items: List[D.Waiting] = []
         self._post = post
         self.market_rows: List[D.Coin] = []
+        self.stock_rows: List[D.Coin] = []
 
     # -------------------------------------------------------------- layout
     def compose(self) -> ComposeResult:
@@ -196,6 +205,9 @@ class EsperoApp(App):
                     yield Static("loading…", id="prices", classes="body")
                     yield Static("Biggest moves today", classes="h")
                     yield Static("loading…", id="movers", classes="body")
+                    yield Static("Stocks, indexes and commodities on Hyperliquid", classes="h")
+                    yield Static("loading…", id="stocks", classes="body")
+                    yield Static(id="stocks-note", classes="body")
                     yield Static("Funding", classes="h")
                     yield Static("loading…", id="funding", classes="body")
                     yield Static("Liquidations, last hour", classes="h")
@@ -334,6 +346,25 @@ class EsperoApp(App):
             return
         self.market_rows = rows
         self.call_from_thread(self._draw_market, mine, top, D.funding(rows))
+        try:
+            stocks = self.src.stocks()
+        except Exception as exc:  # noqa: BLE001 - this block says what failed; the rest of the tab stays
+            self.call_from_thread(self.query_one("#stocks", Static).update,
+                                  Text(f"Hyperliquid did not answer: {exc}", style="red"))
+            return
+        self.call_from_thread(self._draw_stocks, stocks)
+
+    def _draw_stocks(self, rows) -> None:
+        t = Table(box=None, pad_edge=False, header_style=MUTED)
+        for col in ("Market", "Price", "Today", "Traded today", "Funding"):
+            t.add_column(col, justify="left" if col in ("Market", "Funding") else "right")
+        for c in rows:
+            t.add_row(c.coin, price(c.price), change(c.change), money(c.volume_usd), pays(c.funding_h))
+        self.stock_rows = list(rows)
+        self.query_one("#stocks", Static).update(t)
+        self.query_one("#stocks-note", Static).update(Text(
+            "Perps on trade.xyz, not shares: no dividends, funding every hour, open through the night and the "
+            "weekend. `espero hip3` lists them all.", style=MUTED))
 
     def _draw_market(self, mine, top, fund) -> None:
         t = Table(box=None, pad_edge=False, header_style=MUTED)

@@ -25,6 +25,19 @@ def payload(*rows):
 
 
 class TestMarket(unittest.TestCase):
+    def test_stocks_are_the_most_traded_on_the_builder_exchange_without_its_prefix(self):
+        asked = []
+
+        def post(body):
+            asked.append(body)
+            return payload(ctx("xyz:INTC", 59, 58, vol="8e7"), ctx("xyz:NVDA", 180, 150, vol="7e8"),
+                           ctx("xyz:IBM", 246, 246, vol="2e7"))
+
+        rows = D.fetch_stocks(post, n=2)
+        self.assertEqual(asked, [{"type": "metaAndAssetCtxs", "dex": "xyz"}])
+        self.assertEqual([c.coin for c in rows], ["NVDA", "INTC"])
+        self.assertAlmostEqual(rows[0].change, 0.2)
+
     def test_contexts_read_price_move_funding_and_size(self):
         rows = D.parse_contexts(payload(ctx("BTC", 110, 100, oi="2", vol="5e9"), ctx("BAD", "x", 1)))
         self.assertEqual(len(rows), 1)

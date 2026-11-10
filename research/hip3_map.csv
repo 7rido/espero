@@ -1,0 +1,59 @@
+coin,ticker,kind,since,note
+NVDA,NVDA,US stock,1999-01-22,
+XYZ100,NQ=F,index,2000-09-18,front-month future; the perp's own contract rolls on trade.xyz's schedule
+SKHX,000660.KS,Korea stock,2000-01-04,"the Korean line, quoted on trade.xyz in USD at the won's rate"
+SOXL,SOXL,leveraged ETF,2010-03-11,
+SP500,ES=F,index,2000-09-18,front-month future
+CL,CL=F,commodity,2000-08-23,front-month future
+BRENTOIL,BZ=F,commodity,2007-07-30,front-month future
+SNDK,SNDK,US stock,2025-02-13,
+MU,MU,US stock,1984-06-01,
+AMD,AMD,US stock,1980-03-17,
+DRAM,DRAM,ETF,2026-04-02,
+SPCX,SPCX,US stock,2026-06-12,
+SKHY,SKHY,US stock,2026-07-10,SK hynix's US line
+GOOGL,GOOGL,US stock,2004-08-19,
+SILVER,SI=F,commodity,2000-08-30,front-month future
+KORU,KORU,leveraged ETF,2013-04-10,
+INTC,INTC,US stock,1980-03-17,
+GOLD,GC=F,commodity,2000-08-30,front-month future
+TSLA,TSLA,US stock,2010-06-29,
+SMSN,005930.KS,Korea stock,2000-01-04,"the Korean line, quoted in USD at the won's rate"
+META,META,US stock,2012-05-18,
+NATGAS,NG=F,commodity,2000-08-30,front-month future
+EWY,EWY,ETF,2000-05-12,
+MRNA,MRNA,US stock,2018-12-07,
+AAPL,AAPL,US stock,1980-12-12,
+CRCL,CRCL,US stock,2025-06-05,
+NBIS,NBIS,US stock,2024-10-21,
+UNITREE,,no listed equivalent,,
+MSFT,MSFT,US stock,1986-03-13,
+IBM,IBM,US stock,1962-01-02,
+AMZN,AMZN,US stock,1997-05-15,
+MRVL,MRVL,US stock,2000-06-30,
+CRWV,CRWV,US stock,2025-03-28,
+RKLB,RKLB,US stock,2020-11-24,a blank-check company (Vector Acquisition) until August 2021
+CXMT,,no listed equivalent,,
+SNXX,SNXX,leveraged ETF,2026-01-27,
+ANT,,no listed equivalent,,a pre-listing market
+COIN,COIN,US stock,2021-04-14,
+MSTR,MSTR,US stock,1998-06-11,
+CBRS,CBRS,US stock,2026-05-14,
+KIOXIA,285A.T,Japan stock,2024-12-18,quoted in USD at the yen's rate
+AVGO,AVGO,US stock,2009-08-06,
+HIMS,HIMS,US stock,2019-09-13,a blank-check company until January 2021
+LITE,LITE,US stock,2015-07-23,
+COPPER,HG=F,commodity,2000-08-30,front-month future
+BE,BE,US stock,2018-07-25,
+HOOD,HOOD,US stock,2021-07-29,
+IREN,IREN,US stock,2021-11-17,
+ORCL,ORCL,US stock,1986-03-12,
+TSM,TSM,US stock,1997-10-09,
+PLTR,PLTR,US stock,2020-09-30,
+ZHIPU,2513.HK,Hong Kong stock,2026-01-08,quoted in USD at the Hong Kong dollar's rate
+AAOI,AAOI,US stock,2013-09-26,
+PURRDAT,PURR,US stock,2025-12-03,
+ARM,ARM,US stock,2023-09-14,
+EWZ,EWZ,ETF,2000-07-14,
+USAR,USAR,US stock,2023-07-17,a blank-check company until March 2025
+DELL,DELL,US stock,2016-08-17,

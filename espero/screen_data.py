@@ -17,7 +17,7 @@ import sqlite3
 import time
 import urllib.request
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -181,6 +181,20 @@ def fetch_contexts(post: Optional[Callable] = None) -> List[Coin]:
 
     post = post or (lambda body: hl.post(body, url=hl.MAINNET_URL + "/info"))
     return parse_contexts(post({"type": "metaAndAssetCtxs"}))
+
+
+STOCKS_DEX = "xyz"                    # trade.xyz: the builder exchange with the stocks, indexes and commodities
+
+
+def fetch_stocks(post: Optional[Callable] = None, n: int = 12) -> List[Coin]:
+    """The `n` most traded stock, index and commodity perps on Hyperliquid now, named without the exchange's
+    prefix: one request (espero/hip3.py has the whole list, fees and the ticker each follows)."""
+    from . import hyperliquid as hl
+
+    post = post or (lambda body: hl.post(body, url=hl.MAINNET_URL + "/info"))
+    rows = parse_contexts(post({"type": "metaAndAssetCtxs", "dex": STOCKS_DEX}))
+    top = sorted(rows, key=lambda c: -c.volume_usd)[:n]
+    return [replace(c, coin=c.coin.split(":", 1)[-1]) for c in top]
 
 
 def daily_sigma(closes: Sequence[float]) -> Optional[float]:

@@ -21,6 +21,7 @@ def coin(name, px=100.0, ch=0.01, f=0.0000125, vol=1e8):
 def sources(**kw):
     base = dict(contexts=lambda: [coin("BTC", 77_000.0, 0.009), coin("ETH", 2_280.0, -0.014), coin("RUNE", 1.2, 0.15)],
                 closes=lambda c: [100.0, 101.0] * 15,
+                stocks=lambda: [coin("NVDA", 180.89, 0.012, 0.000032, 7.03e8), coin("GOLD", 4128.6, -0.004, -0.00001)],
                 liquidations=lambda: {"at": NOW, "coins": {"BTC": {"longs": 3e4, "shorts": 4.5e6}}},
                 outlook=lambda: [D.Outlook("BTC", 0.057, 0.035, "stormier")],
                 now=lambda: NOW)
@@ -191,6 +192,17 @@ class TestTheScreen(unittest.IsolatedAsyncioTestCase):
             self.assertIn("shorts squeezed", text["liqs"])
             self.assertIn("stormier", text["vol"])
             self.assertEqual([c.coin for c in app.market_rows], ["BTC", "ETH", "RUNE"])
+            self.assertEqual([c.coin for c in app.stock_rows], ["NVDA", "GOLD"])
+            self.assertIn("not shares", str(app.query_one("#stocks-note", tui.Static).render()))
+
+    async def test_stocks_that_do_not_answer_say_so_and_the_coins_still_show(self):
+        app = tui.EsperoApp(Path(tempfile.mkdtemp()), sources(stocks=lambda: 1 / 0))
+        async with app.run_test() as pilot:
+            await app.workers.wait_for_complete()
+            await pilot.pause()
+            self.assertIn("did not answer", str(app.query_one("#stocks", tui.Static).render()))
+            self.assertEqual([c.coin for c in app.market_rows], ["BTC", "ETH", "RUNE"])
+            self.assertEqual(app.stock_rows, [])
 
     async def test_a_market_that_does_not_answer_says_so(self):
         app = tui.EsperoApp(Path(tempfile.mkdtemp()), sources(contexts=lambda: 1 / 0, liquidations=lambda: None,
@@ -210,6 +222,9 @@ class TestWords(unittest.TestCase):
         self.assertEqual(tui.size_word(3.1), "extreme (3.1× a normal day)")
         self.assertEqual(tui.size_word(None), "")
         self.assertEqual(tui.money(4_454_551), "$4.5M")
+        self.assertEqual(tui.pays(0.000032), "longs pay 28% a year")
+        self.assertEqual(tui.pays(-0.00001), "shorts pay 9% a year")
+        self.assertEqual(tui.pays(0.0), "-")
         self.assertEqual(tui.money(37_579), "$38K")
         self.assertEqual(tui.money(3.2e9), "$3.2B")
         self.assertEqual(tui.price(77_407), "77,407.00")

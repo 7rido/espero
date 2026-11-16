@@ -102,7 +102,7 @@ class TestTheRun(unittest.TestCase):
             prices[m][T0 + 2 * W] = prices[m][T0 + W]
             prices[m][T0 + 3 * W] = prices[m][T0 + 2 * W]
         got = F.run(funding, prices, [T0, T0 + W, T0 + 2 * W])
-        self.assertEqual([g.turnover for g in got][:2], [1.0, 0.0])
+        self.assertEqual([round(g.turnover, 12) for g in got][:2], [1.0, 0.0])    # a sum of weights: 1 to rounding
         self.assertAlmostEqual(got[1].net, got[1].gross)
         # in the second week D's funding was the lowest of all, so D is long and C is not
         funding2, prices2 = world(weeks=3)
@@ -126,7 +126,7 @@ class TestTheRun(unittest.TestCase):
             del prices[m][T0 + 2 * W]                                   # A and B have no candle at the third Monday
         got = F.run(funding, prices, [T0, T0 + W, T0 + 2 * W, T0 + 3 * W])
         self.assertEqual([g.t for g in got], [T0, T0 + 3 * W])
-        self.assertEqual([g.turnover for g in got], [1.0, 1.0])         # not 0.0: the book was closed in between
+        self.assertEqual([round(g.turnover, 12) for g in got], [1.0, 1.0])   # not 0.0: the book was closed in between
 
     def test_a_market_left_out_is_not_in_the_legs(self):
         funding, prices = world()

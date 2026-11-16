@@ -1572,6 +1572,14 @@ def _cmd_hip3rec(args: argparse.Namespace) -> int:
     return hip3rec.main(["--loop" if args.loop else "--coins"])
 
 
+def _cmd_spotcarry(args: argparse.Namespace) -> int:
+    """The #83 spot carry paper book (espero/spotcarry.py): both legs on Hyperliquid, paper only, nothing is sent."""
+    from . import spotcarry
+
+    argv = ["--state-dir", str(state_dir(args.state_dir))] + (["--once"] if args.once else [])
+    return spotcarry.main(argv)
+
+
 def _cmd_hip3paper(args: argparse.Namespace) -> int:
     """The HIP-3 paper books (espero/hip3paper.py): #75 and #76 watched live on the perps, information only."""
     from . import hip3paper
@@ -2142,6 +2150,13 @@ def build_parser() -> argparse.ArgumentParser:
     h3p.add_argument("--once", action="store_true", help="fetch new candles (about 10 minutes), rewrite the books")
     h3p.add_argument("--state-dir", default=None)
     h3p.set_defaults(func=_cmd_hip3paper)
+
+    spc = sub.add_parser("spotcarry", help="#83: funding carry on BTC and ETH, both legs on Hyperliquid, on paper "
+                                           "(research/PREREGISTRATION_SPOTCARRY.md); nothing is sent")
+    spc.add_argument("--once", action="store_true", help="one pass: read the books, record them, update the book")
+    spc.add_argument("--status", action="store_true", help="print the book (the default)")
+    spc.add_argument("--state-dir", default=None)
+    spc.set_defaults(func=_cmd_spotcarry)
 
     rps = sub.add_parser("replay-stack", help="a recorded day's #71 events through the risk gate to the recorded "
                                               "Hyperliquid book; orders and refusals only, nothing sent")

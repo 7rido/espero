@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.espero.spotcarry</string>
+
+    <!-- the #83 spot carry paper book (espero/spotcarry.py): funding carry on BTC and ETH with both legs on
+         Hyperliquid, paper only. It reads public books and funding, and writes only state/spotcarry.db,
+         state/spotcarry.json and state/spotcarry/; nothing signs or trades.
+         scripts/install-spotcarry-launchd.sh renders this. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>-m</string>
+        <string>espero</string>
+        <string>spotcarry</string>
+        <string>--once</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+
+    <!-- every hour at minute 33: six calls two seconds apart, a few seconds a pass, clear of the collector's
+         sweep at minute 19 to 27 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Minute</key>
+        <integer>33</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>__LOG_DIR__/spotcarry.log</string>
+    <key>StandardErrorPath</key>
+    <string>__LOG_DIR__/spotcarry.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

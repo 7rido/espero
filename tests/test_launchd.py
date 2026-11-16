@@ -246,3 +246,20 @@ class TestReinstall(unittest.TestCase):
                 self.assertTrue(waits, f"{name} loads before the old job has gone")
                 self.assertTrue(stays, f"{name} does not check that the new job stayed")
         self.assertTrue({"livesig", "watchdog", "rawrec", "hlbook", *self.NOT_YET} <= checked)
+
+
+@unittest.skipUnless(shutil.which("bash") and shutil.which("sed"), "needs bash and sed")
+class TestSpotCarryAgent(unittest.TestCase):
+    """#83's paper book: hourly at minute 33 from the repo, never kept alive, and not in the watchdog's KeepAlive list
+    (it is idle between passes, so launchd does not say 'running')."""
+    def test_every_hour_at_minute_33_from_the_repo_never_kept_alive(self):
+        out = subprocess.run(["bash", str(ROOT / "scripts" / "install-spotcarry-launchd.sh"), "--print"],
+                             capture_output=True, text=True, check=True,
+                             env={"PATH": "/usr/bin:/bin", "HOME": "/tmp", "PYTHON": "/x/python"}).stdout
+        p = plistlib.loads(out.encode())
+        self.assertEqual(p["Label"], "com.espero.spotcarry")
+        self.assertEqual(p["ProgramArguments"], ["/x/python", "-m", "espero", "spotcarry", "--once"])
+        self.assertEqual(p["StartCalendarInterval"], {"Minute": 33})
+        self.assertEqual(p["WorkingDirectory"], str(ROOT))
+        self.assertNotIn("KeepAlive", p)
+        self.assertTrue(p["StandardOutPath"].endswith("spotcarry.log"))

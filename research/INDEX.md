@@ -777,6 +777,7 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 - `PREREGISTRATION_SWINGHOURS.md`
 - `PREREGISTRATION_SWINGHOURS.md.ots`
+- `swinghours.py`  (rule: `espero/swinghours.py`)
 
 ## #83 — Funding carry on BTC and ETH with both legs on Hyperliquid, forward on paper
 

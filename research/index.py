@@ -167,7 +167,7 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
     "74": ("What a fill costs on trade.xyz perps", ["PREREGISTRATION_HIP3COST.md", "PREREGISTRATION_HIP3COST.md.ots"]),
     "83": ("Funding carry on BTC and ETH with both legs on Hyperliquid, forward on paper", ["PREREGISTRATION_SPOTCARRY.md", "PREREGISTRATION_SPOTCARRY.md.ots"]),
     "82": ("Session swings: how big each coin's moves are, hour by hour of the week",
-           ["PREREGISTRATION_SWINGHOURS.md", "PREREGISTRATION_SWINGHOURS.md.ots"]),
+           ["PREREGISTRATION_SWINGHOURS.md", "PREREGISTRATION_SWINGHOURS.md.ots", "swinghours.py"]),
     "81": ("The BTC volatility premium, sold every week with wings", ["PREREGISTRATION_VOLPREM.md", "PREREGISTRATION_VOLPREM.md.ots",
                                                                   "volprem.py", "volprem_run.txt", "volprem_weeks.csv",
                                                                   "volprem_inputs.csv.gz", "RESULTS_VOLPREM.md"]),

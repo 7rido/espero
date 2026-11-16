@@ -771,6 +771,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `volprem_run.txt`
 - `volprem_weeks.csv`
 
+## #82 — Session swings: how big each coin's moves are, hour by hour of the week
+
+*#82 (not in trials.csv)*
+
+- `PREREGISTRATION_SWINGHOURS.md`
+- `PREREGISTRATION_SWINGHOURS.md.ots`
+
 ## #83 — Funding carry on BTC and ETH with both legs on Hyperliquid, forward on paper
 
 *#83 (not in trials.csv)*

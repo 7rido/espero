@@ -43,7 +43,7 @@ LAYERS: Dict[str, Tuple[str, List[str]]] = {
     "measure": ("costs on prints, fills on tape, the point-in-time store and the ledger of every trial",
                 ["markout", "execsim", "pit", "trials", "factor_eval", "detector", "audit", "tca", "reconcile",
                  "hl_exchange", "hlp_testnet", "rawbars", "replaysim", "robustness", "sleeves", "opalpha",
-                 "costcurve", "costcurve_table", "livesig", "hip3track"]),
+                 "costcurve", "costcurve_table", "livesig", "hip3track", "swinghours"]),
     "live": ("from a verdict to a sized order, built and tested before any verdict; no mainnet path",
              ["latency", "approvals", "risk", "rungs", "holder", "watchdog", "attribution", "replay_stack",
               "holderform", "hl_mainnet", "mf_canary"]),

@@ -36,7 +36,7 @@ LAYERS: Dict[str, Tuple[str, List[str]]] = {
                 ["liqfwd", "lowsfwd", "liqbreak", "fundsplit", "postclose", "bidsfwd", "settlefwd", "liqhold"]),
     "accounts": ("paper books and the machinery that holds a position honestly",
                  ["tsmom", "xs", "mf", "carry_paper", "hlpbook", "paper", "journal", "portfolio",
-                  "execution", "backtest"]),
+                  "execution", "backtest", "spotcarry"]),
     "record": ("what Hyperliquid and aggr show only in the present, saved so it can be read later",
                ["hlcollect", "hlbook", "book", "manifest", "rawrec", "binance_archive", "tapewatch", "deribit",
                 "hip3", "hip3rec", "hip3paper"]),

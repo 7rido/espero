@@ -771,6 +771,13 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 - `volprem_run.txt`
 - `volprem_weeks.csv`
 
+## #83 — Funding carry on BTC and ETH with both legs on Hyperliquid, forward on paper
+
+*#83 (not in trials.csv)*
+
+- `PREREGISTRATION_SPOTCARRY.md`
+- `PREREGISTRATION_SPOTCARRY.md.ots`
+
 ## Cross-cutting
 
 **The ledger of every test**

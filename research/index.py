@@ -165,6 +165,7 @@ TESTS: Dict[str, Tuple[str, List[str]]] = {
                                                                "hip3track_run.txt", "hip3track_cells.csv",
                                                                "hip3track_inputs.csv.gz", "RESULTS_HIP3TRACK.md"]),
     "74": ("What a fill costs on trade.xyz perps", ["PREREGISTRATION_HIP3COST.md", "PREREGISTRATION_HIP3COST.md.ots"]),
+    "83": ("Funding carry on BTC and ETH with both legs on Hyperliquid, forward on paper", ["PREREGISTRATION_SPOTCARRY.md", "PREREGISTRATION_SPOTCARRY.md.ots"]),
     "81": ("The BTC volatility premium, sold every week with wings", ["PREREGISTRATION_VOLPREM.md", "PREREGISTRATION_VOLPREM.md.ots",
                                                                   "volprem.py", "volprem_run.txt", "volprem_weeks.csv",
                                                                   "volprem_inputs.csv.gz", "RESULTS_VOLPREM.md"]),

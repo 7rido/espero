@@ -722,6 +722,7 @@ espero/
     portfolio.py      # From a ranking to a set of weights that a small account can actually carry.
     execution.py      # Resting limit orders, simulated against a recorded book, pessimistically.
     backtest.py       # One long-only position, one bar at a time, filled when it is physically possible.
+    spotcarry.py      # #83: BTC and ETH carry with both legs on Hyperliquid, on paper …
     # record: what Hyperliquid and aggr show only in the present, saved so it can be read later
     hlcollect.py      # Hyperliquid collector: record what Hyperliquid shows only in the present.
     hlbook.py         # Hyperliquid's order book, recorded: the top 20 levels a side, every 5 minutes, on 10 coins.

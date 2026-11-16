@@ -5,6 +5,20 @@ change its verdict; the code that produced it stays as it ran, marked with a com
 points here. Numbers below were reproduced from cached data during the 2026-10-27 audit
 (docs/AUDIT_2026-10-27.md, section D) unless stated.
 
+## 2026-11-16: the raw tape and #71's engine move to a second Mac
+
+**No rule, threshold or criterion changes.** This Mac's disk fell under the raw recorder's 30 GB floor, so the book
+channels stopped (trades went on). The recorder (`com.espero.rawrec`) and #71's engine (`com.espero.livesig`) were
+stopped here at **2026-11-16 11:51:50 UTC** and started on `fredo`, a second Mac on a Thunderbolt cable, writing its
+own disk (docs/RUNBOOK.md, "On a second Mac"). Every venue was writing there again by about **11:55 UTC**: the tape
+has a gap of about four minutes, which `espero rawrec --gaps 2026-11-16` shows and nothing fills. The tape before the
+move was copied to Fredo and checked file by file against this Mac's copy. Book channels were off here from when the
+disk crossed the floor (recently; the recorder's log keeps no time) until the move; they are on again there.
+
+#71's ledger (`state/livesig_events.csv`, 781 lines) and heartbeat were copied as they stood and continue on Fredo.
+PREREGISTRATION_LIVESIG.md says "the tape this Mac's"; that describes where the tape was recorded, not a criterion.
+#71 decides nothing, and its emitted latency is from now on read on Fredo's clock (0.2 s from this one's when moved).
+
 ## 2026-11-03: #22, #23, #27 and #32's recordings and joins: an empty aggr day is not saved; a stale funding rate is not "the last settlement"
 
 **No rule, threshold or criterion changes; plumbing fixes from the production-readiness audit (docs/AUDIT_PROD.md),

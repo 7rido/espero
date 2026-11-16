@@ -279,6 +279,29 @@ cd "/Users/fredp/Espero Trading QuantBot/espero" && ESPERO_RAW_DIR="/Users/fredp
   book is the snapshot and `espero.binance_archive` backfills the public archive for gaps. Don't study the
   tape casually: every look uses up a future holdout. Pre-register first.
 
+### On a second Mac (since 2026-11-16)
+
+The raw recorder and #71's engine run on a second Mac, `fredo`, joined to this one by a Thunderbolt cable
+(`ssh fredo`, 10.99.0.2; `~/.ssh/config` names it). This Mac's disk held about three more days of tape; Fredo's holds
+about three months. The tape is `/Users/fredo/espero-raw`, written to Fredo's own disk, never over the cable, so the
+recording does not depend on the link. espero is a clone at `~/espero` with its own `.venv` (Python 3.12 from
+python.org); the recorder needs no key, so Fredo has no `.env`. #71's ledger and heartbeat are in `~/espero/state`.
+
+- Installed there, by the account holder, over ssh:
+  `ssh fredo 'cd ~/espero && ESPERO_RAW_DIR=/Users/fredo/espero-raw ./scripts/install-rawrec-launchd.sh'`, and the
+  same with `install-livesig-launchd.sh`. Their logs are in Fredo's `~/Library/Logs/espero/`.
+- The watchdog here checks them there: `state/rawrec-host.json` names the host, its tape and its state folder, and
+  each pass makes one `ssh` call that reads, with Fredo's stock Python, each venue's newest file, Fredo's free disk,
+  launchd's word on both jobs and #71's heartbeat (`watchdog.check_remote`). Fredo unreachable is one alarm,
+  `remote:fredo`. Remove the file and the watchdog looks for the tape here again.
+- Fredo must stay awake on its charger (`pmset -c sleep 0 disksleep 0`, set) and logged in: its jobs are the logged-in
+  user's, so after a restart nothing records until someone logs in. A gap stays a gap.
+- Updating the code there: `ssh fredo 'cd ~/espero && git pull --ff-only'`, then the install lines again.
+- `espero.binance_archive` backfills into the tape: run it on Fredo. `espero livesig --replay`/`--compare` read the
+  tape: run them on Fredo too.
+- Closed days are deleted from this Mac only after their checksums match Fredo's, and only on the account holder's
+  yes. This Mac's `espero-raw` keeps what it had until then; nothing here writes to it any more.
+
 ## The Hyperliquid collector
 
 `espero hlcollect --loop` records what Hyperliquid shows only in the present, for ideas 3, 4, 10 and

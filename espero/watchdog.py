@@ -15,9 +15,11 @@ the check recovers or the operator acknowledges it. A notification that fails ne
 from __future__ import annotations
 
 import calendar
+import inspect
 import json
 import os
 import re
+import shlex
 import socket
 import struct
 import subprocess
@@ -55,6 +57,9 @@ REPEAT_S = 3600.0
 STATE = "watchdog.json"
 DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 NOT_DATA = ("MANIFEST.sha256", "coins.json", "rawrec.lock", "instruments.json")
+REMOTE = "rawrec-host.json"            # in the state folder once the tape is recorded on another Mac (docs/RUNBOOK.md)
+REMOTE_AGENTS = ("com.espero.rawrec", "com.espero.livesig")   # run there, not here, when REMOTE names a host
+REMOTE_TIMEOUT_S = 60
 
 
 @dataclass(frozen=True)
@@ -131,13 +136,15 @@ def check_agents(state_of: Callable[[str], str] = launchd_state, agents: Iterabl
     return out
 
 
-def check_livesig(now: float, state: Path, tape_newest: Optional[float]) -> Check:
+def check_livesig(now: float, state: Optional[Path], tape_newest: Optional[float],
+                  heartbeat: Optional[Callable[[], dict]] = None) -> Check:
     """#71's engine writes nothing until an event fires, so it says where it is (livesig.beat). It is stuck when it
     has not said so for ten minutes, or when the Binance tape is being written and its last frame trails it by
     more; a silent tape is rawrec:binance's alarm, not this one. A start gets fifteen minutes. No heartbeat at all
     is an engine that has not run since it began writing one; launchd's word on it (AGENTS) still holds."""
     try:
-        hb = json.loads((state / LIVESIG_HEARTBEAT).read_text(encoding="utf-8"))
+        hb = heartbeat() if heartbeat is not None else \
+            json.loads((state / LIVESIG_HEARTBEAT).read_text(encoding="utf-8"))
         started, written, tape = hb["started_ms"] / 1000, hb["written_ms"] / 1000, hb["tape_ms"]
     except FileNotFoundError:
         return Check("livesig", True, "no heartbeat yet")
@@ -157,12 +164,111 @@ def check_livesig(now: float, state: Path, tape_newest: Optional[float]) -> Chec
                  lag, LIVESIG_LAG_S)
 
 
-def check_disk(path: Path, free_gb: Callable[[Path], float] = rawrec.free_gb) -> Check:
+def check_disk(path: Path, free_gb: Callable[[Path], float] = rawrec.free_gb, name: str = "disk") -> Check:
     try:
         gb = free_gb(path)
     except OSError:
-        return Check("disk", False, f"cannot read free space at {path}")
-    return Check("disk", gb >= DISK_FLOOR_GB, f"{gb:,.0f} GB free, floor {DISK_FLOOR_GB:.0f} GB")
+        return Check(name, False, f"cannot read free space at {path}")
+    return Check(name, gb >= DISK_FLOOR_GB, f"{gb:,.0f} GB free, floor {DISK_FLOOR_GB:.0f} GB")
+
+
+# ------------------------------------------------------------------ the tape on another Mac
+def remote_config(state: Path) -> Optional[dict]:
+    """`state/rawrec-host.json`: where the raw recorder and #71's engine run when it is not here, as
+    {"host": ssh host, "raw": its ESPERO_RAW_DIR, "state": its state folder}. None when the tape is recorded here."""
+    try:
+        cfg = json.loads((Path(state) / REMOTE).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"{REMOTE} does not read: {exc}") from None
+    if not isinstance(cfg, dict) or not all(isinstance(cfg.get(k), str) and cfg[k] for k in ("host", "raw", "state")):
+        raise ValueError(f"{REMOTE} needs host, raw and state")
+    return cfg
+
+
+def probe_script() -> str:
+    """What the other Mac runs, with its own stock Python: nothing of espero is imported there. The newest file is
+    found by this module's own `newest_mtime`, so both Macs judge the tape alike."""
+    return "\n".join([
+        "import json, os, re, subprocess, sys, time",
+        "from pathlib import Path",
+        "from typing import Optional",
+        f"DAY = re.compile({DAY.pattern!r})",
+        f"NOT_DATA = {NOT_DATA!r}",
+        inspect.getsource(newest_mtime),
+        "cfg = json.loads(sys.argv[1])",
+        "raw, st = Path(cfg['raw']), Path(cfg['state'])",
+        "out = {'now': time.time(), 'mtime': {v: newest_mtime(raw / v) for v in cfg['venues']}}",
+        "s = os.statvfs(raw)",
+        "out['free_gb'] = s.f_bavail * s.f_frsize / 1e9",
+        "out['agents'] = {}",
+        "for label in cfg['agents']:",
+        "    r = subprocess.run(['launchctl', 'print', 'gui/%d/%s' % (os.getuid(), label)], capture_output=True,"
+        " text=True)",
+        "    m = re.search(r'^\\s*state = (\\S+)', r.stdout, re.M) if r.returncode == 0 else None",
+        "    out['agents'][label] = m.group(1) if m else ('not loaded' if r.returncode else 'unknown')",
+        f"hb = st / {LIVESIG_HEARTBEAT!r}",
+        "try:",
+        "    out['heartbeat'] = json.loads(hb.read_text())",
+        "except FileNotFoundError:",
+        "    out['heartbeat'] = None",
+        "except (OSError, ValueError):",
+        "    out['heartbeat'] = 'unreadable'",
+        "print(json.dumps(out))",
+    ]) + "\n"
+
+
+def probe(cfg: dict, venues: Iterable[str] = rawrec.VENUES, run=subprocess.run,
+          clock: Callable[[], float] = time.time) -> Tuple[dict, float]:
+    """One ssh call to the other Mac: (what it found, how far its clock is from this one's, in seconds, positive
+    when it runs ahead). Raises RuntimeError when it cannot be reached or answers nonsense."""
+    arg = json.dumps({"raw": cfg["raw"], "state": cfg["state"], "venues": list(venues), "agents": list(REMOTE_AGENTS)})
+    t0 = clock()
+    try:
+        r = run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", cfg["host"], "/usr/bin/python3", "-",
+                 shlex.quote(arg)], input=probe_script(), capture_output=True, text=True, timeout=REMOTE_TIMEOUT_S)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(f"{type(exc).__name__}") from None
+    t1 = clock()
+    if r.returncode != 0:
+        last = (r.stderr or "").strip().splitlines()[-1:] or [f"exit {r.returncode}"]
+        raise RuntimeError(last[0][:160])
+    try:
+        found = json.loads(r.stdout.strip().splitlines()[-1])
+        ahead = float(found["now"]) - (t0 + t1) / 2
+        return found, ahead
+    except (ValueError, KeyError, IndexError, TypeError):
+        raise RuntimeError("its answer does not read") from None
+
+
+def check_remote(now: float, cfg: dict, venues: Iterable[str] = rawrec.VENUES,
+                 probe_fn: Callable[[dict], Tuple[dict, float]] = None) -> List[Check]:
+    """The tape's checks, made on the Mac that records it: one alarm when it cannot be reached, never one per venue.
+    Its times are moved onto this Mac's clock, and its clock is a warning when it is a second off."""
+    host = cfg["host"]
+    try:
+        found, ahead = (probe_fn or (lambda c: probe(c, venues)))(cfg)
+    except RuntimeError as exc:
+        return [Check(f"remote:{host}", False, f"cannot reach {host}: {exc}; the tape's checks are not made")]
+    out = [Check(f"remote:{host}", True, f"reached; its clock {ahead:+.2f} s from this one's")]
+    if abs(ahead) > CLOCK_REFUSE_S:
+        out.append(Check(f"clock@{host}", False, f"{host}'s clock is {ahead:+.2f} s from this Mac's: the tape's "
+                         "receive times are off by as much", severity="warn"))
+    mt = {v: (None if found.get("mtime", {}).get(v) is None else float(found["mtime"][v]) - ahead) for v in venues}
+    out += [check_age(f"rawrec:{v}", mt[v], RAW_MAX_AGE_S, now) for v in venues]
+    for label in REMOTE_AGENTS:
+        s = found.get("agents", {}).get(label, "unknown")
+        out.append(Check(f"agent:{label}@{host}", s == "running", f"launchd on {host} says {s}"))
+    hb = found.get("heartbeat")
+
+    def beat() -> dict:
+        if hb is None:
+            raise FileNotFoundError
+        return {**hb, "started_ms": hb["started_ms"] - ahead * 1000, "written_ms": hb["written_ms"] - ahead * 1000}
+    out.append(check_livesig(now, None, mt.get("binance"), heartbeat=beat))
+    out.append(check_disk(Path(cfg["raw"]), lambda _p: float(found["free_gb"]), name=f"disk@{host}"))
+    return out
 
 
 def sntp_sample(server: str = NTP_SERVER, timeout: float = 2.0, port: int = 123) -> Tuple[float, float]:
@@ -253,10 +359,25 @@ def ack(state: Dict[str, dict], name: str) -> bool:
 
 
 def run_checks(now: float, data: Path, state: Path, raw: Optional[Path], clock: bool = True,
-               state_of: Callable[[str], str] = launchd_state) -> List[Check]:
-    out = check_recorders(now, data, raw) + [check_daily(now, state)] + check_agents(state_of)
-    out.append(check_livesig(now, state, newest_mtime(raw / "binance") if raw is not None else None))
-    out.append(check_disk(raw if raw is not None else data))
+               state_of: Callable[[str], str] = launchd_state,
+               probe_fn: Optional[Callable[[dict], Tuple[dict, float]]] = None) -> List[Check]:
+    try:
+        cfg = remote_config(state)
+    except ValueError as exc:
+        cfg = None
+        bad = Check("remote", False, str(exc))
+    else:
+        bad = None
+    if cfg is None:
+        out = check_recorders(now, data, raw) + [check_daily(now, state)] + check_agents(state_of)
+        out.append(check_livesig(now, state, newest_mtime(raw / "binance") if raw is not None else None))
+        out.append(check_disk(raw if raw is not None else data))
+        out += [bad] if bad else []
+    else:  # the tape and #71's engine run on the other Mac: checked there; this Mac's own recorders and disk here
+        out = check_recorders(now, data, None) + [check_daily(now, state)]
+        out += check_agents(state_of, [a for a in AGENTS if a not in REMOTE_AGENTS])
+        out += check_remote(now, cfg, probe_fn=probe_fn)
+        out.append(check_disk(data))
     if clock:
         out.append(check_clock())
     return out
@@ -287,12 +408,13 @@ def read_memory(state_dir: Path) -> dict:
 
 
 def once(state_dir: Path, data: Path, raw: Optional[Path], clock: bool = True, send=None, now: Optional[float] = None,
-         state_of: Callable[[str], str] = launchd_state) -> int:
+         state_of: Callable[[str], str] = launchd_state,
+         probe_fn: Optional[Callable[[dict], Tuple[dict, float]]] = None) -> int:
     """One pass: check, escalate, notify, remember. Exit 0 when every check holds."""
     from . import notify
 
     now = time.time() if now is None else now
-    checks = run_checks(now, data, state_dir, raw, clock, state_of)
+    checks = run_checks(now, data, state_dir, raw, clock, state_of, probe_fn)
     sends, memory = escalate(checks, read_memory(state_dir), now)
     send = send or (lambda channel, title, msg: notify.macos(title, msg) if channel == "macos"
                     else notify.webhook(title, msg))

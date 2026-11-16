@@ -301,6 +301,126 @@ class TestLivesig(unittest.TestCase):
         self.assertFalse(got["livesig"])
 
 
+class TestTheTapeOnAnotherMac(unittest.TestCase):
+    """2026-11-16: the raw recorder and #71's engine moved to a second Mac; the watchdog checks them there by ssh."""
+
+    CFG = {"host": "fredo", "raw": "/Users/fredo/espero-raw", "state": "/Users/fredo/espero/state"}
+
+    def found(self, age=10.0, agents="running", hb="fresh", free=700.0, ahead=0.0):
+        there = NOW + ahead
+        beat = {"started_ms": (there - 3600) * 1000, "written_ms": (there - 30) * 1000, "tape_ms": (NOW - 20) * 1000}
+        return ({"now": there, "mtime": {v: there - age for v in W.rawrec.VENUES},
+                 "agents": {a: agents for a in W.REMOTE_AGENTS}, "free_gb": free,
+                 "heartbeat": beat if hb == "fresh" else hb}, ahead)
+
+    def checks(self, **kw):
+        return {c.name: c for c in W.check_remote(NOW, self.CFG, probe_fn=lambda cfg: self.found(**kw))}
+
+    def test_a_healthy_tape_there_passes_every_check(self):
+        c = self.checks()
+        self.assertTrue(all(x.ok for x in c.values()), [x for x in c.values() if not x.ok])
+        self.assertEqual({f"rawrec:{v}" for v in W.rawrec.VENUES} - set(c), set())
+        self.assertIn("agent:com.espero.rawrec@fredo", c)
+        self.assertIn("disk@fredo", c)
+
+    def test_its_times_are_moved_onto_this_macs_clock(self):
+        c = self.checks(age=10.0, ahead=-900.0)                  # fresh there, though its clock runs 900 s behind
+        self.assertTrue(c["rawrec:binance"].ok)
+        self.assertTrue(c["livesig"].ok)
+        self.assertFalse(c["clock@fredo"].ok)
+        self.assertEqual(c["clock@fredo"].severity, "warn")
+        self.assertNotIn("clock@fredo", self.checks(ahead=0.3))
+
+    def test_a_silent_tape_a_stopped_job_a_full_disk_and_a_stuck_engine_each_alarm(self):
+        self.assertFalse(self.checks(age=600.0)["rawrec:okx"].ok)
+        self.assertFalse(self.checks(agents="not loaded")["agent:com.espero.livesig@fredo"].ok)
+        self.assertFalse(self.checks(free=20.0)["disk@fredo"].ok)
+        stuck = self.found()
+        stuck[0]["heartbeat"]["written_ms"] = (NOW - 3600) * 1000
+        c = {x.name: x for x in W.check_remote(NOW, self.CFG, probe_fn=lambda cfg: stuck)}
+        self.assertFalse(c["livesig"].ok)
+        self.assertFalse(self.checks(hb="unreadable")["livesig"].ok)
+        self.assertTrue(self.checks(hb=None)["livesig"].ok)      # no heartbeat yet, as here
+
+    def test_an_unreachable_mac_is_one_alarm_not_one_per_venue(self):
+        def down(cfg):
+            raise RuntimeError("ssh: connect to host 10.99.0.2 port 22: Operation timed out")
+        c = W.check_remote(NOW, self.CFG, probe_fn=down)
+        self.assertEqual([(x.name, x.ok) for x in c], [("remote:fredo", False)])
+        self.assertIn("timed out", c[0].note)
+
+    def test_with_the_config_the_tape_is_not_looked_for_here_and_its_jobs_not_asked_of_this_launchd(self):
+        with tempfile.TemporaryDirectory() as d:
+            state, data = Path(d) / "state", Path(d) / "data"
+            state.mkdir()
+            (state / W.REMOTE).write_text(json.dumps(self.CFG))
+            asked = []
+            checks = W.run_checks(NOW, data, state, Path(d) / "gone", clock=False,
+                                  state_of=lambda label: asked.append(label) or "running",
+                                  probe_fn=lambda cfg: self.found())
+            names = {c.name for c in checks}
+            self.assertTrue(set(W.REMOTE_AGENTS).isdisjoint(asked))
+            self.assertIn("com.espero.mf-canary", asked)
+            self.assertIn("rawrec:binance", names)
+            self.assertIn("disk", names)                         # this Mac's own disk is still checked
+            self.assertTrue(all(c.ok for c in checks if c.name.startswith("rawrec:")))
+
+    def test_without_the_config_nothing_changes_and_a_bad_config_alarms(self):
+        with tempfile.TemporaryDirectory() as d:
+            state = Path(d)
+            self.assertIsNone(W.remote_config(state))
+            (state / W.REMOTE).write_text('{"host": "fredo"}')
+            with self.assertRaises(ValueError):
+                W.remote_config(state)
+            checks = W.run_checks(NOW, state / "data", state, None, clock=False, state_of=lambda label: "running")
+            self.assertIn(("remote", False), [(c.name, c.ok) for c in checks])
+
+    def test_the_probe_runs_one_ssh_with_stock_python_and_reads_its_answer(self):
+        calls = []
+
+        class R:
+            returncode, stderr = 0, ""
+            stdout = json.dumps({"now": 105.0, "mtime": {}, "agents": {}, "free_gb": 1.0, "heartbeat": None})
+
+        def run(cmd, **kw):
+            calls.append((cmd, kw))
+            return R()
+        times = iter([100.0, 102.0])
+        found, ahead = W.probe(self.CFG, ["binance"], run=run, clock=lambda: next(times))
+        self.assertEqual(ahead, 4.0)                             # 105 against the midpoint, 101
+        cmd, kw = calls[0]
+        self.assertEqual(cmd[:6], ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "fredo"])
+        self.assertEqual(cmd[6:8], ["/usr/bin/python3", "-"])
+        import shlex
+        self.assertEqual(json.loads(shlex.split(cmd[8])[0])["venues"], ["binance"])   # quoted for the remote shell
+        self.assertIn("def newest_mtime", kw["input"])
+
+        class Bad(R):
+            returncode, stderr, stdout = 255, "ssh: Could not resolve hostname fredo\n", ""
+        with self.assertRaises(RuntimeError):
+            W.probe(self.CFG, run=lambda *a, **k: Bad())
+
+        class Nonsense(R):
+            stdout = "hello"
+        with self.assertRaises(RuntimeError):
+            W.probe(self.CFG, run=lambda *a, **k: Nonsense())
+
+    def test_the_probe_script_is_valid_python_and_judges_the_tape_as_this_module_does(self):
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as d:
+            raw, st = Path(d) / "raw", Path(d) / "state"
+            touch(raw / "binance" / "2026-11-16" / "00.jsonl.zst", NOW - 30)
+            touch(raw / "binance" / "2026-11-15" / "23.jsonl.zst", NOW + 30)   # an older day, newer mtime: ignored
+            st.mkdir()
+            arg = json.dumps({"raw": str(raw), "state": str(st), "venues": ["binance"], "agents": []})
+            r = subprocess.run([sys.executable, "-", arg], input=W.probe_script(), capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            out = json.loads(r.stdout)
+            self.assertEqual(out["mtime"]["binance"], W.newest_mtime(raw / "binance"))
+            self.assertIsNone(out["heartbeat"])
+
+
 class TestMain(unittest.TestCase):
     def test_a_check_loads_the_repo_s_env_for_the_webhook_and_reading_the_status_does_not(self):
         loaded = []

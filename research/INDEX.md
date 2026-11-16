@@ -773,11 +773,14 @@ convention: `PREREGISTRATION_<NAME>.md` is the contract, `RESULTS_<NAME>.md` the
 
 ## #82 — Session swings: how big each coin's moves are, hour by hour of the week
 
-*#82 (not in trials.csv)*
+*#82 measurement*
 
 - `PREREGISTRATION_SWINGHOURS.md`
 - `PREREGISTRATION_SWINGHOURS.md.ots`
+- `RESULTS_SWINGHOURS.md`
 - `swinghours.py`  (rule: `espero/swinghours.py`)
+- `swinghours_profiles.csv`
+- `swinghours_run.txt`
 
 ## #83 — Funding carry on BTC and ETH with both legs on Hyperliquid, forward on paper
 

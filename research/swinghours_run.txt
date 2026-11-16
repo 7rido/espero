@@ -1,0 +1,58 @@
+#82 session swings: run once, research/PREREGISTRATION_SWINGHOURS.md
+
+coins and bars (kept; dropped = bad bars and the first 720 hours):
+  AAVE  kept 51,496  dropped   721  months in 50, out 21  compares
+  ADA   kept 57,711  dropped   721  months in 58, out 21  compares
+  AVAX  kept 52,048  dropped   721  months in 51, out 21  compares
+  BNB   kept 57,471  dropped   721  months in 58, out 21  compares
+  BTC   kept 58,439  dropped   721  months in 60, out 21  compares
+  DOGE  kept 53,846  dropped   721  months in 53, out 21  compares
+  ENA   kept 21,155  dropped   721  months in  8, out 21  information only
+  ETH   kept 58,439  dropped   721  months in 60, out 21  compares
+  LINK  kept 58,047  dropped   721  months in 59, out 21  compares
+  LTC   kept 58,119  dropped   721  months in 59, out 21  compares
+  NEAR  kept 51,399  dropped   721  months in 50, out 21  compares
+  SOL   kept 52,144  dropped   721  months in 51, out 21  compares
+  UNI   kept 52,168  dropped   721  months in 51, out 21  compares
+  WLD   kept 27,227  dropped   721  months in 17, out 21  compares
+  XRP   kept 58,191  dropped   721  months in 59, out 21  compares
+  ZEC   kept 57,471  dropped   721  months in 58, out 21  compares
+  ZRO   kept 19,257  dropped   721  months in  6, out 21  information only
+comparing coins: 15
+
+READOUT 1, the hours repeat (body, weekday hours, UTC clock):
+  pooled Spearman in vs out 0.865 (needs >= 0.7); coins at >= 0.5: 15 of 15 (needs 13)
+  => THE HOURS REPEAT
+  body  utc      pooled 0.865  coins >= 0.5: 15/15  repeats
+  body  new_york pooled 0.749  coins >= 0.5: 14/15  repeats
+  range utc      pooled 0.899  coins >= 0.5: 15/15  repeats
+  range new_york pooled 0.842  coins >= 0.5: 15/15  repeats
+  per coin (body): AAVE 0.82/0.69, ADA 0.82/0.59, AVAX 0.87/0.72, BNB 0.81/0.64, BTC 0.89/0.79, DOGE 0.82/0.72, ETH 0.90/0.80, LINK 0.86/0.79, LTC 0.76/0.69, NEAR 0.74/0.56, SOL 0.89/0.79, UNI 0.78/0.60, WLD 0.65/0.53, XRP 0.82/0.82, ZEC 0.65/0.38   (UTC/New York)
+
+READOUT 2, the clock (body):
+  pooled out-of-sample correlation UTC 0.865, New York 0.749 => UTC
+  utc      out-of-sample peak-to-trough 2.00
+  new_york out-of-sample peak-to-trough 1.99
+  range: UTC 0.899, New York 0.842 => UTC
+
+READOUT 3, the size (body, pooled, normalised swing: 1.0 = the coin's last month's average hour):
+  in  utc      busiest 14:00 UTC 1.40, 15:00 UTC 1.34, 13:00 UTC 1.29; quietest 04:00 UTC 0.88, 05:00 UTC 0.91, 23:00 UTC 0.96; ratio 1.59
+  in  new_york busiest 10:00 New York 1.42, 09:00 New York 1.31, 11:00 New York 1.29; quietest 00:00 New York 0.88, 23:00 New York 0.88, 01:00 New York 0.92; ratio 1.61
+  in  days Mon..Sun 1.11 1.08 1.10 1.07 1.05 0.85 0.90; weekend over weekdays 0.81
+  out utc      busiest 14:00 UTC 1.61, 15:00 UTC 1.55, 13:00 UTC 1.31; quietest 23:00 UTC 0.80, 11:00 UTC 0.88, 10:00 UTC 0.88; ratio 2.00
+  out new_york busiest 10:00 New York 1.68, 09:00 New York 1.44, 11:00 New York 1.44; quietest 19:00 New York 0.85, 06:00 New York 0.89, 07:00 New York 0.89; ratio 1.99
+  out days Mon..Sun 1.15 1.04 1.04 1.05 1.09 0.78 0.89; weekend over weekdays 0.78
+
+READOUT 4, the weekend:
+  Saturday and Sunday the two quietest days: in True, out True => THE WEEKEND REPEATS
+
+INFORMATION ONLY
+  the week, out-of-sample, busiest: Tue 14:00 UTC 1.75, Thu 15:00 UTC 1.74, Fri 14:00 UTC 1.68, Mon 15:00 UTC 1.63, Mon 14:00 UTC 1.62
+  the week, out-of-sample, quietest: Sat 10:00 UTC 0.63, Sat 11:00 UTC 0.63, Sun 05:00 UTC 0.64, Sun 06:00 UTC 0.67, Sat 19:00 UTC 0.67
+  each year against the in-sample pooled profile (median over coins): 2020 0.47, 2021 0.67, 2022 0.84, 2023 0.87, 2024 0.90, 2025 0.76, 2026 0.79
+  ENA (not comparing) out-of-sample against the pooled out-of-sample profile: 0.96
+  ZRO (not comparing) out-of-sample against the pooled out-of-sample profile: 0.95
+  BTC median hour, out-of-sample, raw bps by weekday hour UTC 00..23: 27 25 24 21 19 21 20 19 21 21 19 18 22 35 48 36 29 33 27 22 22 21 20 16
+  ETH median hour, out-of-sample, raw bps by weekday hour UTC 00..23: 37 36 37 30 27 30 27 27 28 30 26 26 31 50 63 52 37 45 41 33 35 29 30 27
+  SOL median hour, out-of-sample, raw bps by weekday hour UTC 00..23: 43 47 45 37 35 39 33 35 37 34 31 31 41 52 72 62 48 54 47 42 42 34 35 32
+  NOT A SIGNAL, signed mean return by week slot out-of-sample (bps), highest: Tue 15:00 +21.9, Fri 01:00 +17.3, Fri 16:00 +15.3; lowest: Mon 01:00 -23.2, Thu 13:00 -16.7, Thu 19:00 -15.4

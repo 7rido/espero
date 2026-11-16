@@ -86,3 +86,18 @@ winter), a day less the five-minute execution allowance, instead of rule 8's bud
 land up to a day after rule 8's decision. The canary proves the order path, not the edge, so it waits for me. For this
 sleeve only, the testnet stage's latency criterion is measured from my approval to the venue's acknowledgement, not
 from the signal. Everything else above stands. The timestamp beside this file covers the text before this amendment.
+
+## Amendment 2026-11-16, by the account holder: the testnet buys without asking
+
+From the decision of Sunday 2026-11-22 on, this sleeve's **testnet** entries are placed without my yes. No proposal is
+made on the testnet: each entry is sent once the week is decided, within rule 8's own budget (Monday 00:00 UTC plus
+8.4 hours, less the five-minute execution allowance, about 08:19 UTC), and announced through `espero.notify` when it
+fills. A decision after that time is journaled `late` and buys nothing. Exits never wait, as before.
+
+The approval path was proven on the testnet on 2026-11-09, when four entries were approved with the one-time code and
+filled. What is left to prove is the round trips, and they need entries. The testnet stage's latency criterion is again
+measured from the signal, as for every other sleeve.
+
+**Rung 2 is unchanged: on mainnet every entry waits for my yes, as the lift says,** and the 2026-11-04 amendment's day
+to answer applies to rung 2 only. The risk gate, the stop file and `KILL`, the shared account's rules and everything
+else above stand.

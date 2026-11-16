@@ -440,6 +440,72 @@ class TestTheJournalIsWhatCounts(unittest.TestCase):
         self.assertEqual(r.leg("ETH")["status"], "filled")
 
 
+class TestTheAmendmentOf20261116(unittest.TestCase):
+    """From the decision of Sunday 2026-11-22, testnet entries are sent without the holder's yes, inside rule 8's own
+    budget; before it, every entry waits for the yes (research/CANARY_MF.md)."""
+
+    AUTO_MON = MON + 21 * 86_400                                  # Monday 2026-11-23 00:00 UTC
+
+    def test_the_deadlines(self):
+        self.assertFalse(C.auto_entries("2026-11-15"))
+        self.assertTrue(C.auto_entries("2026-11-22"))
+        self.assertEqual(C.entry_deadline("2026-11-15"), C.deadline(self.AUTO_MON - 7 * 86_400))
+        self.assertEqual(C.entry_deadline("2026-11-22"), self.AUTO_MON + 30_240 - 300)   # 8.4 h less 5 min: 08:19 UTC
+        self.assertEqual(C.calendar_monday("2026-11-22"), self.AUTO_MON)
+
+    def test_from_the_amendment_entries_are_bought_without_a_proposal_and_each_fill_is_announced(self):
+        r = Run(picks=("BTC", "ETH", "BCH"))
+        r.canary.step(self.AUTO_MON + 3600)
+        self.assertEqual(r.canary.ledger.db.execute("SELECT COUNT(*) FROM proposals").fetchone()[0], 0)
+        self.assertEqual(sorted(o["coin"] for o in r.ex.sent if o["side"] == "buy"), ["BTC", "ETH"])
+        for coin in ("BTC", "ETH"):
+            leg = r.leg(coin)
+            self.assertEqual((leg["status"], leg["proposal"]), ("filled", None))
+            self.assertIn("amendment 2026-11-16", leg["note"])
+        self.assertEqual(r.leg("BCH")["status"], "not_on_testnet")
+        bought = [m for t, m in r.notes if "bought" in t]
+        self.assertEqual(len(bought), 2)
+        self.assertFalse(any("proposal" in t for t, _ in r.notes))
+
+    def test_before_the_amendment_entries_still_wait_for_the_yes(self):
+        r = Run(picks=("BTC",))
+        r.canary.step(self.AUTO_MON - 7 * 86_400 + 3600)          # the week of 2026-11-15
+        self.assertEqual(r.leg("BTC")["status"], "proposed")
+        self.assertEqual(r.ex.sent, [])
+
+    def test_after_rule_8s_budget_the_week_buys_nothing_and_still_sells(self):
+        r = Run(picks=("BTC", "ETH"))
+        r.canary.step(self.AUTO_MON - 7 * 86_400 + 3600)
+        t = self.AUTO_MON - 7 * 86_400 + 3600
+        for coin in ("BTC", "ETH"):
+            t += 30
+            r.answer(r.leg(coin)["proposal"], "approve", t)
+        r.canary.step(t)
+        r.picks = ["BTC", "SOL"]
+        r.canary.step(C.entry_deadline("2026-11-22") + 60)        # the Mac woke after 08:19 UTC
+        self.assertIsNone(r.leg("SOL"))
+        self.assertEqual(r.leg("ETH", "exit")["status"], "filled")
+        w = r.canary.db.execute("SELECT status FROM weeks WHERE sunday='2026-11-22'").fetchone()
+        self.assertEqual(w["status"], "late")
+
+    def test_an_entry_not_filled_by_rule_8s_budget_is_late_and_never_sent_again(self):
+        r = Run(picks=("BTC",))
+        r.ex.fill_ratio = 0.0
+        r.canary.step(self.AUTO_MON + 3600)                       # one try, no fill
+        n = len(r.ex.sent)
+        r.ex.fill_ratio = 1.0
+        r.canary.step(C.entry_deadline("2026-11-22"))
+        self.assertEqual(len(r.ex.sent), n)
+        self.assertEqual(r.leg("BTC")["status"], "late")
+
+    def test_the_stop_file_still_stops_automatic_entries(self):
+        r = Run(picks=("BTC",))
+        (r.state / C.STOP).write_text("")
+        r.canary.step(self.AUTO_MON + 3600)
+        self.assertEqual(r.leg("BTC")["status"], "stopped")
+        self.assertEqual(r.ex.sent, [])
+
+
 class TestStopAndRestart(unittest.TestCase):
     def test_the_stop_file_proposes_nothing_and_sells_only_what_the_canary_holds(self):
         r = Run(picks=("BTC",))

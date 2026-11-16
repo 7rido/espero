@@ -209,14 +209,16 @@ script and `--uninstall`; the journal stays.
 ### Rule 8's plumbing canary on testnet
 
 `espero mf-canary --loop` is rule 8's canary, under the account holder's signed lift ([CANARY_MF.md](../research/CANARY_MF.md)).
-Every five minutes it takes your answers, decides the week once Sunday's daily bar is complete (Monday 00:00 UTC),
-proposes each new entry for your yes, and places what you approved on Hyperliquid's **testnet**. Journal:
-`state/mf-canary.db`; proposals: `state/approvals.db`.
+Every five minutes it decides the week once Sunday's daily bar is complete (Monday 00:00 UTC) and trades it on
+Hyperliquid's **testnet**. Journal: `state/mf-canary.db`; proposals: `state/approvals.db`.
 
-- **Your part.** Each entry is announced in the notification centre around 00:05 UTC Monday (7:05 p.m. Sunday
-  Eastern). Answer with the one-time code before 23:55 UTC that Monday (6:55 p.m. Eastern), on the home screen
-  ("Approvals") or with `espero approve <id> approve <code>`. One code
-  answers one proposal: for a second, wait for the next code. Silence is "no".
+- **From the week of 2026-11-22: no answer needed** (the holder's amendment of 2026-11-16). Each entry is bought at
+  once, until rule 8's own deadline, Monday 08:19 UTC (3:19 a.m. Eastern), and each fill is announced in the
+  notification centre. A week decided after that buys nothing and still sells.
+- **Up to the week of 2026-11-15: your part.** Each entry is announced in the notification centre around 00:05 UTC
+  Monday (7:05 p.m. Sunday Eastern). Answer with the one-time code before 23:55 UTC that Monday (6:55 p.m. Eastern),
+  on the home screen (Today) or with `espero approve <id> approve <code>`. One code answers one proposal: for a
+  second, wait for the next code. Silence is "no". On mainnet (rung 2) every entry will wait for the yes like this.
 - **Exits never wait.** A coin rule 8 drops is sold at once, exactly the canary's own size.
 - **Shared account.** It trades the testnet account #59's executor and carry-maker's mirror use, so it tracks its
   own orders by client id and never reads or closes anything it did not open.

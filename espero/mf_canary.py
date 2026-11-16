@@ -49,6 +49,7 @@ EXIT_TRIES = 8
 REDUCE_ONLY_EXITS = False
 DAY_S = 86_400
 ANSWER_WINDOW_S = approvals.MAX_WAIT_S - approvals.EXECUTION_ALLOWANCE_S   # the holder's amendment
+AUTO_FROM = "2026-11-22"   # the holder's amendment of 2026-11-16: from this Sunday, testnet entries need no yes
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS weeks (
@@ -84,6 +85,30 @@ def deadline(monday: int) -> int:
     Eastern in winter. #8's own budget of 8.4 hours closed before the holder's Monday morning; a plumbing canary proves
     the order path, so it waits for the holder, as no sleeve trading for an edge may."""
     return int(monday + ANSWER_WINDOW_S)
+
+
+def auto_entries(sunday: str) -> bool:
+    """The week's testnet entries are placed without the holder's yes (research/CANARY_MF.md, amendment 2026-11-16).
+    Rung 2, on mainnet, always waits for the yes; this module trades only the testnet."""
+    return sunday >= AUTO_FROM
+
+
+def rule_deadline(monday: int) -> int:
+    """Rule 8's own budget from Monday 00:00 UTC, less the execution allowance: about 08:19 UTC, 3:19 a.m. Eastern."""
+    return int(monday + latency.by_test(latency.ROWS)[RULE].budget_s - approvals.EXECUTION_ALLOWANCE_S)
+
+
+def entry_deadline(sunday: str) -> int:
+    """The last moment the week's entries may still be sent: the holder's day to answer while entries wait for the
+    yes, rule 8's own budget once they no longer do."""
+    monday = calendar_monday(sunday)
+    return rule_deadline(monday) if auto_entries(sunday) else deadline(monday)
+
+
+def calendar_monday(sunday: str) -> int:
+    import calendar
+
+    return calendar.timegm(time.strptime(sunday, "%Y-%m-%d")) + DAY_S
 
 
 def plan(picks: Sequence[str], held: Dict[str, float]) -> Tuple[List[str], List[str]]:
@@ -243,7 +268,7 @@ class Canary:
         sunday = time.strftime("%Y-%m-%d", time.gmtime(monday - DAY_S))
         if self.db.execute("SELECT 1 FROM weeks WHERE sunday=?", (sunday,)).fetchone():
             return
-        late = now >= deadline(monday)
+        late = now >= entry_deadline(sunday)
         held = self.held()
         if late and not held:  # nothing to sell, and too late to buy: no decision is needed
             self.db.execute(
@@ -292,11 +317,11 @@ class Canary:
             )
         made = []
         for coin in entries:
-            status, note, pid = self._propose(sunday, coin, px.get(coin), monday, now)
+            status, note, pid, usd = self._propose(sunday, coin, px.get(coin), monday, now)
             self.db.execute(
                 "INSERT INTO legs (sunday, coin, kind, side, usd, decision_px, proposal, status, created, "
                 "ruling_testnet, ruling_holder, note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                (sunday, coin, "entry", "buy", ENTRY_USD, px.get(coin), pid, status, now, *self._rulings(coin), note),
+                (sunday, coin, "entry", "buy", usd, px.get(coin), pid, status, now, *self._rulings(coin), note),
             )
             if pid:
                 made.append(approvals.describe(self.ledger.proposal(pid)))
@@ -346,19 +371,23 @@ class Canary:
 
     def _propose(
         self, sunday: str, coin: str, px: Optional[float], monday: int, now: int
-    ) -> Tuple[str, str, Optional[str]]:
-        """(status, note, proposal id) for one entry."""
+    ) -> Tuple[str, str, Optional[str], float]:
+        """(status, note, proposal id, dollars) for one entry: a proposal for the holder's yes, or, from AUTO_FROM on,
+        an entry approved by the holder's amendment and sent at once."""
         if self.stopped():
-            return "stopped", "the stop or KILL file is set", None
+            return "stopped", "the stop or KILL file is set", None, ENTRY_USD
         if self.broken:
-            return "refused_journal", "the approvals journal's chain is broken", None
+            return "refused_journal", "the approvals journal's chain is broken", None, ENTRY_USD
         if coin not in self.ex.meta:
-            return "not_on_testnet", "the testnet does not list it", None
+            return "not_on_testnet", "the testnet does not list it", None, ENTRY_USD
         if not px or not math.isfinite(px) or px <= 0:
-            return "no_price", "no Sunday close", None
+            return "no_price", "no Sunday close", None, ENTRY_USD
         ruling = self._gate(coin, TESTNET_CAPITAL)
         if not ruling.allowed:
-            return "refused_gate", "; ".join(ruling.reasons), None
+            return "refused_gate", "; ".join(ruling.reasons), None, ENTRY_USD
+        if auto_entries(sunday):
+            return "approved", "testnet: sent without a yes (amendment 2026-11-16)", None, min(ENTRY_USD,
+                                                                                                ruling.notional)
         p = approvals.propose(
             RULE,
             SLEEVE,
@@ -375,7 +404,7 @@ class Canary:
         )
         p = replace(p, expires=deadline(monday))
         self.ledger.record(p)
-        return "proposed", "", p.id
+        return "proposed", "", p.id, ENTRY_USD
 
     def _sync(self, now: int, out: List[str]) -> None:
         """Proposals the operator has answered, or that lapsed, become approved, rejected or silence legs."""
@@ -460,7 +489,7 @@ class Canary:
             if leg["inflight"]:
                 self._set(leg["id"], inflight=None)  # it never reached the venue: safe to send again
                 leg = self.legs("id=?", (leg["id"],))[0]
-            if now >= deadline(monday_of(int(leg["created"]))):
+            if now >= entry_deadline(leg["sunday"]):
                 self._set(leg["id"], status="late", done=now, note="approved, but past the budget before it filled")
                 continue
             try:
@@ -479,6 +508,9 @@ class Canary:
                 self._record_fill(leg, filled, avg, oid)
                 self._set(leg["id"], status="filled", size=size, done=now)
                 out.append(f"#8 canary bought {filled:g} {leg['coin']} at {avg:g}")
+                if not leg["proposal"]:   # no proposal told the holder: the fill does (amendment 2026-11-16)
+                    self.notify("espero: the canary bought on the testnet",
+                                f"{filled:g} {leg['coin']} at {avg:g}, rule 8's week of {leg['sunday']}")
             elif int(leg["tries"]) + 1 >= ENTRY_TRIES:
                 self._set(leg["id"], status="unfilled", done=now, note=err or "no fill")
                 out.append(f"#8 canary {leg['coin']}: entry unfilled after {ENTRY_TRIES} tries")
